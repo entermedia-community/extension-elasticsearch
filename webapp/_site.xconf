@@ -1,0 +1,12 @@
+<page>
+
+
+  <property name="themeprefix">/themes/baseem</property>
+  <inner-layout>${themeprefix}/layouts/layout.html</inner-layout>
+  
+	<property name="editable">true</property>
+	<script id="jquery" src="/system/components/javascript/jquery-1.4.2.js" />
+	<script src="/system/components/openedit/openedit.js" id="openedit"/>
+	<style href="/system/components/openedit/html/theme/style.css" id="openedit-css"/>
+
+</page>
