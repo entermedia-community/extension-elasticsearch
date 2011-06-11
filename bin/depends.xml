@@ -1,3 +1,0 @@
-<plugin projectname="entermedia-elasticsearch">
-	<depend>entermedia-server</depend>
-</plugin>
