@@ -1,5 +1,0 @@
-<beans>
-
-	<bean id="assetSearcher" bean="elasticXmlFileSearcher" /> 
-	    
-</beans>
