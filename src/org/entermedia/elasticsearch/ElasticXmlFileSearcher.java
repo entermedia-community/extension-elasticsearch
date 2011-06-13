@@ -142,7 +142,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	}
 
 	
-	public void saveAllData(List inAll, User inUser)
+	public void saveAllData(List<Data> inAll, User inUser)
 	{
 		for (Object object: inAll)
 		{

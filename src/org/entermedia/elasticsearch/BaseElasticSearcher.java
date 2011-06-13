@@ -145,7 +145,16 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			}
 			if( failed)
 			{
-				reIndexAll();
+				try
+				{
+					admin.indices().create(Requests.createIndexRequest(toId(getCatalogId()))).actionGet();
+					reIndexAll();
+				}
+				catch( Exception ex)
+				{
+					log.error(ex);
+				}
+				
 			}
 			fieldConnected =  true;
 		}
@@ -303,7 +312,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 	}
 
 	
-	public void saveAllData(List inAll, User inUser)
+	public void saveAllData(List<Data> inAll, User inUser)
 	{
 		
 
