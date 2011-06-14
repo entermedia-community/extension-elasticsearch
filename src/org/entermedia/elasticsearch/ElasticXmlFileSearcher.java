@@ -1,6 +1,7 @@
 package org.entermedia.elasticsearch;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -8,6 +9,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dom4j.Element;
 import org.openedit.Data;
+import org.openedit.data.DataArchive;
 import org.openedit.data.XmlDataArchive;
 import org.openedit.data.XmlFileSearcher;
 import org.openedit.repository.ContentItem;
@@ -18,18 +20,16 @@ import org.openedit.xml.XmlFile;
 import com.openedit.OpenEditException;
 import com.openedit.page.manage.PageManager;
 import com.openedit.users.User;
-import com.openedit.util.IntCounter;
 import com.openedit.util.PathProcessor;
 
 public class ElasticXmlFileSearcher extends BaseElasticSearcher
 {
 	protected Log log = LogFactory.getLog(XmlFileSearcher.class);
 	protected XmlArchive fieldXmlArchive;
-	protected XmlDataArchive fieldXmlDataArchive;
-	protected IntCounter fieldIntCounter;
-	protected PageManager fieldPageManager;
+	protected DataArchive fieldXmlDataArchive;
 	protected String fieldPrefix;
-
+	protected String fieldDataFileName;
+	
 	public PageManager getPageManager()
 	{
 		return fieldPageManager;
@@ -47,9 +47,17 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	
 	public String getDataFileName()
 	{
-		return getSearchType() + ".xml";
+		if (fieldDataFileName == null)
+		{
+			fieldDataFileName = getSearchType() + ".xml";
+		}
+		return fieldDataFileName;
 	}
-	protected XmlDataArchive getXmlDataArchive()
+	public void setDataFileName(String inName)
+	{
+		fieldDataFileName = inName;
+	}
+	protected DataArchive getDataArchive()
 	{
 		if (fieldXmlDataArchive == null)
 		{
@@ -75,33 +83,21 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	public void reIndexAll() throws OpenEditException
 	{		
 		//For now just add things to the index. It never deletes
-		
+		deleteAll(null); //This only deleted the index
 		final List buffer = new ArrayList(100);
 		PathProcessor processor = new PathProcessor()
 		{
 			public void processFile(ContentItem inContent, User inUser)
 			{
-				if (!inContent.getName().equals(getSearchType() + ".xml"))
+				if (!inContent.getName().equals(getDataFileName()))
 				{
 					return;
 				}
 				String sourcepath = inContent.getPath();
 				sourcepath = sourcepath.substring(getPathToData().length() + 1,
 						sourcepath.length() - getDataFileName().length() - 1);
-				String path = inContent.getPath();
-				XmlFile content = getXmlArchive().getXml(path, getSearchType());
-				for (Iterator iterator = content.getElements().iterator(); iterator.hasNext();)
-				{
-					Element element = (Element) iterator.next();
-					ElementData data = (ElementData)createNewData();
-					data.setElement(element);
-					data.setSourcePath(sourcepath);
-					buffer.add(data);
-					if( buffer.size() > 99)
-					{
-						updateIndex(buffer,null);
-					}
-				}
+				hydrateData( inContent, sourcepath, buffer);
+				incrementCount();
 			}
 		};
 		processor.setRecursive(true);
@@ -110,8 +106,30 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		processor.setFilter("xml");
 		processor.process();
 		updateIndex(buffer,null);
+		log.info("reindexed " + processor.getExecCount());
 	}
 
+	protected void hydrateData(ContentItem inContent, String sourcepath, List buffer)
+	{
+		String path = inContent.getPath();
+		//TODO: Create new api to load up assets
+		XmlFile content = getDataArchive().getXmlArchive().getXml(path, getSearchType());
+
+		// TODO Auto-generated method stub
+		for (Iterator iterator = content.getElements().iterator(); iterator.hasNext();)
+		{
+			Element element = (Element) iterator.next();
+			ElementData data = (ElementData)createNewData();
+			data.setElement(element);
+			data.setSourcePath(sourcepath);
+			buffer.add(data);
+			if( buffer.size() > 99)
+			{
+				updateIndex(buffer,null);
+			}
+		}
+
+	}
 	public String getPrefix()
 	{
 		if(fieldPrefix == null)
@@ -136,13 +154,13 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		{
 			throw new OpenEditException("Cannot delete null data.");
 		}
-		getXmlDataArchive().delete(inData,inUser);
+		getDataArchive().delete(inData,inUser);
 		// Remove from Index
 		super.delete(inData, inUser);
 	}
 
-	
-	public void saveAllData(List<Data> inAll, User inUser)
+	//This is the main APU for saving and updates to the index
+	public void saveAllData(Collection<Data> inAll, User inUser)
 	{
 		for (Object object: inAll)
 		{
@@ -152,7 +170,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 				data.setId(nextId());
 			}			
 		}
-		getXmlDataArchive().saveAllData(inAll, inUser);
-		super.saveAllData(inAll,inUser);
+		getDataArchive().saveAllData(inAll, inUser);
+		updateIndex(inAll, inUser);
 	}
 }

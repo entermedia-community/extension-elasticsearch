@@ -1,11 +1,13 @@
 package org.entermedia.elasticsearch;
 
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
 import org.openedit.Data;
+import org.openedit.util.DateStorageUtil;
 
 import com.openedit.OpenEditException;
 
@@ -38,6 +40,15 @@ public class SearchHitData implements Data
 			{
 				return String.valueOf(value);
 			}
+		}
+		Object found = getSearchHit().getSource().get(inId);
+		if( found instanceof Date)
+		{
+			found = DateStorageUtil.getStorageUtil().formatForStorage((Date)found);
+		}
+		if( found != null)
+		{
+			return String.valueOf(found);
 		}
 		return null;
 	}
