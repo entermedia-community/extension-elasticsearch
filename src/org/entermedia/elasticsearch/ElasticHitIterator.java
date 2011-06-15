@@ -37,6 +37,7 @@ public class ElasticHitIterator implements Iterator
 	}
 	public ElasticHitIterator(Iterator inIter)
 	{
+		setSearchHitIterator(inIter);
 	}
 	public ElasticHitIterator()
 	{

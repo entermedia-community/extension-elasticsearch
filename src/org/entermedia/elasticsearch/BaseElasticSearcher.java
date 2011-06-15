@@ -115,7 +115,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 	        search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 	        XContentQueryBuilder terms = buildTerms(inQuery);
 	        search.setQuery(terms);
-	        addSorts(inQuery,search);
+	       // addSorts(inQuery,search);
 	        search.setFrom(0).setSize(60).setExplain(true);
 
 			SearchResponse results = search.execute().actionGet();
@@ -123,9 +123,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			hits.setIndexId(getIndexId());
 			hits.setSearchQuery(inQuery);
 
+			String json = new String(terms.buildAsBytes() , "UTF-8" );
 			long end = System.currentTimeMillis() - start;
 
-			log.info(hits.size() + " hits query: " + inQuery.toQuery() + " sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds] on " + getCatalogId() + "/" + getSearchType() );
+			log.info(hits.size() + " hits query: " + json + " sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds] on " + getCatalogId() + "/" + getSearchType() );
 
 			return hits;
 		}

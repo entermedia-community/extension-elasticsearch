@@ -1,0 +1,46 @@
+curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search' -d '
+{"query" : 
+
+
+{"bool" :   {
+        "must" : 
+	{
+		"term" : { "category":"index" }
+        },
+        "should" : [
+            {
+                "term" : { "viewasset" : "profileassetadmin" }
+            },
+            {
+                "term" : { "viewasset" : "profileviewassets" }
+            }
+        ]
+  }
+}
+
+
+}' | python -mjson.tool
+
+
+
+{"bool" :   {
+        "must" : 
+	{
+		"term" : { "category":"index" }
+        },
+        "should" : [
+            {
+                "term" : { "viewasset" : "profileassetadmin" }
+            },
+            {
+                "term" : { "viewasset" : "profileviewassets" }
+            }
+        ]
+  }
+}
+
+
+{"bool":{"must":{"term":{"category":"users"}},"must":{"bool":{"should":{"term":{"viewasset":"true"}},"should":{"term":{"viewasset":""}},"should":{"term":{"viewasset":"sgroupadministrator"}},"should":{"term":{"viewasset":"profileassetadmin"}},"should":{"term":{"viewasset":"video"}},"should":{"term":{"viewasset":"developers"}},"should":{"term":{"viewasset":"photoeditors"}},"should":{"term":{"viewasset":"visualdata"}},"should":{"term":{"viewasset":"administrators"}},"should":{"term":{"viewasset":"admin"}}}}}}
+
+curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search?q=category:index' | python -mjson.tool
+
