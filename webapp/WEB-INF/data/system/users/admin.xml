@@ -9,7 +9,7 @@
     <property name="enabled" value="true"/>
     <property name="lastName" value="Administrator"/>
     <property name="productspecialrestrictions" value="false"/>
-    <property name="screenname" value="admin"/>
+    <property name="screenname" value="Admin"/>
     <property name="searchtype" value="categories"/>
     <property name="productavailability" value="false"/>
     <property name="resultstype" value="thumbs"/>
@@ -22,7 +22,7 @@
     <property name="productlegal" value="false"/>
     <property name="productreviewers" value="false"/>
     <property name="resulttype" value="thumbs"/>
-    <property name="email" value="support@openedit.org"/>
+    <property name="email" value="support.openedit"/>
     <property name="retention" value="false"/>
     <property name="showfilter" value="false"/>
     <property name="photooptions" value="false"/>

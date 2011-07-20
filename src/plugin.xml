@@ -24,7 +24,7 @@
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
-	</bean>
+	</bean> 
 
     <bean id="elasticAssetDataConnector" class="org.entermedia.connectors.elastic.ElasticAssetDataConnector"
 		singleton="false">
@@ -37,4 +37,20 @@
 		</property>
 		<property name="dataFileName"><value>data.xml</value></property>
 	</bean>
+	
+	<bean id="elasticUserSearcher" class="org.entermedia.elasticsearch.ElasticUserSearcher">
+		<property name="clientPool"><ref bean="clientPool" /></property>
+		<property name="userManager">
+			<ref bean="userManager" />
+		</property>
+		<property name="pageManager">
+			<ref bean="pageManager" />
+		</property>
+	</bean>
+	<bean id="elasticGroupSearcher" class="org.openedit.users.LuceneGroupSearcher">
+		<property name="userManager">
+			<ref bean="userManager" />
+		</property>
+	</bean>
+
 </beans>

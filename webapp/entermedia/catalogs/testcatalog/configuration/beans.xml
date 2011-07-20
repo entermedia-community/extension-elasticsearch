@@ -1,5 +1,6 @@
 <beans>
 
 	<bean id="assetSearcher" bean="elasticAssetSearcher" /> 
+	<bean id="approvalsSearcher" bean="elasticXmlFileSearcher" /> 
 	    
 </beans>

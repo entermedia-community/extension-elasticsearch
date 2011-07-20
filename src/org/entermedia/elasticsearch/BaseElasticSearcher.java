@@ -1,10 +1,13 @@
 package org.entermedia.elasticsearch;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,42 +53,36 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 	protected boolean fieldConnected;
 	protected IntCounter fieldIntCounter;
 	protected PageManager fieldPageManager;
-	
+
 	public PageManager getPageManager()
 	{
 		return fieldPageManager;
 	}
-
 
 	public void setPageManager(PageManager inPageManager)
 	{
 		fieldPageManager = inPageManager;
 	}
 
-
 	public boolean isConnected()
 	{
 		return fieldConnected;
 	}
-
 
 	public void setConnected(boolean inConnected)
 	{
 		fieldConnected = inConnected;
 	}
 
-
 	public ClientPool getClientPool()
 	{
 		return fieldClientPool;
 	}
 
-
 	public void setClientPool(ClientPool inClientPool)
 	{
 		fieldClientPool = inClientPool;
 	}
-
 
 	public SearchQuery createSearchQuery()
 	{
@@ -96,15 +93,18 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		query.setSearcherManager(getSearcherManager());
 		return query;
 	}
+
 	protected Client getClient()
 	{
 		return getClientPool().getClient();
 	}
+
 	protected String toId(String inId)
 	{
 		String id = inId.replace('/', '_');
 		return id;
 	}
+
 	public HitTracker search(SearchQuery inQuery)
 	{
 		try
@@ -112,21 +112,21 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			long start = System.currentTimeMillis();
 			connect();
 			SearchRequestBuilder search = getClient().prepareSearch(toId(getCatalogId()));
-	        search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
-	        XContentQueryBuilder terms = buildTerms(inQuery);
-	        search.setQuery(terms);
-	       // addSorts(inQuery,search);
-	        search.setFrom(0).setSize(60).setExplain(true);
+			search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+			XContentQueryBuilder terms = buildTerms(inQuery);
+			search.setQuery(terms);
+			addSorts(inQuery, search);
+			search.setFrom(0).setSize(60).setExplain(true);
 
 			SearchResponse results = search.execute().actionGet();
 			ElasticHitTracker hits = new ElasticHitTracker(results);
 			hits.setIndexId(getIndexId());
 			hits.setSearchQuery(inQuery);
 
-			String json = new String(terms.buildAsBytes() , "UTF-8" );
+			String json = new String(terms.buildAsBytes(), "UTF-8");
 			long end = System.currentTimeMillis() - start;
 
-			log.info(hits.size() + " hits query: " + json + " sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds] on " + getCatalogId() + "/" + getSearchType() );
+			log.info(hits.size() + " hits query: " + json + " sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds] on " + getCatalogId() + "/" + getSearchType());
 
 			return hits;
 		}
@@ -140,14 +140,15 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			throw new OpenEditException(ex);
 		}
 
-//		AdminClient admin = client.admin();
-//		ActionFuture<CreateIndexResponse> indexresponse = admin.indices().create(new CreateIndexRequest("test"));
-//		log(indexresponse.isDone() + " done ");
-		
+		//		AdminClient admin = client.admin();
+		//		ActionFuture<CreateIndexResponse> indexresponse = admin.indices().create(new CreateIndexRequest("test"));
+		//		log(indexresponse.isDone() + " done ");
+
 		//node.close();
 	}
 
-	protected void connect()
+	@SuppressWarnings("rawtypes")
+	protected void connect() throws IOException
 	{
 		if( !isConnected())
 		{
@@ -166,11 +167,31 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 				log.error("index not ready " + ex);
 				failed = true;
 			}
+			
+			XContentBuilder jsonBuilder =  XContentFactory.jsonBuilder(); 
+//			jsonBuilder.startObject();
+//			XContentBuilder data = jsonBuilder.startObject().startObject("properties");
+//			for (Iterator i = getPropertyDetails().findIndexProperties().iterator() ; i.hasNext();)
+//			{
+//				PropertyDetail detail = (PropertyDetail) i.next();
+//				System.out.println(detail.getId());
+//				//XContentBuilder data = jsonBuilder.startObject().startObject("properties");
+//				Map properties = detail.getProperties();
+//				data  = data.startObject(detail.getId())
+//					.field("type", "string")
+//					.field("index", properties.containsKey("analyzed")?properties.get("analyzed").toString():"standard")
+//					.field("store", "yes").endObject();
+//				data = data.endObject();
+//			}
+//			data.endObject();
+			
 			if( failed)
 			{
 				try
 				{
 					admin.indices().create(Requests.createIndexRequest(toId(getCatalogId()))).actionGet();
+					
+					
 					
 					  // create properties for the mapped type
 //	                XContentBuilder data = jsonBuilder().startObject()
@@ -214,15 +235,15 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		for (Iterator iterator = inQuery.getTerms().iterator(); iterator.hasNext();)
 		{
 			Term term = (Term) iterator.next();
-			if( "orsGroup".equals( term.getOperation() ) )
+			if ("orsGroup".equals(term.getOperation()))
 			{
-				if( term.getValues() != null)
+				if (term.getValues() != null)
 				{
 					BoolQueryBuilder or = QueryBuilders.boolQuery();
 					for (int i = 0; i < term.getValues().length; i++)
 					{
 						Object val = term.getValues()[i];
-						or.should(QueryBuilders.termQuery(term.getDetail().getId(), val));					
+						or.should(QueryBuilders.termQuery(term.getDetail().getId(), val));
 					}
 					bool.must(or);
 				}
@@ -230,9 +251,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			else
 			{
 				String value = term.getValue();
-				if( value.contains("*"))
+				value = value.toLowerCase();
+				if (value.contains("*"))
 				{
-					XContentQueryBuilder find = QueryBuilders.wildcardQuery(term.getDetail().getId(), value);				
+					XContentQueryBuilder find = QueryBuilders.wildcardQuery(term.getDetail().getId(), value);
 					bool.must(find);
 				}
 				else
@@ -246,10 +268,9 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		return bool;
 	}
 
-
-	protected void addSorts(SearchQuery inQuery,SearchRequestBuilder search)
+	protected void addSorts(SearchQuery inQuery, SearchRequestBuilder search)
 	{
-		if( inQuery.getSorts() == null)
+		if (inQuery.getSorts() == null)
 		{
 			return;
 		}
@@ -267,69 +288,69 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 				direction = false;
 				field = field.substring(0, field.length() - 2);
 			}
-	        FieldSortBuilder sort = SortBuilders.fieldSort(field);
-	        if( direction)
-	        {
-	        	sort.order(SortOrder.DESC);
-	        }
-	        else
-	        {
-	        	sort.order(SortOrder.ASC);
-	        }
-	        search.addSort(sort);
+			FieldSortBuilder sort = SortBuilders.fieldSort(field);
+			if (direction)
+			{
+				sort.order(SortOrder.DESC);
+			}
+			else
+			{
+				sort.order(SortOrder.ASC);
+			}
+			search.addSort(sort);
 		}
 	}
+
 	public String getIndexId()
 	{
-		
+
 		return "singleton";
 	}
 
-	
 	public void clearIndex()
 	{
 
 	}
+
 	public void saveData(Object inData, User inUser)
 	{
-		saveData((Data)inData,inUser);
+		saveData((Data) inData, inUser);
 	}
+
 	public void saveData(Data inData, User inUser)
 	{
 		//update the index
 		List<Data> list = new ArrayList(1);
-		list.add((Data)inData);
-		saveAllData(list,inUser);
+		list.add((Data) inData);
+		saveAllData(list, inUser);
 	}
+
 	protected void updateIndex(Collection<Data> inBuffer, User inUser)
 	{
 		String catid = toId(getCatalogId());
-		
-//		BulkRequestBuilder brb = getClient().prepareBulk();
-//		brb.add(Requests.indexRequest(indexName).type(getIndexType()).id(id).source(source));
-//    }
-//    if (brb.numberOfActions() > 0) brb.execute().actionGet(); 
+
+		//		BulkRequestBuilder brb = getClient().prepareBulk();
+		//		brb.add(Requests.indexRequest(indexName).type(getIndexType()).id(id).source(source));
+		//    }
+		//    if (brb.numberOfActions() > 0) brb.execute().actionGet(); 
 		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
 
-		for(Data data : inBuffer)
+		for (Data data : inBuffer)
 		{
 			try
 			{
 				IndexRequestBuilder builder = getClient().prepareIndex(catid, getSearchType(), data.getId());
 				XContentBuilder content = XContentFactory.jsonBuilder().startObject();
-				updateIndex(content,data,details);
+				updateIndex(content, data, details);
 				content.endObject();
-				IndexResponse response = builder.setSource(content)
-			        .setRefresh(true)
-			        .execute()
-			        .actionGet();
+				IndexResponse response = builder.setSource(content).setRefresh(true).execute().actionGet();
 			}
-			catch( Exception ex)
+			catch (Exception ex)
 			{
 				throw new OpenEditException(ex);
 			}
 		}
-		
+
 		inBuffer.clear();
 	}
 
@@ -337,47 +358,42 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 	{
 		for (Iterator iterator = inDetails.findIndexProperties().iterator(); iterator.hasNext();)
 		{
-			PropertyDetail detail = (PropertyDetail)iterator.next();
+			PropertyDetail detail = (PropertyDetail) iterator.next();
 			String value = inData.get(detail.getId());
-			if( value != null)
+			if (value != null)
 			{
 				try
 				{
 					//TODO: Deal with data types and move to indexer object
-					inContent.field(detail.getId(),value);
+					inContent.field(detail.getId(), value);
 					//log.info("Saved" + detail.getId() + "=" + value );
 				}
-				catch( Exception ex)
+				catch (Exception ex)
 				{
 					throw new OpenEditException(ex);
 				}
 			}
 		}
-//		.field("user", "kimchy")
-//        .field("postDate", new Date())
-//        .field("message", "trying out Elastic Search");
-		
-	}
+		//		.field("user", "kimchy")
+		//        .field("postDate", new Date())
+		//        .field("message", "trying out Elastic Search");
 
+	}
 
 	public void deleteAll(User inUser)
 	{
 		log.info("Deleted old database");
 		DeleteByQueryRequestBuilder delete = getClient().prepareDeleteByQuery(toId(getCatalogId()));
 
-		delete.setQuery(new MatchAllQueryBuilder() ).execute()
-        .actionGet();
+		delete.setQuery(new MatchAllQueryBuilder()).execute().actionGet();
 
 	}
 
-	
 	public void delete(Data inData, User inUser)
 	{
 		String id = inData.getId();
 		DeleteRequestBuilder delete = getClient().prepareDelete(toId(getCatalogId()), getSearchType(), id);
-		delete.setOperationThreaded(false)
-        .execute()
-        .actionGet();
+		delete.setOperationThreaded(false).execute().actionGet();
 	}
 
 	//Base class only updated the index in bulk
@@ -385,6 +401,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 	{
 		updateIndex(inAll, inUser);
 	}
+
 	public synchronized String nextId()
 	{
 		return String.valueOf(getIntCounter().incrementCount());
@@ -396,13 +413,12 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		{
 			fieldIntCounter = new IntCounter();
 			fieldIntCounter.setLabelName(getSearchType() + "IdCount");
-			Page prop = getPageManager().getPage("/WEB-INF/data/" + getCatalogId() +"/"+ getSearchType() + "s/idcounter.properties");
+			Page prop = getPageManager().getPage("/WEB-INF/data/" + getCatalogId() + "/" + getSearchType() + "s/idcounter.properties");
 			File file = new File(prop.getContentItem().getAbsolutePath());
 			file.getParentFile().mkdirs();
 			fieldIntCounter.setCounterFile(file);
 		}
 		return fieldIntCounter;
 	}
-
 
 }

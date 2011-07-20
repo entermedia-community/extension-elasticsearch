@@ -1,0 +1,13 @@
+<event operation="authentication" user="foo" details="add" catalogid="system" date="2011-07-19 11:23:23 -0400" indexed="false"/>
+<event operation="authentication" user="	" details="add" catalogid="system" date="2011-07-19 11:28:06 -0400" indexed="false"/>
+<event operation="authentication" user="don" details="add" catalogid="system" date="2011-07-19 11:29:37 -0400" indexed="false"/>
+<event operation="authentication" user="don2" details="add" catalogid="system" date="2011-07-19 11:36:51 -0400" indexed="false"/>
+<event operation="authentication" user="don3" details="add" catalogid="system" date="2011-07-19 11:37:36 -0400" indexed="false"/>
+<event operation="authentication" user="don4" details="add" catalogid="system" date="2011-07-19 11:39:09 -0400" indexed="false"/>
+<event operation="authentication" user="don5" details="add" catalogid="system" date="2011-07-19 11:39:27 -0400" indexed="false"/>
+<event operation="authentication" user="don5" details="add" catalogid="system" date="2011-07-19 11:39:31 -0400" indexed="false"/>
+<event operation="authentication" user="don5" details="add" catalogid="system" date="2011-07-19 11:45:35 -0400" indexed="false"/>
+<event operation="authentication" user="getUser" details="add" catalogid="system" date="2011-07-19 11:51:42 -0400" indexed="false"/>
+<event operation="authentication" user="don5" details="add" catalogid="system" date="2011-07-19 12:17:00 -0400" indexed="false"/>
+<event operation="authentication" user="don5" details="add" catalogid="system" date="2011-07-19 12:17:08 -0400" indexed="false"/>
+<event operation="authentication" user="don5" details="add" catalogid="system" date="2011-07-19 12:20:37 -0400" indexed="false"/>

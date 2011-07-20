@@ -14,8 +14,8 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHitField;
 import org.openedit.Data;
+import org.openedit.data.Searcher;
 import org.openedit.entermedia.Asset;
 import org.openedit.entermedia.BaseEnterMediaTest;
 import org.openedit.entermedia.search.BaseAssetSearcher;
@@ -58,7 +58,7 @@ public void xxtestBasicRead() throws Exception
 		        .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
 		        .setQuery(QueryBuilders.termQuery("user", "simon2"))
 		        .setFrom(0).setSize(60).setExplain(true)
-		        //.addField("_all")
+//		        .addField("_all")
 		        .execute()
 		        .actionGet();
 		SearchHit hit = results.getHits().iterator().next();
@@ -89,6 +89,15 @@ public void xxtestBasicRead() throws Exception
 		
 		HitTracker tracker = searcher.search(q);
 		assertEquals( 1, tracker.size() );
+		
+		Searcher approvalsearch = getMediaArchive().getSearcherManager().getSearcher("entermedia/catalogs/testcatalog", "approvals");
+		Data approval = approvalsearch.createNewData();
+		approval.setId("123");
+		approval.setProperty("notes", "A note");
+		approval.setProperty("assetid", "99");
+		approval.setSourcePath(found.getSourcePath());
+		approvalsearch.saveData(approval, null);
+		
 	}
 	
 	
