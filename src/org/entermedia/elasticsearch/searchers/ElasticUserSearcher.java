@@ -20,6 +20,7 @@ import com.openedit.OpenEditException;
 import com.openedit.WebPageRequest;
 import com.openedit.hittracker.HitTracker;
 import com.openedit.hittracker.SearchQuery;
+import com.openedit.users.BaseUser;
 import com.openedit.users.Group;
 import com.openedit.users.User;
 import com.openedit.users.UserManager;
@@ -32,6 +33,12 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 	private static final Log log = LogFactory.getLog(ElasticUserSearcher.class);
 	protected UserManager fieldUserManager;
 
+	@Override
+	public Data createNewData()
+	{
+		BaseUser user = new BaseUser();
+		return user;
+	}
 	public HitTracker getAllHits(WebPageRequest inReq)
 	{
 		SearchQuery query = createSearchQuery();
@@ -142,7 +149,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		{
 			throw new OpenEditException("No group found");
 		}
-		query.addMatches("groups",inGroup.getId());
+		query.addMatches("group",inGroup.getId());
 		query.setSortBy("namesorted");
 		HitTracker tracker = search(query);
 		return tracker;

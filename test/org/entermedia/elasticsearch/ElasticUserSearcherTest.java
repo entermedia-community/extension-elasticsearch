@@ -3,6 +3,7 @@ package org.entermedia.elasticsearch;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.entermedia.elasticsearch.searchers.BaseElasticSearcher;
 import org.entermedia.elasticsearch.searchers.ElasticUserSearcher;
 import org.junit.Test;
 import org.openedit.Data;
@@ -23,8 +24,9 @@ public class ElasticUserSearcherTest extends BaseEnterMediaTest
 	@Test
 	public void testVerifyConfiguration()
 	{
-		Searcher userSearcher = getMediaArchive().getSearcherManager().getSearcher("entermedia/catalogs/testcatalog", "user");
+		Searcher userSearcher = getMediaArchive().getSearcherManager().getSearcher("system", "user");
 		assertNotNull("user searcher is NULL!", userSearcher);
+		assertTrue("user searcher is elastic", userSearcher instanceof ElasticUserSearcher);
 	}
 
 	@Test
@@ -76,7 +78,7 @@ public class ElasticUserSearcherTest extends BaseEnterMediaTest
 		ElasticUserSearcher userSearcher = (ElasticUserSearcher) getMediaArchive().getSearcherManager().getSearcher("system", "user");
 		userSearcher.reIndexAll();
 		
-		Data hit = (Data) userSearcher.searchByField("screenname", "admin");
+		Data hit = (Data) userSearcher.searchByField("screenname", "Admin");
 		assertEquals("screen name ","Admin",hit.get("screenname") );
 		assertNotNull("screen Name is null" , hit);
 
@@ -105,7 +107,7 @@ public class ElasticUserSearcherTest extends BaseEnterMediaTest
 	{
 		ElasticUserSearcher userSearcher = (ElasticUserSearcher) getMediaArchive().getSearcherManager().getSearcher("system", "user");
 		Group group = new BaseGroup();
-		group.setId("photoeditors");
+		group.setId("administrators");
 		HitTracker hit = userSearcher.getUsersInGroup(group);
 		assertTrue("no results", hit.size()>0);
 	}
@@ -113,7 +115,7 @@ public class ElasticUserSearcherTest extends BaseEnterMediaTest
 	@Test
 	public void testSaveUsers()
 	{
-		ElasticUserSearcher userSearcher = (ElasticUserSearcher) getMediaArchive().getSearcherManager().getSearcher("entermedia/catalogs/testcatalog", "user");
+		ElasticUserSearcher userSearcher = (ElasticUserSearcher) getMediaArchive().getSearcherManager().getSearcher("system", "user");
 		BaseUser user = (BaseUser) userSearcher.createNewData();
 		user.setId("1");
 		
