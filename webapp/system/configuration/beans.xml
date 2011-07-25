@@ -1,6 +1,4 @@
 <beans>
-
 	<bean id="userSearcher" bean="elasticUserSearcher" /> 
 	<bean id="groupSearcher" bean="elasticGroupSearcher" /> 
-	    
 </beans>

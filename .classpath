@@ -4,7 +4,7 @@
 	<classpathentry kind="src" path="test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/entermedia-server"/>
-	<classpathentry kind="lib" path="lib/elasticsearch-0.16.1.jar" sourcepath="/home/cburkey/workspaceSVN/elasticsearch/modules/elasticsearch/src/main/java"/>
+	<classpathentry kind="lib" path="lib/elasticsearch-0.16.1.jar" sourcepath="/Users/donl/dev/_elasticsearch/elasticsearch/modules/elasticsearch/src/main/java/org"/>
 	<classpathentry kind="lib" path="lib/jline-0.9.94.jar"/>
 	<classpathentry kind="lib" path="lib/jna-3.2.7.jar"/>
 	<classpathentry kind="lib" path="lib/lucene-analyzers-3.1.0.jar"/>

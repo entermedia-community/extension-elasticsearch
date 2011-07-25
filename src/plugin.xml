@@ -2,17 +2,27 @@
 <!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 
 <beans>
-    <bean id="elasticXmlFileSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" singleton="false">
-		<property name="pageManager"><ref bean="pageManager" /></property>
-		<property name="xmlArchive"><ref bean="xmlArchive" /></property>
-		<property name="moduleManager"><ref bean="moduleManager" /></property>
-		<property name="clientPool"><ref bean="clientPool" /></property>
+	<bean id="elasticXmlFileSearcher"
+		class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher"
+		singleton="false">
+		<property name="pageManager">
+			<ref bean="pageManager" />
+		</property>
+		<property name="xmlArchive">
+			<ref bean="xmlArchive" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="clientPool">
+			<ref bean="clientPool" />
+		</property>
 	</bean>
 
-	<bean id="clientPool" class="org.entermedia.elasticsearch.ClientPool" >
+	<bean id="clientPool" class="org.entermedia.elasticsearch.ClientPool">
 	</bean>
 
-	<!--  Use beans.xml to enable this one -->
+	<!-- Use beans.xml to enable this one -->
 	<bean id="elasticAssetSearcher" class="org.openedit.entermedia.search.BaseAssetSearcher"
 		singleton="false">
 		<property name="dataConnector">
@@ -24,22 +34,36 @@
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
-	</bean> 
+	</bean>
 
-    <bean id="elasticAssetDataConnector" class="org.entermedia.elasticsearch.searchers.ElasticAssetDataConnector"
+	<bean id="elasticAssetDataConnector"
+		class="org.entermedia.elasticsearch.searchers.ElasticAssetDataConnector"
 		singleton="false">
-		<property name="pageManager"><ref bean="pageManager" /></property>
-		<property name="xmlArchive"><ref bean="xmlArchive" /></property>
-		<property name="moduleManager"><ref bean="moduleManager" /></property>
-		<property name="clientPool"><ref bean="clientPool" /></property>
+		<property name="pageManager">
+			<ref bean="pageManager" />
+		</property>
+		<property name="xmlArchive">
+			<ref bean="xmlArchive" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="clientPool">
+			<ref bean="clientPool" />
+		</property>
 		<property name="assetSecurityArchive">
 			<ref bean="assetSecurityArchive" />
 		</property>
-		<property name="dataFileName"><value>data.xml</value></property>
+		<property name="dataFileName">
+			<value>data.xml</value>
+		</property>
 	</bean>
-	
-	<bean id="elasticUserSearcher" class="org.entermedia.elasticsearch.searchers.ElasticUserSearcher">
-		<property name="clientPool"><ref bean="clientPool" /></property>
+
+	<bean id="elasticUserSearcher"
+		class="org.entermedia.elasticsearch.searchers.ElasticUserSearcher">
+		<property name="clientPool">
+			<ref bean="clientPool" />
+		</property>
 		<property name="userManager">
 			<ref bean="userManager" />
 		</property>
@@ -47,7 +71,11 @@
 			<ref bean="pageManager" />
 		</property>
 	</bean>
-	<bean id="elasticGroupSearcher" class="org.entermedia.elasticsearch.searchers.ElasticGroupSearcher">
+	<bean id="elasticGroupSearcher"
+		class="org.entermedia.elasticsearch.searchers.ElasticGroupSearcher">
+		<property name="clientPool">
+			<ref bean="clientPool" />
+		</property>
 		<property name="userManager">
 			<ref bean="userManager" />
 		</property>

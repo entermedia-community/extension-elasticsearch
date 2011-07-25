@@ -24,7 +24,7 @@ public class ElasticUserSearcherTest extends BaseEnterMediaTest
 	@Test
 	public void testVerifyConfiguration()
 	{
-		Searcher userSearcher = getMediaArchive().getSearcherManager().getSearcher("system", "user");
+		ElasticUserSearcher userSearcher = (ElasticUserSearcher) getMediaArchive().getSearcherManager().getSearcher("system", "user");
 		assertNotNull("user searcher is NULL!", userSearcher);
 		assertTrue("user searcher is elastic", userSearcher instanceof ElasticUserSearcher);
 	}
