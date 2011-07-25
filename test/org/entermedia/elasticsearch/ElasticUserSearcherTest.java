@@ -1,9 +1,9 @@
 package org.entermedia.elasticsearch;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
+import org.entermedia.elasticsearch.searchers.ElasticUserSearcher;
 import org.junit.Test;
 import org.openedit.Data;
 import org.openedit.data.Searcher;

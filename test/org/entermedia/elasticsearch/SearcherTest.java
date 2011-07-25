@@ -14,6 +14,7 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher;
 import org.openedit.Data;
 import org.openedit.data.Searcher;
 import org.openedit.entermedia.Asset;

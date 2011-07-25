@@ -1,4 +1,4 @@
-package org.entermedia.elasticsearch;
+package org.entermedia.elasticsearch.searchers;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +32,9 @@ import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.entermedia.elasticsearch.ClientPool;
+import org.entermedia.elasticsearch.ElasticHitTracker;
+import org.entermedia.elasticsearch.ElasticSearchQuery;
 import org.openedit.Data;
 import org.openedit.data.BaseSearcher;
 import org.openedit.data.PropertyDetail;
@@ -113,6 +116,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			connect();
 			SearchRequestBuilder search = getClient().prepareSearch(toId(getCatalogId()));
 			search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+			search.setTypes(getSearchType());
 			XContentQueryBuilder terms = buildTerms(inQuery);
 			search.setQuery(terms);
 			addSorts(inQuery, search);
