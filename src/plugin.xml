@@ -81,4 +81,15 @@
 		</property>
 	</bean>
 
+	<bean id="lockSearcher" class="org.entermedia.elasticsearch.searchers.IndexElasticSearcher" singleton="false">
+		<property name="clientPool">
+			<ref bean="clientPool" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="newDataName"><value>lock</value></property>
+	</bean>
+
+
 </beans>

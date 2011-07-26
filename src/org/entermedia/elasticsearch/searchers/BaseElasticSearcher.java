@@ -4,15 +4,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.admin.indices.status.IndicesStatusResponse;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
@@ -29,6 +28,7 @@ import org.elasticsearch.index.query.xcontent.BoolQueryBuilder;
 import org.elasticsearch.index.query.xcontent.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.xcontent.QueryBuilders;
 import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
+import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -39,6 +39,7 @@ import org.openedit.Data;
 import org.openedit.data.BaseSearcher;
 import org.openedit.data.PropertyDetail;
 import org.openedit.data.PropertyDetails;
+import org.openedit.util.DateStorageUtil;
 
 import com.openedit.OpenEditException;
 import com.openedit.hittracker.HitTracker;
@@ -143,12 +144,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			}
 			throw new OpenEditException(ex);
 		}
-
-		//		AdminClient admin = client.admin();
-		//		ActionFuture<CreateIndexResponse> indexresponse = admin.indices().create(new CreateIndexRequest("test"));
-		//		log(indexresponse.isDone() + " done ");
-
-		//node.close();
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -157,75 +152,78 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		if( !isConnected())
 		{
 			AdminClient admin = getClient().admin();
-			boolean failed = false;
+			boolean reindex = true;
 			try
 			{
-				ActionFuture<IndicesStatusResponse> future = admin.indices().status(Requests.indicesStatusRequest(toId(getCatalogId())));
-				if( future.actionGet().getTotalShards() == 0 )
+				//ActionFuture<IndicesStatusResponse> future = admin.indices().status(Requests.indicesStatusRequest(toId(getCatalogId())));
+				CreateIndexResponse res = admin.indices().create(Requests.createIndexRequest(toId(getCatalogId()))).actionGet();
+				if( res.acknowledged() )
 				{
-					failed = true;
-				}				
+					reindex  = false;
+				}
+			}
+			catch( IndexAlreadyExistsException exists)
+			{
+				//silent error
 			}
 			catch( Exception ex)
 			{
-				log.error("index not ready " + ex);
-				failed = true;
+				log.error("index may already exist " + ex);
 			}
 			
 			XContentBuilder jsonBuilder =  XContentFactory.jsonBuilder(); 
-//			jsonBuilder.startObject();
-//			XContentBuilder data = jsonBuilder.startObject().startObject("properties");
-//			for (Iterator i = getPropertyDetails().findIndexProperties().iterator() ; i.hasNext();)
-//			{
-//				PropertyDetail detail = (PropertyDetail) i.next();
-//				System.out.println(detail.getId());
-//				//XContentBuilder data = jsonBuilder.startObject().startObject("properties");
-//				Map properties = detail.getProperties();
-//				data  = data.startObject(detail.getId())
-//					.field("type", "string")
-//					.field("index", properties.containsKey("analyzed")?properties.get("analyzed").toString():"standard")
-//					.field("store", "yes").endObject();
-//				data = data.endObject();
-//			}
-//			data.endObject();
+			XContentBuilder jsonproperties = jsonBuilder.startObject().startObject(getSearchType());
+			jsonproperties = jsonproperties.startObject("properties");
+			for (Iterator i = getPropertyDetails().findIndexProperties().iterator() ; i.hasNext();)
+			{
+				PropertyDetail detail = (PropertyDetail) i.next();
+				jsonproperties  = jsonproperties.startObject(detail.getId());
+				String indextype = detail.get("indextype");
+				if( indextype == null)
+				{	
+					indextype = "not_analyzed";
+				}
+				jsonproperties = jsonproperties.field("index", indextype);
+				
+				if( detail.isDate())
+				{
+					jsonproperties = jsonproperties.field("type", "date");
+				}
+				else if ( detail.isBoolean())
+				{
+					jsonproperties = jsonproperties.field("type", "boolean");					
+				}
+				else if ( detail.isDataType("number"))
+				{
+					jsonproperties = jsonproperties.field("type", "number");					
+				}
+				else
+				{
+					jsonproperties = jsonproperties.field("type", "string");					
+				}
+				if( detail.isStored())
+				{
+					jsonproperties = jsonproperties.field("store", "yes");
+				}
+				jsonproperties = jsonproperties.endObject();
+			}
+			jsonproperties = jsonproperties.endObject();
+			jsonBuilder = jsonproperties.endObject();
+
 			
-			if( failed)
+			PutMappingRequest  req = Requests.putMappingRequest( toId( getCatalogId() ) );
+			req.source(jsonproperties);
+			getClient().admin().indices().putMapping(req); //does this only apply to one index?
+
+			if(reindex)
 			{
 				try
 				{
-					admin.indices().create(Requests.createIndexRequest(toId(getCatalogId()))).actionGet();
-					
-					
-					
-					  // create properties for the mapped type
-//	                XContentBuilder data = jsonBuilder().startObject()
-//	                                .startObject("properties")
-//	                                        .startObject(MEDIA_TITLE_FIELD)
-//	                                                .field("type", "string")
-//	                                                .field("index", "not_analyzed")
-//	                                                .field("store", "yes")
-//	                                        .endObject()
-//	                                        .startObject(MEDIA_DESCRIPTION_FIELD)
-//	                                                .field("type", "string")
-//	                                                .field("index", "standard")
-//	                                                .field("store", "yes")
-//	                                        .endObject()
-//	                                .endObject()
-//	                        .endObject();
-//
-//	                CreateIndexResponse mapping = client
-//	                                .admin()
-//	                                .indices()
-//	                                .create(createIndexRequest(TEST_INDEX).mapping(TEST_TYPE, data))
-//	                                .actionGet();
-//
-//	                assertTrue(mapping.acknowledged()); 
-					
 					reIndexAll();
 				}
 				catch( Exception ex)
 				{
-					log.error(ex);
+					log.error("Problem with reindex", ex);
 				}
 				
 			}
@@ -235,6 +233,15 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 
 	protected XContentQueryBuilder buildTerms(SearchQuery inQuery)
 	{
+		if( inQuery.getTerms().size() == 1)
+		{
+			Term term = (Term)inQuery.getTerms().iterator().next();
+			String value = term.getValue();
+			XContentQueryBuilder find =buildTerm(term.getDetail(),value);
+			return find;
+		}
+		
+		//TODO: Deal with subqueries, or, and, not 
 		BoolQueryBuilder bool = QueryBuilders.boolQuery();
 		for (Iterator iterator = inQuery.getTerms().iterator(); iterator.hasNext();)
 		{
@@ -247,7 +254,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 					for (int i = 0; i < term.getValues().length; i++)
 					{
 						Object val = term.getValues()[i];
-						or.should(QueryBuilders.termQuery(term.getDetail().getId(), val));
+						or.should(buildTerm(term.getDetail(),val));
 					}
 					bool.must(or);
 				}
@@ -255,21 +262,48 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			else
 			{
 				String value = term.getValue();
-				value = value.toLowerCase();
-				if (value.contains("*"))
-				{
-					XContentQueryBuilder find = QueryBuilders.wildcardQuery(term.getDetail().getId(), value);
-					bool.must(find);
-				}
-				else
-				{
-					XContentQueryBuilder find = QueryBuilders.termQuery(term.getDetail().getId(), value);
-					bool.must(find);
-				}
+				XContentQueryBuilder find =buildTerm(term.getDetail(),value);
+				bool.must(find);
 			}
-			//TODO: Deal with subqueries, or, and, not 
 		}
 		return bool;
+	}
+
+	protected XContentQueryBuilder buildTerm(PropertyDetail inDetail, Object inValue)
+	{
+		//Check for quick date object
+		XContentQueryBuilder find = null;
+		if( inValue instanceof Date)
+		{
+			find = QueryBuilders.termQuery(inDetail.getId(), (Date)inValue);
+		}
+		else
+		{
+			String valueof = String.valueOf(inValue);
+			
+			if( valueof.contains("*"))
+			{
+				find = QueryBuilders.wildcardQuery(inDetail.getId(), valueof);
+			}
+			else if( inDetail.isBoolean())
+			{
+				find = QueryBuilders.termQuery(inDetail.getId(), Boolean.parseBoolean(valueof));
+			}
+			else if( inDetail.isDate())
+			{
+				Date date = DateStorageUtil.getStorageUtil().parseFromStorage(valueof);
+				find = QueryBuilders.termQuery(inDetail.getId(), date);
+			}
+			else if( inDetail.isDataType("number") )
+			{
+				find = QueryBuilders.termQuery(inDetail.getId(), Long.parseLong(valueof));
+			}
+			else
+			{
+				find = QueryBuilders.termQuery(inDetail.getId(), valueof);
+			}
+		}
+		return find;
 	}
 
 	protected void addSorts(SearchQuery inQuery, SearchRequestBuilder search)
@@ -364,24 +398,60 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		{
 			PropertyDetail detail = (PropertyDetail) iterator.next();
 			String value = inData.get(detail.getId());
-			if (value != null)
+			try
 			{
-				try
+				if( detail.isDate())
 				{
-					//TODO: Deal with data types and move to indexer object
-					inContent.field(detail.getId(), value);
-					//log.info("Saved" + detail.getId() + "=" + value );
+					if( value == null)
+					{
+						inContent.field(detail.getId(), (Date)null);
+					}
+					else
+					{
+						Date date = DateStorageUtil.getStorageUtil().parseFromStorage(value);
+						inContent.field(detail.getId(), date);
+					}
 				}
-				catch (Exception ex)
+				else if( detail.isBoolean())
 				{
-					throw new OpenEditException(ex);
+					if( value == null)
+					{
+						inContent.field(detail.getId(), Boolean.FALSE);
+					}
+					else
+					{
+						inContent.field(detail.getId(), Boolean.valueOf(value));
+					}
 				}
+				else if( detail.isDataType("number"))
+				{
+					if( value == null)
+					{
+						inContent.field(detail.getId(), Long.valueOf(0));
+					}
+					else
+					{
+						inContent.field(detail.getId(), Long.valueOf(value));
+					}
+				}
+				else
+				{
+					if( value == null)
+					{
+						//inContent.field(detail.getId(), ""); // this ok?
+					}
+					else
+					{
+						inContent.field(detail.getId(), value);
+					}
+				}
+				//log.info("Saved" + detail.getId() + "=" + value );
+			}
+			catch (Exception ex)
+			{
+				throw new OpenEditException(ex);
 			}
 		}
-		//		.field("user", "kimchy")
-		//        .field("postDate", new Date())
-		//        .field("message", "trying out Elastic Search");
-
 	}
 
 	public void deleteAll(User inUser)

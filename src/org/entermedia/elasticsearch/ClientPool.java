@@ -17,10 +17,15 @@ public class ClientPool
 			//Todo Change the port number and work path for this node
             nb.settings().put("cluster.name", "entermedia");
             nb.settings().put("gateway.type", "fs");
+            
+            //This is shared
+            //TODO: Use an OE mount point and get the real file path
             nb.settings().put("gateway.fs.location", "/tmp/elasticsearch/gateway"); //This is a shared location
             //nb.settings().put("index.store.type", "mmapfs");
             //nb.settings().put("index.store.fs.mmapfs.enabled", "true");
             //nb.settings().put("index.merge.policy.merge_factor", "20");
+            
+            //TODO: Load this up locally
             nb.settings().put("path.data", "/tmp/elasticsearch2/data");
             nb.settings().put("path.logs", "/tmp/elasticsearch2/logs");
             nb.settings().put("path.work", "/tmp/elasticsearch2/work");

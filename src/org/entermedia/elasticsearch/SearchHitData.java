@@ -1,6 +1,7 @@
 package org.entermedia.elasticsearch;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -91,7 +92,14 @@ public class SearchHitData implements Data
 	}
 	public Map getProperties() 
 	{
-		return null;
+		Map all = new HashMap();
+		for (Iterator iterator = getSearchHit().getFields().keySet().iterator(); iterator.hasNext();)
+		{
+			String key = (String) iterator.next();
+			String val = get(key);
+			all.put(key, val);
+		}
+		return all;
 	}
 	public String toString()
 	{

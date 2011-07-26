@@ -26,7 +26,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 {
 	protected Log log = LogFactory.getLog(XmlFileSearcher.class);
 	protected XmlArchive fieldXmlArchive;
-	protected DataArchive fieldXmlDataArchive;
+	protected DataArchive fieldXmlDataArchive; //lazy loaded
 	protected String fieldPrefix;
 	protected String fieldDataFileName;
 	
