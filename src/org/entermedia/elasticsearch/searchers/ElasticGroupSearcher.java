@@ -16,6 +16,7 @@ import org.openedit.data.PropertyDetails;
 import org.openedit.users.GroupSearcher;
 
 import com.openedit.OpenEditException;
+import com.openedit.users.BaseGroup;
 import com.openedit.users.Group;
 import com.openedit.users.User;
 import com.openedit.users.UserManager;
@@ -83,7 +84,12 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 		return group;
 	}
 
-	public void saveData(Object inData, User inUser)
+	public Data createNewData()
+	{
+		return getUserManager().createGroup();
+	}
+
+	public void saveData(Data inData, User inUser)
 	{
 		getUserManager().saveGroup((Group) inData);
 		super.saveData(inData,inUser);
