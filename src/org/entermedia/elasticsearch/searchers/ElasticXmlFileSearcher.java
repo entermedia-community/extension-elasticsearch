@@ -8,6 +8,8 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dom4j.Element;
+import org.entermedia.locks.Lock;
+import org.entermedia.locks.LockManager;
 import org.openedit.Data;
 import org.openedit.data.DataArchive;
 import org.openedit.data.XmlDataArchive;
@@ -29,7 +31,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	protected DataArchive fieldXmlDataArchive; //lazy loaded
 	protected String fieldPrefix;
 	protected String fieldDataFileName;
-	
+
 	public PageManager getPageManager()
 	{
 		return fieldPageManager;
@@ -154,7 +156,15 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		{
 			throw new OpenEditException("Cannot delete null data.");
 		}
-		getDataArchive().delete(inData,inUser);
+		Lock lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath(),"admin");
+		try
+		{
+			getDataArchive().delete(inData,inUser);
+		}
+		finally
+		{
+			getLockManager().release(getCatalogId(), lock);
+		}
 		// Remove from Index
 		super.delete(inData, inUser);
 	}
@@ -162,15 +172,31 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	//This is the main APU for saving and updates to the index
 	public void saveAllData(Collection<Data> inAll, User inUser)
 	{
+		List<Data> toindex = new ArrayList<Data>(inAll.size());
 		for (Object object: inAll)
 		{
 			Data data = (Data)object;
 			if(data.getId() == null)
 			{
 				data.setId(nextId());
-			}			
+			}		
+			Lock lock = null;
+			try
+			{
+				lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + data.getSourcePath(),"admin");
+				getDataArchive().saveData(data, inUser);
+				toindex.add(data);
+			}
+			catch(Throwable ex)
+			{
+				log.error("problem saving " + data.getId() , ex);
+			}
+			finally
+			{
+				getLockManager().release(getCatalogId(), lock);
+			}
 		}
-		getDataArchive().saveAllData(inAll, inUser);
-		updateIndex(inAll, inUser);
+		updateIndex(toindex, inUser);
 	}
+
 }

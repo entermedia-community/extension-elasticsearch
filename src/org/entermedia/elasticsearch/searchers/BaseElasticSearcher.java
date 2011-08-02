@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.index.IndexResponse;
@@ -35,6 +36,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.entermedia.elasticsearch.ClientPool;
 import org.entermedia.elasticsearch.ElasticHitTracker;
 import org.entermedia.elasticsearch.ElasticSearchQuery;
+import org.entermedia.locks.LockManager;
 import org.openedit.Data;
 import org.openedit.data.BaseSearcher;
 import org.openedit.data.PropertyDetail;
@@ -57,6 +59,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 	protected boolean fieldConnected;
 	protected IntCounter fieldIntCounter;
 	protected PageManager fieldPageManager;
+	protected LockManager fieldLockManager;
 
 	public PageManager getPageManager()
 	{
@@ -152,14 +155,19 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		if( !isConnected())
 		{
 			AdminClient admin = getClient().admin();
-			boolean reindex = true;
+			boolean reindex = false;
 			try
 			{
 				//ActionFuture<IndicesStatusResponse> future = admin.indices().status(Requests.indicesStatusRequest(toId(getCatalogId())));
-				CreateIndexResponse res = admin.indices().create(Requests.createIndexRequest(toId(getCatalogId()))).actionGet();
+				
+				CreateIndexRequest newindex = new CreateIndexRequest(toId(getCatalogId()));
+				XContentBuilder source = buildMapping();
+				newindex.mapping(getSearchType(), source);
+				
+				CreateIndexResponse res = admin.indices().create(newindex).actionGet();
 				if( res.acknowledged() )
 				{
-					reindex  = false;
+					reindex  = true;
 				}
 			}
 			catch( IndexAlreadyExistsException exists)
@@ -170,50 +178,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			{
 				log.error("index may already exist " + ex);
 			}
-			
-			XContentBuilder jsonBuilder =  XContentFactory.jsonBuilder(); 
-			XContentBuilder jsonproperties = jsonBuilder.startObject().startObject(getSearchType());
-			jsonproperties = jsonproperties.startObject("properties");
-			for (Iterator i = getPropertyDetails().findIndexProperties().iterator() ; i.hasNext();)
-			{
-				PropertyDetail detail = (PropertyDetail) i.next();
-				jsonproperties  = jsonproperties.startObject(detail.getId());
-				String indextype = detail.get("indextype");
-				if( indextype == null)
-				{	
-					indextype = "not_analyzed";
-				}
-				jsonproperties = jsonproperties.field("index", indextype);
-				
-				if( detail.isDate())
-				{
-					jsonproperties = jsonproperties.field("type", "date");
-				}
-				else if ( detail.isBoolean())
-				{
-					jsonproperties = jsonproperties.field("type", "boolean");					
-				}
-				else if ( detail.isDataType("number"))
-				{
-					jsonproperties = jsonproperties.field("type", "number");					
-				}
-				else
-				{
-					jsonproperties = jsonproperties.field("type", "string");					
-				}
-				if( detail.isStored())
-				{
-					jsonproperties = jsonproperties.field("store", "yes");
-				}
-				jsonproperties = jsonproperties.endObject();
-			}
-			jsonproperties = jsonproperties.endObject();
-			jsonBuilder = jsonproperties.endObject();
 
-			
-			PutMappingRequest  req = Requests.putMappingRequest( toId( getCatalogId() ) );
-			req.source(jsonproperties);
-			getClient().admin().indices().putMapping(req); //does this only apply to one index?
+//			PutMappingRequest  req = Requests.putMappingRequest( toId( getCatalogId() ) );
+//			req.source(jsonproperties);
+//			getClient().admin().indices().putMapping(req); //does this only apply to one index?
 
 			if(reindex)
 			{
@@ -231,6 +199,51 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		}
 	}
 
+	protected XContentBuilder buildMapping() throws Exception
+	{
+		XContentBuilder jsonBuilder =  XContentFactory.jsonBuilder(); 
+		XContentBuilder jsonproperties = jsonBuilder.startObject().startObject(getSearchType());
+		jsonproperties = jsonproperties.startObject("properties");
+		for (Iterator i = getPropertyDetails().findIndexProperties().iterator() ; i.hasNext();)
+		{
+			PropertyDetail detail = (PropertyDetail) i.next();
+			jsonproperties  = jsonproperties.startObject(detail.getId());
+			String indextype = detail.get("indextype");
+			if( indextype == null)
+			{	
+				indextype = "not_analyzed";
+			}
+			jsonproperties = jsonproperties.field("index", indextype);
+			
+			if( detail.isDate())
+			{
+				jsonproperties = jsonproperties.field("type", "date");
+				jsonproperties = jsonproperties.field("format", "yyyy-MM-dd HH:mm:ss Z");
+			}
+			else if ( detail.isBoolean())
+			{
+				jsonproperties = jsonproperties.field("type", "boolean");					
+			}
+			else if ( detail.isDataType("number"))
+			{
+				jsonproperties = jsonproperties.field("type", "number");					
+			}
+			else
+			{
+				jsonproperties = jsonproperties.field("type", "string");					
+			}
+			if( detail.isStored())
+			{
+				jsonproperties = jsonproperties.field("store", "yes");
+			}
+			jsonproperties = jsonproperties.endObject();
+		}
+		jsonproperties = jsonproperties.endObject();
+		jsonBuilder = jsonproperties.endObject();
+		return jsonproperties;
+
+	}
+	
 	protected XContentQueryBuilder buildTerms(SearchQuery inQuery)
 	{
 		if( inQuery.getTerms().size() == 1)
@@ -408,8 +421,8 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 					}
 					else
 					{
-						Date date = DateStorageUtil.getStorageUtil().parseFromStorage(value);
-						inContent.field(detail.getId(), date);
+						//ie date = DateStorageUtil.getStorageUtil().parseFromStorage(value);
+						inContent.field(detail.getId(), value);
 					}
 				}
 				else if( detail.isBoolean())
@@ -467,12 +480,19 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 	{
 		String id = inData.getId();
 		DeleteRequestBuilder delete = getClient().prepareDelete(toId(getCatalogId()), getSearchType(), id);
-		delete.setOperationThreaded(false).execute().actionGet();
+		delete.setOperationThreaded(false).setRefresh(true).execute().actionGet();
 	}
 
 	//Base class only updated the index in bulk
 	public void saveAllData(Collection<Data> inAll, User inUser)
 	{
+		for(Data data:inAll)
+		{
+			if( data.getId() == null)
+			{
+				data.setId(nextId());
+			}
+		}
 		updateIndex(inAll, inUser);
 	}
 
@@ -493,6 +513,16 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			fieldIntCounter.setCounterFile(file);
 		}
 		return fieldIntCounter;
+	}
+	
+	public LockManager getLockManager()
+	{
+		return fieldLockManager;
+	}
+
+	public void setLockManager(LockManager inLockManager)
+	{
+		fieldLockManager = inLockManager;
 	}
 
 }

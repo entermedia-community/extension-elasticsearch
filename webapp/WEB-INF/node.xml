@@ -1,0 +1,15 @@
+<node id="singlenode" name="Default Single Node">
+
+    <property id="cluster.name">entermedia</property>
+     <property id="gateway.type">fs</property>
+     <property id="gateway.fs.location">./elastic/gateway</property>
+     <!-- 
+     <property name="index.store.type">mmapfs</property>
+     <property name="index.store.fs.mmapfs.enabled">true</property>
+     <property name="index.merge.policy.merge_factor">20</property>
+      -->
+     <property id="path.data">./elastic/data</property>
+     <property id="path.logs">./elastic/logs</property>
+     <property id="path.work">./elastic/work</property>
+
+</node>

@@ -11,6 +11,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.entermedia.locks.Lock;
 import org.openedit.Data;
 import org.openedit.data.PropertyDetails;
 import org.openedit.users.GroupSearcher;
@@ -91,7 +92,30 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 
 	public void saveData(Data inData, User inUser)
 	{
-		getUserManager().saveGroup((Group) inData);
-		super.saveData(inData,inUser);
+		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/groups/" + inData.getId() + ".xml","admin");
+		try
+		{
+			getUserManager().saveGroup((Group) inData);
+			super.saveData(inData, inUser); //update the index
+		}
+		finally
+		{
+			getLockManager().release(getCatalogId(), lock);
+		}
 	}
+
+	public void delete(Data inData, User inUser)
+	{
+		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/users/" + inData.getId() + ".xml","admin");
+		try
+		{
+			getUserManager().deleteGroup((Group) inData);
+			super.delete(inData, inUser); //update the index
+		}
+		finally
+		{
+			getLockManager().release(getCatalogId(), lock);
+		}
+	}
+
 }

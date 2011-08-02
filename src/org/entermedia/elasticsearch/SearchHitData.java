@@ -43,10 +43,6 @@ public class SearchHitData implements Data
 			}
 		}
 		Object found = getSearchHit().getSource().get(inId);
-		if( found instanceof Date)
-		{
-			found = DateStorageUtil.getStorageUtil().formatForStorage((Date)found);
-		}
 		if( found != null)
 		{
 			return String.valueOf(found);
@@ -93,7 +89,7 @@ public class SearchHitData implements Data
 	public Map getProperties() 
 	{
 		Map all = new HashMap();
-		for (Iterator iterator = getSearchHit().getFields().keySet().iterator(); iterator.hasNext();)
+		for (Iterator iterator = getSearchHit().getSource().keySet().iterator(); iterator.hasNext();)
 		{
 			String key = (String) iterator.next();
 			String val = get(key);

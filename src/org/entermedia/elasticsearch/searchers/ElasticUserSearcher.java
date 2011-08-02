@@ -11,6 +11,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.entermedia.locks.Lock;
 import org.openedit.Data;
 import org.openedit.data.PropertyDetails;
 import org.openedit.data.PropertyDetailsArchive;
@@ -163,11 +164,35 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		}
 	}
 
-	public void saveData(Object inData, User inUser)
+	public void saveData(Data inData, User inUser)
 	{
-		getUserManager().saveGroup((Group)inData);
-		super.saveData(inData, inUser);
+		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/users/" + inData.getId() + ".xml","admin");
+		try
+		{
+			getUserManager().saveUser((User)inData);
+			super.saveData(inData, inUser); //update the index
+		}
+		finally
+		{
+			getLockManager().release(getCatalogId(), lock);
+		}
+
 	}
+	
+	public void delete(Data inData, User inUser)
+	{
+		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/users/" + inData.getId() + ".xml","admin");
+		try
+		{
+			getUserManager().deleteUser((User)inData);
+			super.delete(inData, inUser); //delete the index
+		}
+		finally
+		{
+			getLockManager().release(getCatalogId(), lock);
+		}
+	}
+	
 	protected void updateIndex(XContentBuilder inContent, Data inData, PropertyDetails inDetails)
 	{
 		super.updateIndex(inContent, inData, inDetails);
