@@ -20,6 +20,10 @@
 	</bean>
 
 	<bean id="clientPool" class="org.entermedia.elasticsearch.ClientPool">
+		<property name="nodeManager">
+			<ref bean="nodeManager" />
+		</property>
+	
 	</bean>
 
 	<!-- Use beans.xml to enable this one -->
@@ -88,7 +92,31 @@
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
+		<property name="pageManager">
+			<ref bean="pageManager" />
+		</property>
 		<property name="newDataName"><value>lock</value></property>
+	</bean>
+
+	<bean id="lockManager" class="org.openedit.entermedia.cluster.ClusterLockManager" >
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>
+		<property name="nodeManager">
+			<ref bean="nodeManager" />
+		</property>
+	</bean>
+
+	<bean id="nodeManager" class="org.openedit.entermedia.cluster.NodeManager" >
+		<property name="pageManager">
+			<ref bean="pageManager" />
+		</property>
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>
+		<property name="xmlUtil">
+			<ref bean="xmlUtil" />
+		</property>
 	</bean>
 
 
