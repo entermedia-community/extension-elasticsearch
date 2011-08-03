@@ -103,6 +103,8 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 
 	protected Client getClient()
 	{
+		connect();
+
 		return getClientPool().getClient();
 	}
 
@@ -117,7 +119,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		try
 		{
 			long start = System.currentTimeMillis();
-			connect();
 			SearchRequestBuilder search = getClient().prepareSearch(toId(getCatalogId()));
 			search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 			search.setTypes(getSearchType());
@@ -150,11 +151,11 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 	}
 
 	@SuppressWarnings("rawtypes")
-	protected void connect() throws IOException
+	protected void connect() 
 	{
 		if( !isConnected())
 		{
-			AdminClient admin = getClient().admin();
+			AdminClient admin = getClientPool().getClient().admin();
 			boolean reindex = false;
 			try
 			{
@@ -176,7 +177,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			}
 			catch( Exception ex)
 			{
-				log.error("index may already exist " + ex);
+				log.error("index could not be created ", ex);
 			}
 
 //			PutMappingRequest  req = Requests.putMappingRequest( toId( getCatalogId() ) );
@@ -204,16 +205,15 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		XContentBuilder jsonBuilder =  XContentFactory.jsonBuilder(); 
 		XContentBuilder jsonproperties = jsonBuilder.startObject().startObject(getSearchType());
 		jsonproperties = jsonproperties.startObject("properties");
-		for (Iterator i = getPropertyDetails().findIndexProperties().iterator() ; i.hasNext();)
+		List props = getPropertyDetails().findIndexProperties();
+		if( props.size() == 0)
+		{
+			throw new OpenEditException("No fields defined for " + getSearchType() );
+		}
+		for (Iterator i = props.iterator() ; i.hasNext();)
 		{
 			PropertyDetail detail = (PropertyDetail) i.next();
 			jsonproperties  = jsonproperties.startObject(detail.getId());
-			String indextype = detail.get("indextype");
-			if( indextype == null)
-			{	
-				indextype = "not_analyzed";
-			}
-			jsonproperties = jsonproperties.field("index", indextype);
 			
 			if( detail.isDate())
 			{
@@ -226,10 +226,16 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			}
 			else if ( detail.isDataType("number"))
 			{
-				jsonproperties = jsonproperties.field("type", "number");					
+				jsonproperties = jsonproperties.field("type", "long");					
 			}
 			else
 			{
+				String indextype = detail.get("indextype");
+				if( indextype == null)
+				{	
+					indextype = "not_analyzed";
+				}
+				jsonproperties = jsonproperties.field("index", indextype);
 				jsonproperties = jsonproperties.field("type", "string");					
 			}
 			if( detail.isStored())
@@ -240,6 +246,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		}
 		jsonproperties = jsonproperties.endObject();
 		jsonBuilder = jsonproperties.endObject();
+		log.info("Mapping: " + jsonBuilder.string());
 		return jsonproperties;
 
 	}
