@@ -30,7 +30,7 @@ public class ClientPool
 			//Get this info from the NodeManager
 			
 			//Node node = NodeBuilder.nodeBuilder().local(true).node();
-			NodeBuilder nb = NodeBuilder.nodeBuilder().local(true);
+			NodeBuilder nb = NodeBuilder.nodeBuilder();//.client(client)local(true);
 			
 			//Todo Change the port number and work path for this node
 			
