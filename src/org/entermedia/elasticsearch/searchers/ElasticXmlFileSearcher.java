@@ -8,8 +8,8 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dom4j.Element;
+import org.entermedia.elasticsearch.SearchHitData;
 import org.entermedia.locks.Lock;
-import org.entermedia.locks.LockManager;
 import org.openedit.Data;
 import org.openedit.data.DataArchive;
 import org.openedit.data.XmlDataArchive;
@@ -121,7 +121,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		for (Iterator iterator = content.getElements().iterator(); iterator.hasNext();)
 		{
 			Element element = (Element) iterator.next();
-			ElementData data = (ElementData)createNewData();
+			ElementData data = new ElementData();
 			data.setElement(element);
 			data.setSourcePath(sourcepath);
 			buffer.add(data);
@@ -199,4 +199,29 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		updateIndex(toindex, inUser);
 	}
 
+	public Object searchByField(String inField, String inValue)
+	{
+		Object hit =  super.searchByField(inField, inValue);
+		//load up a real object?
+		if( hit instanceof SearchHitData)
+		{
+			SearchHitData newdata = (SearchHitData)hit;
+			if( newdata.getSourcePath() == null)
+			{
+				log.info("Source path is null on search results "  +getSearchType() );
+				return null;
+			}
+			String path = getPathToData() + "/" + newdata.getSourcePath() + "/" + getSearchType() + ".xml";
+			XmlFile content = getDataArchive().getXmlArchive().getXml(path, getSearchType());
+			//log.info( newdata.getProperties() );
+			Element element = content.getElementById(newdata.getId());
+			
+			ElementData realdata = (ElementData)createNewData();
+			realdata.setElement(element);
+			realdata.setSourcePath(newdata.getSourcePath());
+
+			return realdata;
+		}
+		return hit;
+	}
 }

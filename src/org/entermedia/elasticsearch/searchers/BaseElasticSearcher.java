@@ -1,7 +1,6 @@
 package org.entermedia.elasticsearch.searchers;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -13,6 +12,7 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
@@ -36,6 +36,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.entermedia.elasticsearch.ClientPool;
 import org.entermedia.elasticsearch.ElasticHitTracker;
 import org.entermedia.elasticsearch.ElasticSearchQuery;
+import org.entermedia.locks.Lock;
 import org.entermedia.locks.LockManager;
 import org.openedit.Data;
 import org.openedit.data.BaseSearcher;
@@ -60,6 +61,17 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 	protected IntCounter fieldIntCounter;
 	protected PageManager fieldPageManager;
 	protected LockManager fieldLockManager;
+	protected boolean fieldAutoIncrementId;
+	
+	public boolean isAutoIncrementId()
+	{
+		return fieldAutoIncrementId;
+	}
+
+	public void setAutoIncrementId(boolean inAutoIncrementId)
+	{
+		fieldAutoIncrementId = inAutoIncrementId;
+	}
 
 	public PageManager getPageManager()
 	{
@@ -116,6 +128,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 
 	public HitTracker search(SearchQuery inQuery)
 	{
+		String json = null;
 		try
 		{
 			long start = System.currentTimeMillis();
@@ -123,6 +136,8 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 			search.setTypes(getSearchType());
 			XContentQueryBuilder terms = buildTerms(inQuery);
+			json = new String(terms.buildAsBytes(), "UTF-8");
+
 			search.setQuery(terms);
 			addSorts(inQuery, search);
 			search.setFrom(0).setSize(60).setExplain(true);
@@ -132,16 +147,19 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			hits.setIndexId(getIndexId());
 			hits.setSearchQuery(inQuery);
 
-			String json = new String(terms.buildAsBytes(), "UTF-8");
 			long end = System.currentTimeMillis() - start;
 
-			log.info(hits.size() + " hits query: " + json + " sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds] on " + getCatalogId() + "/" + getSearchType());
+			log.info(hits.size() + " hits query: " + toId(getCatalogId()) + "/" + getSearchType() + "/_search' -d '" + json + "' sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds]");
 
 			return hits;
 		}
 		catch (Exception ex)
 		{
-			log.error(ex);
+			if( json != null)
+			{
+				log.error("Could not query: " + toId(getCatalogId()) + "/" + getSearchType() + "/_search' -d '" + json + "' sort by " + inQuery.getSorts() , ex);
+			}
+
 			if (ex instanceof OpenEditException)
 			{
 				throw (OpenEditException) ex;
@@ -155,6 +173,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 	{
 		if( !isConnected())
 		{
+			fieldConnected =  true;
 			AdminClient admin = getClientPool().getClient().admin();
 			boolean reindex = false;
 			try
@@ -162,27 +181,38 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 				//ActionFuture<IndicesStatusResponse> future = admin.indices().status(Requests.indicesStatusRequest(toId(getCatalogId())));
 				
 				CreateIndexRequest newindex = new CreateIndexRequest(toId(getCatalogId()));
-				XContentBuilder source = buildMapping();
-				newindex.mapping(getSearchType(), source);
-				
-				CreateIndexResponse res = admin.indices().create(newindex).actionGet();
-				if( res.acknowledged() )
+				try
 				{
-					reindex  = true;
+					CreateIndexResponse res = admin.indices().create(newindex).actionGet();
+					if( res.acknowledged() )
+					{
+						log.info("index created " + toId(getCatalogId()));
+					}
 				}
-			}
-			catch( IndexAlreadyExistsException exists)
-			{
-				//silent error
+				catch( IndexAlreadyExistsException exists)
+				{
+					//silent error
+					log.debug("Index already exists " +  toId(getCatalogId()));
+				}
+
+				XContentBuilder source = buildMapping();
+				log.info(toId(getCatalogId()) + "/" + getSearchType() + "/_mapping' -d '" + source.string() + "'");
+				PutMappingRequest  req = Requests.putMappingRequest( toId( getCatalogId() ) ).type(getSearchType());
+				req.source(source);
+				PutMappingResponse pres = getClientPool().getClient().admin().indices().putMapping(req).actionGet(); 
+				if( pres.acknowledged() )
+				{
+					log.info("mapping applied " + getSearchType());
+					reindex = true;
+				}
+	
+
 			}
 			catch( Exception ex)
 			{
 				log.error("index could not be created ", ex);
 			}
 
-//			PutMappingRequest  req = Requests.putMappingRequest( toId( getCatalogId() ) );
-//			req.source(jsonproperties);
-//			getClient().admin().indices().putMapping(req); //does this only apply to one index?
 
 			if(reindex)
 			{
@@ -196,7 +226,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 				}
 				
 			}
-			fieldConnected =  true;
 		}
 	}
 
@@ -242,11 +271,20 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			{
 				jsonproperties = jsonproperties.field("store", "yes");
 			}
+			/*
+			if( detail.isKeyword())
+			{
+				jsonproperties = jsonproperties.field("include_in_all", "true");
+			}
+			else
+			{
+				jsonproperties = jsonproperties.field("include_in_all", "false");
+			}
+			*/
 			jsonproperties = jsonproperties.endObject();
 		}
 		jsonproperties = jsonproperties.endObject();
 		jsonBuilder = jsonproperties.endObject();
-		log.info("Mapping: " + jsonBuilder.string());
 		return jsonproperties;
 
 	}
@@ -257,6 +295,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		{
 			Term term = (Term)inQuery.getTerms().iterator().next();
 			String value = term.getValue();
+			if( value.equals("*"))
+			{
+				return QueryBuilders.matchAllQuery();
+			}
 			XContentQueryBuilder find =buildTerm(term.getDetail(),value);
 			return find;
 		}
@@ -408,7 +450,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 				throw new OpenEditException(ex);
 			}
 		}
-
+		log.info("Saved "  + inBuffer.size() + " records into " + toId(getCatalogId()) + "/" + getSearchType() );
 		inBuffer.clear();
 	}
 
@@ -417,6 +459,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		for (Iterator iterator = inDetails.findIndexProperties().iterator(); iterator.hasNext();)
 		{
 			PropertyDetail detail = (PropertyDetail) iterator.next();
+			if( "_id".equals( detail.getId() ) )
+			{
+				continue;
+			}
 			String value = inData.get(detail.getId());
 			try
 			{
@@ -476,18 +522,19 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 
 	public void deleteAll(User inUser)
 	{
-		log.info("Deleted old database");
+		log.info("Deleted all records database " + getSearchType() );
 		DeleteByQueryRequestBuilder delete = getClient().prepareDeleteByQuery(toId(getCatalogId()));
 
 		delete.setQuery(new MatchAllQueryBuilder()).execute().actionGet();
-
 	}
 
 	public void delete(Data inData, User inUser)
 	{
 		String id = inData.getId();
+		
 		DeleteRequestBuilder delete = getClient().prepareDelete(toId(getCatalogId()), getSearchType(), id);
 		delete.setOperationThreaded(false).setRefresh(true).execute().actionGet();
+		
 	}
 
 	//Base class only updated the index in bulk
@@ -505,7 +552,15 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 
 	public synchronized String nextId()
 	{
-		return String.valueOf(getIntCounter().incrementCount());
+		Lock lock = getLockManager().lock(getCatalogId(), loadCounterPath(), "admin");
+		try
+		{
+			return String.valueOf(getIntCounter().incrementCount());
+		}
+		finally
+		{
+			getLockManager().release(getCatalogId(), lock);
+		}
 	}
 
 	protected IntCounter getIntCounter()
@@ -514,12 +569,17 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		{
 			fieldIntCounter = new IntCounter();
 			fieldIntCounter.setLabelName(getSearchType() + "IdCount");
-			Page prop = getPageManager().getPage("/WEB-INF/data/" + getCatalogId() + "/" + getSearchType() + "s/idcounter.properties");
+			Page prop = getPageManager().getPage(loadCounterPath());
 			File file = new File(prop.getContentItem().getAbsolutePath());
 			file.getParentFile().mkdirs();
 			fieldIntCounter.setCounterFile(file);
 		}
 		return fieldIntCounter;
+	}
+
+	protected String loadCounterPath()
+	{
+		return "/WEB-INF/data/" + getCatalogId() + "/" + getSearchType() + "s/idcounter.properties";
 	}
 	
 	public LockManager getLockManager()

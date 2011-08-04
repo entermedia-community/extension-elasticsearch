@@ -47,12 +47,18 @@ public class SearchHitData implements Data
 		{
 			return String.valueOf(found);
 		}
+		//if( inId.equals("id"))
 		return null;
 	}
 
 	public String getId()
 	{
-		return get("id");
+		String id = get("id");
+		if( id == null)
+		{
+			id = getSearchHit().getId();
+		}
+		return id;
 	}
 
 	public String getName()

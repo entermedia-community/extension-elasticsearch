@@ -40,23 +40,23 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		BaseUser user = new BaseUser();
 		return user;
 	}
-	public HitTracker getAllHits(WebPageRequest inReq)
-	{
-		SearchQuery query = createSearchQuery();
-		query.addMatches("enabled", "true");
-		query.addMatches("enabled", "false");
-		query.addSortBy("namesorted");
-		query.setAndTogether(false);
-		if( inReq == null)
-		{
-			return search(query);
-		}
-		else
-		{
-			return cachedSearch(inReq,query);
-		}
-		//return new ListHitTracker().setList(getCustomerArchive().)
-	}
+//	public HitTracker getAllHits(WebPageRequest inReq)
+//	{
+//		SearchQuery query = createSearchQuery();
+//		query.addMatches("enabled", "true");
+//		query.addMatches("enabled", "false");
+//		query.addSortBy("name");
+//		query.setAndTogether(false);
+//		if( inReq == null)
+//		{
+//			return search(query);
+//		}
+//		else
+//		{
+//			return cachedSearch(inReq,query);
+//		}
+//		//return new ListHitTracker().setList(getCustomerArchive().)
+//	}
 
 	public UserManager getUserManager()
 	{
@@ -99,26 +99,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		}
 
 	}
-	/*
-	protected void updateIndex(Data inData, Document doc, PropertyDetails inDetails)
-	{
-		User user = (User)inData;
-		doc.add(new Field("enabled", Boolean.toString(user.isEnabled()), Field.Store.YES, Field.Index.ANALYZED));
-		StringBuffer groups = new StringBuffer();
-		for (Iterator iterator = user.getGroups().iterator(); iterator.hasNext();)
-		{
-			Group group = (Group) iterator.next();
-			groups.append(group.getId());
-			groups.append(" ");
-		}
-		if( groups.length() > 0)
-		{
-			doc.add(new Field("groups", groups.toString(), Field.Store.NO, Field.Index.ANALYZED));
-		}
 
-		super.updateIndex(inData, doc, inDetails);
-	}
-	*/
 
 	//TODO: Replace with search?
 	public Object searchById(String inId)
