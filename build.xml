@@ -44,11 +44,7 @@
 
 
 	 <target name="compile"  >
-	 	
-	 	
-	 	
 	    <mkdir dir="${compiled}"/>
-	  
 	 	<copy todir="${compiled}">
 			<fileset dir="${src}">
 			  <include name="*.xml"/>
@@ -88,9 +84,17 @@
 	  </target>
 	    
 	<target name="zip" >
-		<mkdir dir="${deployDir}/builds/"/>
+		<mkdir dir="${build}/zip/"/>
+		
+	  	<copy todir="${build}/zip" preservelastmodified="true" overwrite="true">
+	  		<fileset dir="${basedir}/" followsymlinks="false">
+	  			<exclude name="webapp/WEB-INF/base" />
+	  			<include name="lib/**" />
+	  		</fileset>
+	  	</copy>
+		
 		<zip destfile="${deployDir}/${appname}.zip" >			
-			<zipfileset dir="${webapp}" prefix="webapp"/>
+			<zipfileset dir="${build}/zip" />
 		</zip>
 	  </target>
 	   
