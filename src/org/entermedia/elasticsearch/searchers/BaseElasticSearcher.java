@@ -578,7 +578,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		if (fieldIntCounter == null)
 		{
 			fieldIntCounter = new IntCounter();
-			fieldIntCounter.setLabelName(getSearchType() + "IdCount");
+			//fieldIntCounter.setLabelName(getSearchType() + "IdCount");
 			Page prop = getPageManager().getPage(loadCounterPath());
 			File file = new File(prop.getContentItem().getAbsolutePath());
 			file.getParentFile().mkdirs();
