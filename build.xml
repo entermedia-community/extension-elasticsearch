@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="default" name="extension-elasticsearch">
+
+  	<target name="default" depends="clean, update-dependencies, compile, jar, zip, publish"/>
+  	<target name="dependency" depends="default"/>
+   
+    <property name="appname" value="${ant.project.name}"/>
+    <property name="org" value="EnterMedia, Inc."/>
+	<property name="etc" location="${basedir}/etc"/>
+    <property name="src" location="${basedir}/src"/>
+    <property name="lib" location="${basedir}/lib"/>
+	
+    <property name="build" location="${basedir}/build"/>
+    <property name="webapp" location="${basedir}/webapp"/>
+	<property name="compiled" location="${basedir}/build/compiled"/>
+
+    <property name="wardir" location="${build}/wartmp"/>
+	<property name="webinf" location="${webapp}/WEB-INF"/>
+
+	<!-- 
+		========================================================================
+		Anthill build server properties.  These properties will be passed in
+		by anthill when this script is executed on the build server.
+		
+			- "version" is set by the version adapter
+			- "deployDir" is set by anthill.publish.dir
+		========================================================================
+	--> 
+  	<property name="version"  value="7.${env.BUILD_NUMBER}"/>
+  	<property name="deployDir" location="deploy"/>
+  	
+  	<!-- A convenience variable for documentation output -->
+
+	<target name="clean">
+	 <delete dir="${build}"/>
+	</target>
+
+	<target name="update-dependencies"  >
+	    <mkdir dir="${build}"/>
+	    <mkdir dir="${wardir}/WEB-INF/" />
+		<get dest="${build}/install.xml" src="http://dev.entermediasoftware.com/jenkins/job/entermedia-server/lastSuccessfulBuild/artifact/deploy/install.xml"/>
+		<ant antfile="${build}/install.xml" inheritAll="false" dir="${wardir}/WEB-INF/" target="default"/> 
+	</target>
+
+
+	 <target name="compile"  >
+	 	
+	 	
+	 	
+	    <mkdir dir="${compiled}"/>
+	  
+	 	<copy todir="${compiled}">
+			<fileset dir="${src}">
+			  <include name="*.xml"/>
+			</fileset>
+		</copy>
+	  
+	    <javac debug="true" destdir="${compiled}" srcdir="${src}" source="1.5" target="1.5">
+	      <classpath>
+	        <fileset dir="${lib}">
+	          <include name="*.jar"/>
+	          <include name="sigar/*.jar"/>
+	        </fileset>
+	        <fileset dir="${wardir}/WEB-INF/lib/">
+	            <include name="*.jar"/>
+	         </fileset>
+	      </classpath>
+	      <include name="**"/>
+	    </javac>
+	  </target>
+	  
+	  	<!-- 
+			========================================================================
+			Jar classes for the main app, excluding unit tests.
+			========================================================================
+		-->	  
+		<target name="jar" depends="compile">
+			<mkdir dir="${deployDir}/builds/"/>
+			<jar jarfile="${deployDir}/builds/${appname}-${version}.jar" basedir="${compiled}" >
+				<exclude name="**/*Test*"/>
+				<manifest>
+			    	<attribute name="Built-By" value="${user.name}"/>
+				    <attribute name="Implementation-Title" value="${appname}"/>
+				    <attribute name="Implementation-Version" value="${version}"/>
+				    <attribute name="Implementation-Vendor" value="${org}"/>
+			    </manifest>
+			</jar>
+	  </target>
+	    
+	<target name="zip" >
+		<mkdir dir="${deployDir}/builds/"/>
+		<zip destfile="${deployDir}/${appname}.zip" >			
+			<zipfileset dir="${webapp}" prefix="webapp"/>
+		</zip>
+	  </target>
+	   
+	<target name="publish" depends="zip">
+		<!-- publish results to anthill -->
+	 	<copy file="${etc}/install.js" overwrite="true"
+	        tofile="${deployDir}/install.js"/>
+	 	<!-- copy file="${etc}/install.xml" overwrite="true"
+	        tofile="${deployDir}/install.xml"/ -->
+	</target>
+</project>
