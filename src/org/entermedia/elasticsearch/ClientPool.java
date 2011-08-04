@@ -42,22 +42,26 @@ public class ClientPool
 					"path.data",
 					"path.logs",
 					"path.work",
+					"network.host"
 			};
 			
 			Page config = getNodeManager().getPageManager().getPage("/WEB-INF/node.xml");
+			if( !config.exists() )
+			{
+				throw new OpenEditException("Missing " + config.getPath());
+			}
 			String abs = config.getContentItem().getAbsolutePath();
 			for (int i = 0; i < keys.length; i++)
 			{
 				String val = getNodeManager().getLocalNode().get(keys[i]);
-				if( val == null)
+				if( val != null)
 				{
-					throw new OpenEditException(keys[i] + " is not set in node.xml");
+					if( val.startsWith("."))
+					{
+						val = PathUtilities.resolveRelativePath(val, abs );
+					}
+					nb.settings().put(keys[i], val);
 				}
-				if( val.startsWith("."))
-				{
-					val = PathUtilities.resolveRelativePath(val, abs );
-				}
-	            nb.settings().put(keys[i], val);
 			}
 			//extras
             //nb.settings().put("index.store.type", "mmapfs");

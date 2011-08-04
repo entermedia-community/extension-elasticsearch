@@ -1,4 +1,4 @@
-package org.entermedia.elasticsearch;
+package org.entermedia.elasticsearch.searchers;
 
 import net.sourceforge.jtds.jdbc.cache.SQLCacheKey;
 
@@ -17,7 +17,7 @@ public class ElasticAssetTest  extends BaseEnterMediaTest
 {
 	public void testVerifyConfiguration()
 	{
-		BaseAssetSearcher searcher = (BaseAssetSearcher)getMediaArchive().getSearcherManager().getSearcher("entermedia/catalogs/testcatalog", "user");
+		BaseAssetSearcher searcher = (BaseAssetSearcher)getMediaArchive().getSearcherManager().getSearcher("entermedia/catalogs/testcatalog", "asset");
 		assertNotNull("asset searcher is NULL!", searcher);
 		assertTrue( searcher.getDataConnector() instanceof ElasticAssetDataConnector );
 	}

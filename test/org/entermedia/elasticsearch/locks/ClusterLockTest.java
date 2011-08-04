@@ -20,8 +20,8 @@ public class ClusterLockTest extends LockTest
 	public void testLockOrder()
 	{
 		//create a bunch of locks out of order make sure the come back in the correct order
-		LockManager manager = (LockManager)getFixture().getModuleManager().getBean("lockManager");
-		SearcherManager searcherManager = (SearcherManager)getFixture().getModuleManager().getBean("searcherManager");
+		LockManager manager = (LockManager)getStaticFixture().getModuleManager().getBean("lockManager");
+		SearcherManager searcherManager = (SearcherManager)getStaticFixture().getModuleManager().getBean("searcherManager");
 		
 		String path = "/entermedia/catalogs/testcatalog/assets/users/101/index.html";
 		String cat = "entermedia/catalogs/testcatalog";

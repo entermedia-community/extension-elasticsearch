@@ -1,4 +1,4 @@
-package org.entermedia.elasticsearch;
+package org.entermedia.elasticsearch.searchers;
 
 import java.util.ArrayList;
 import java.util.List;

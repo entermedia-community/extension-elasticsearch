@@ -11,6 +11,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
+import org.elasticsearch.action.admin.indices.exists.IndicesExistsRequest;
+import org.elasticsearch.action.admin.indices.exists.IndicesExistsResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.index.IndexResponse;
@@ -25,14 +27,15 @@ import org.elasticsearch.client.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.query.xcontent.BoolQueryBuilder;
-import org.elasticsearch.index.query.xcontent.MatchAllQueryBuilder;
-import org.elasticsearch.index.query.xcontent.QueryBuilders;
-import org.elasticsearch.index.query.xcontent.XContentQueryBuilder;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MatchAllQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.transport.RemoteTransportException;
 import org.entermedia.elasticsearch.ClientPool;
 import org.entermedia.elasticsearch.ElasticHitTracker;
 import org.entermedia.elasticsearch.ElasticSearchQuery;
@@ -135,7 +138,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			SearchRequestBuilder search = getClient().prepareSearch(toId(getCatalogId()));
 			search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 			search.setTypes(getSearchType());
-			XContentQueryBuilder terms = buildTerms(inQuery);
+			QueryBuilder terms = buildTerms(inQuery);
 			json = new String(terms.buildAsBytes(), "UTF-8");
 
 			search.setQuery(terms);
@@ -178,35 +181,38 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			boolean reindex = false;
 			try
 			{
-				//ActionFuture<IndicesStatusResponse> future = admin.indices().status(Requests.indicesStatusRequest(toId(getCatalogId())));
+
+				String cluster = toId(getCatalogId());
+				IndicesExistsRequest existsreq = Requests.indicesExistsRequest(cluster);
+				IndicesExistsResponse res = admin.indices().exists(existsreq).actionGet();
 				
-				CreateIndexRequest newindex = new CreateIndexRequest(toId(getCatalogId()));
-				try
+				if( !res.exists() )
 				{
-					CreateIndexResponse res = admin.indices().create(newindex).actionGet();
-					if( res.acknowledged() )
+					try
 					{
-						log.info("index created " + toId(getCatalogId()));
+						CreateIndexRequest newindex = new CreateIndexRequest(cluster);
+						CreateIndexResponse newindexres = admin.indices().create(newindex).actionGet();
+						if( newindexres.acknowledged() )
+						{
+							log.info("index created " + cluster);
+							reindex = true;
+						}
+					}
+					catch( RemoteTransportException exists)
+					{
+						//silent error
+						log.debug("Index already exists " +  cluster);
 					}
 				}
-				catch( IndexAlreadyExistsException exists)
-				{
-					//silent error
-					log.debug("Index already exists " +  toId(getCatalogId()));
-				}
-
 				XContentBuilder source = buildMapping();
-				log.info(toId(getCatalogId()) + "/" + getSearchType() + "/_mapping' -d '" + source.string() + "'");
-				PutMappingRequest  req = Requests.putMappingRequest( toId( getCatalogId() ) ).type(getSearchType());
+				log.info(cluster + "/" + getSearchType() + "/_mapping' -d '" + source.string() + "'");
+				PutMappingRequest  req = Requests.putMappingRequest( cluster ).type(getSearchType());
 				req.source(source);
 				PutMappingResponse pres = getClientPool().getClient().admin().indices().putMapping(req).actionGet(); 
 				if( pres.acknowledged() )
 				{
 					log.info("mapping applied " + getSearchType());
-					reindex = true;
 				}
-	
-
 			}
 			catch( Exception ex)
 			{
@@ -289,7 +295,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 
 	}
 	
-	protected XContentQueryBuilder buildTerms(SearchQuery inQuery)
+	protected QueryBuilder buildTerms(SearchQuery inQuery)
 	{
 		if( inQuery.getTerms().size() == 1)
 		{
@@ -299,7 +305,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			{
 				return QueryBuilders.matchAllQuery();
 			}
-			XContentQueryBuilder find =buildTerm(term.getDetail(),value);
+			QueryBuilder find =buildTerm(term.getDetail(),value);
 			return find;
 		}
 		
@@ -324,17 +330,17 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			else
 			{
 				String value = term.getValue();
-				XContentQueryBuilder find =buildTerm(term.getDetail(),value);
+				QueryBuilder find =buildTerm(term.getDetail(),value);
 				bool.must(find);
 			}
 		}
 		return bool;
 	}
 
-	protected XContentQueryBuilder buildTerm(PropertyDetail inDetail, Object inValue)
+	protected QueryBuilder buildTerm(PropertyDetail inDetail, Object inValue)
 	{
 		//Check for quick date object
-		XContentQueryBuilder find = null;
+		QueryBuilder find = null;
 		if( inValue instanceof Date)
 		{
 			find = QueryBuilders.termQuery(inDetail.getId(), (Date)inValue);
