@@ -83,9 +83,9 @@ public class ElasticUserSearcherTest extends BaseEnterMediaTest
 		assertNotNull("screen Name is null" , hit);
 
 		 hit = (Data) userSearcher.searchByField("screenname", "ADMIN");
-			assertNotNull("screen Name is null" , hit);
+		assertNull("screen name is not null", hit);
 
-		hit = (Data) userSearcher.searchByField("lastName", "administrator");
+		hit = (Data) userSearcher.searchByField("lastName", "Administrator");
 		assertNotNull("Last Name is null" , hit);
 		
 		String email = "support.openedit";
@@ -116,23 +116,32 @@ public class ElasticUserSearcherTest extends BaseEnterMediaTest
 	public void testSaveUsers()
 	{
 		ElasticUserSearcher userSearcher = (ElasticUserSearcher) getMediaArchive().getSearcherManager().getSearcher("system", "user");
+		
 		BaseUser user = (BaseUser) userSearcher.createNewData();
 		user.setId("1");
+		user.setName("test");
 		
-		UserManager mgr = getFixture().getUserManager();
-		User usr = mgr.createUser("don5", null);
-//		mgr.saveUser(usr);
+		//List<User> users = new ArrayList<User>();
+		//users.add(usr);
 		
-		List<User> users = new ArrayList<User>();
-		users.add(usr);
-		
-		userSearcher.saveUsers(users, usr);
+		//userSearcher.saveUsers(users, usr);
+		User admin = userSearcher.getUser("admin");
+		userSearcher.saveData(user, admin);
 		
 		PageManager pManager = userSearcher.getPageManager();
-		Page page = pManager.getPage("WEB-INF/data/system/users/don5.xml");
+		Page page = pManager.getPage("WEB-INF/data/system/users/1.xml");
 		assertTrue("user file not found!", page.exists());
 		
-		pManager.removePage(page);
+		//do a search to verify the user is in the index
+		User test = userSearcher.getUser("1");
+		assertNotNull("user not in index", test);
+		
+		//now get rid of the user
+		userSearcher.delete(user, admin);
+		
+		//make sure the user is gone from the index
+		test = userSearcher.getUser("1");
+		assertNull("user still in index", test);
 	}
 
 }

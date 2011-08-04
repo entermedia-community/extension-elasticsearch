@@ -132,7 +132,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 			throw new OpenEditException("No group found");
 		}
 		query.addMatches("group",inGroup.getId());
-		query.setSortBy("namesorted");
+		//query.setSortBy("idsorted");
 		HitTracker tracker = search(query);
 		return tracker;
 	}
@@ -189,7 +189,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 				{
 					Group group = (Group) iterator.next();
 					groups[i++] = group.getId();
-					inContent.array("groups", groups);
+					inContent.array("group", groups);
 				}
 			}
 		}

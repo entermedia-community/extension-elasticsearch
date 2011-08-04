@@ -10,3 +10,7 @@
 [10:21:29.993] [Jon Spectre] [media_catalogs_public] creating index, cause [api], shards [5]/[1], mappings [asset]
 [10:21:30.276] Deleted old database
 
+5) mount shared drive data to demoall/webapp/WEB-INF/
+6) verify write capability
+
+#delete ES data /demoall/webapp/WEB-INF/elastic
