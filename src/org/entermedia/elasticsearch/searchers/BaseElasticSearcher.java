@@ -1,6 +1,7 @@
 package org.entermedia.elasticsearch.searchers;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -25,13 +26,13 @@ import org.elasticsearch.client.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.client.action.deletebyquery.DeleteByQueryRequestBuilder;
 import org.elasticsearch.client.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
+import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -138,11 +139,14 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			SearchRequestBuilder search = getClient().prepareSearch(toId(getCatalogId()));
 			search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 			search.setTypes(getSearchType());
-			QueryBuilder terms = buildTerms(inQuery);
-			json = new String(terms.buildAsBytes(), "UTF-8");
 
+			QueryBuilder terms = buildTerms(inQuery);
+			
 			search.setQuery(terms);
 			addSorts(inQuery, search);
+
+			json = search.toString();
+
 			search.setFrom(0).setSize(60).setExplain(true);
 
 			SearchResponse results = search.execute().actionGet();
