@@ -28,16 +28,16 @@ files.deleteMatch( web + "/lib/lucene-highlighter-*.jar");
 files.deleteMatch( web + "/lib/lucene-memory-*.jar");
 files.deleteMatch( web + "/lib/lucene-queries-*.jar");
 
-files.copyFileByMatch( tmp + "/WEB-INF/lib/jline-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/WEB-INF/lib/jna-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/WEB-INF/lib/elasticsearch-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/WEB-INF/lib/lucene-analyzers-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/WEB-INF/lib/lucene-core-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/WEB-INF/lib/lucene-highlighter-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/WEB-INF/lib/lucene-memory-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/WEB-INF/lib/lucene-queries-*.jar", web + "/lib/");
+files.copyFileByMatch( tmp + "/lib/jline-*.jar", web + "/lib/");
+files.copyFileByMatch( tmp + "/lib/jna-*.jar", web + "/lib/");
+files.copyFileByMatch( tmp + "/lib/elasticsearch-*.jar", web + "/lib/");
+files.copyFileByMatch( tmp + "/lib/lucene-analyzers-*.jar", web + "/lib/");
+files.copyFileByMatch( tmp + "/lib/lucene-core-*.jar", web + "/lib/");
+files.copyFileByMatch( tmp + "/lib/lucene-highlighter-*.jar", web + "/lib/");
+files.copyFileByMatch( tmp + "/lib/lucene-memory-*.jar", web + "/lib/");
+files.copyFileByMatch( tmp + "/lib/lucene-queries-*.jar", web + "/lib/");
 
 log.add("5. CLEAN UP");
-files.deleteAll(tmp);
+//files.deleteAll(tmp);
 
 log.add("6. UPGRADE COMPLETED");
