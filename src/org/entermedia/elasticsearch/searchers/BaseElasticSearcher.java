@@ -48,6 +48,7 @@ import org.openedit.util.DateStorageUtil;
 
 import com.openedit.OpenEditException;
 import com.openedit.Shutdownable;
+import com.openedit.WebPageRequest;
 import com.openedit.hittracker.HitTracker;
 import com.openedit.hittracker.SearchQuery;
 import com.openedit.hittracker.Term;
@@ -625,5 +626,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	protected boolean hasChanged(HitTracker inTracker)
 	{
 		return true;
+	}
+
+	public HitTracker checkCurrent(WebPageRequest inReq, HitTracker inTracker) throws OpenEditException
+	{
+		return inTracker;
 	}
 }
