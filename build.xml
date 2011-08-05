@@ -104,6 +104,8 @@
 		<!-- publish results to anthill -->
 	 	<copy file="${etc}/install.js" overwrite="true"
 	        tofile="${deployDir}/install.js"/>
+		<copy file="${deployDir}/builds/extension-elasticsearch.zip" overwrite="true"
+			tofile="${deployDir}/extension-elasticsearch.zip"/>
 	 	<!-- copy file="${etc}/install.xml" overwrite="true"
 	        tofile="${deployDir}/install.xml"/ -->
 	</target>
