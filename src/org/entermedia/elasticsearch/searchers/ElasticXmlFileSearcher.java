@@ -80,6 +80,17 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	{
 		fieldXmlArchive = inXmlArchive;
 	}
+	
+	public Data createNewData()
+	{
+		if( fieldNewDataName == null)
+		{
+			ElementData data = new ElementData();
+			
+			return data;
+		}
+		return (Data)getModuleManager().getBean(getNewDataName());
+	}
 
 
 	public void reIndexAll() throws OpenEditException
