@@ -621,4 +621,9 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			getClient().close();
 		}
 	}
+	
+	protected boolean hasChanged(HitTracker inTracker)
+	{
+		return true;
+	}
 }
