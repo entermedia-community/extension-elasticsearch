@@ -26,7 +26,7 @@
 			- "deployDir" is set by anthill.publish.dir
 		========================================================================
 	--> 
-  	<property name="version"  value="7.${env.BUILD_NUMBER}"/>
+  	<property name="version"  value="7.${BUILD_NUMBER}"/>
   	<property name="deployDir" location="deploy"/>
   	
   	<!-- A convenience variable for documentation output -->
@@ -90,6 +90,7 @@
 	  		<fileset dir="${basedir}/" followsymlinks="false">
 	  			<exclude name="webapp/WEB-INF/base" />
 	  			<include name="lib/**" />
+	  			<include name="${deployDir}/builds/${appname}-${version}.jar" />
 	  		</fileset>
 	  	</copy>
 		
