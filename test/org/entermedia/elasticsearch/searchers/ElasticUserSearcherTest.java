@@ -1,23 +1,19 @@
 package org.entermedia.elasticsearch.searchers;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 
-import org.entermedia.elasticsearch.searchers.BaseElasticSearcher;
-import org.entermedia.elasticsearch.searchers.ElasticUserSearcher;
 import org.junit.Test;
 import org.openedit.Data;
-import org.openedit.data.Searcher;
 import org.openedit.entermedia.BaseEnterMediaTest;
 
 import com.openedit.hittracker.HitTracker;
+import com.openedit.hittracker.SearchQuery;
 import com.openedit.page.Page;
 import com.openedit.page.manage.PageManager;
 import com.openedit.users.BaseGroup;
 import com.openedit.users.BaseUser;
 import com.openedit.users.Group;
 import com.openedit.users.User;
-import com.openedit.users.UserManager;
 
 public class ElasticUserSearcherTest extends BaseEnterMediaTest
 {
@@ -42,7 +38,7 @@ public class ElasticUserSearcherTest extends BaseEnterMediaTest
 	}
 
 	@Test
-	public void testGetUser() throws Exception
+	public void testGetUsers() throws Exception
 	{
 //		Client client = new ClientPool().getClient();
 //		Thread.sleep(5000);
@@ -70,6 +66,10 @@ public class ElasticUserSearcherTest extends BaseEnterMediaTest
 		result = userSearcher.getUser("admin");
 		assertNotNull("user is NULL, cannot find 'admin'!", result);
 		
+		SearchQuery q = userSearcher.createSearchQuery();
+		q.addOrsGroup("id", "admin testuser");
+		Collection col = userSearcher.search(q);
+		assertTrue(col.size() > 0);
 	}
 
 	@Test

@@ -1,7 +1,6 @@
 package org.entermedia.elasticsearch.searchers;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -26,7 +25,6 @@ import org.elasticsearch.client.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.client.action.deletebyquery.DeleteByQueryRequestBuilder;
 import org.elasticsearch.client.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
-import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -49,6 +47,7 @@ import org.openedit.data.PropertyDetails;
 import org.openedit.util.DateStorageUtil;
 
 import com.openedit.OpenEditException;
+import com.openedit.Shutdownable;
 import com.openedit.hittracker.HitTracker;
 import com.openedit.hittracker.SearchQuery;
 import com.openedit.hittracker.Term;
@@ -57,7 +56,7 @@ import com.openedit.page.manage.PageManager;
 import com.openedit.users.User;
 import com.openedit.util.IntCounter;
 
-public abstract class BaseElasticSearcher extends BaseSearcher
+public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdownable
 {
 	private static final Log log = LogFactory.getLog(BaseElasticSearcher.class);
 	protected ClientPool fieldClientPool;
@@ -304,6 +303,12 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		if( inQuery.getTerms().size() == 1)
 		{
 			Term term = (Term)inQuery.getTerms().iterator().next();
+
+			if ("orsGroup".equals(term.getOperation()))
+			{
+				return addOrsGroup(term);
+			}
+
 			String value = term.getValue();
 			if( value.equals("*"))
 			{
@@ -320,16 +325,8 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			Term term = (Term) iterator.next();
 			if ("orsGroup".equals(term.getOperation()))
 			{
-				if (term.getValues() != null)
-				{
-					BoolQueryBuilder or = QueryBuilders.boolQuery();
-					for (int i = 0; i < term.getValues().length; i++)
-					{
-						Object val = term.getValues()[i];
-						or.should(buildTerm(term.getDetail(),val));
-					}
-					bool.must(or);
-				}
+				BoolQueryBuilder or = addOrsGroup(term);
+				bool.must(or);
 			}
 			else
 			{
@@ -339,6 +336,21 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 			}
 		}
 		return bool;
+	}
+
+	protected BoolQueryBuilder addOrsGroup(Term term)
+	{
+		if (term.getValues() != null)
+		{
+			BoolQueryBuilder or = QueryBuilders.boolQuery();
+			for (int i = 0; i < term.getValues().length; i++)
+			{
+				Object val = term.getValues()[i];
+				or.should(buildTerm(term.getDetail(),val));
+			}
+			return or;
+		}
+		return null;
 	}
 
 	protected QueryBuilder buildTerm(PropertyDetail inDetail, Object inValue)
@@ -602,4 +614,11 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		fieldLockManager = inLockManager;
 	}
 
+	public void shutdown()
+	{
+		if( fieldClientPool != null)
+		{
+			getClient().close();
+		}
+	}
 }
