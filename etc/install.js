@@ -19,6 +19,7 @@ unziper.unzip(  tmp + "/ROOT.war",  tmp );
 
 log.add("3. REPLACE LIBS");
 var files = new FileUtils();
+files.deleteMatch( web + "/lib/extension-elasticsearch*.jar");
 files.deleteMatch( web + "/lib/jline-*.jar");
 files.deleteMatch( web + "/lib/jna-*.jar");
 files.deleteMatch( web + "/lib/elasticsearch-*.jar");
@@ -28,6 +29,7 @@ files.deleteMatch( web + "/lib/lucene-highlighter-*.jar");
 files.deleteMatch( web + "/lib/lucene-memory-*.jar");
 files.deleteMatch( web + "/lib/lucene-queries-*.jar");
 
+files.copyFileByMatch( tmp + "/lib/extension-elasticsearch*.jar", web + "/lib/");
 files.copyFileByMatch( tmp + "/lib/jline-*.jar", web + "/lib/");
 files.copyFileByMatch( tmp + "/lib/jna-*.jar", web + "/lib/");
 files.copyFileByMatch( tmp + "/lib/elasticsearch-*.jar", web + "/lib/");
