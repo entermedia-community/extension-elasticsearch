@@ -11,3 +11,4 @@
 <event operation="authentication" user="don5" details="add" catalogid="system" date="2011-07-19 12:17:00 -0400" indexed="false"/>
 <event operation="authentication" user="don5" details="add" catalogid="system" date="2011-07-19 12:17:08 -0400" indexed="false"/>
 <event operation="authentication" user="don5" details="add" catalogid="system" date="2011-07-19 12:20:37 -0400" indexed="false"/>
+<event operation="authentication" user="1" details="delete" catalogid="system" date="2011-08-05 11:36:07 -0400" indexed="false"/>

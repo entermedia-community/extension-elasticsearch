@@ -91,10 +91,15 @@
 	  		<fileset dir="${basedir}/" followsymlinks="false">
 	  			<exclude name="webapp/WEB-INF/base" />
 	  			<include name="lib/**" />
-	  			<include name="${deployDir}/builds/${appname}-${version}.jar" />
 	  		</fileset>
 	  	</copy>
-		
+
+	  	<copy todir="${build}/zip" preservelastmodified="true" overwrite="true">
+	  		<fileset dir="${deployDir}/builds/" followsymlinks="false">
+				<include name="${appname}-${version}.jar" />
+	  		</fileset>
+	  	</copy>
+
 		<zip destfile="${deployDir}/${appname}.zip" >			
 			<zipfileset dir="${build}/zip" />
 		</zip>
