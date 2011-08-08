@@ -639,7 +639,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		}
 	}
 	
-	protected boolean hasChanged(HitTracker inTracker)
+	public boolean hasChanged(HitTracker inTracker)
 	{
 		return true;
 	}

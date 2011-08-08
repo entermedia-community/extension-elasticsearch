@@ -45,7 +45,8 @@ public class SearchHitData implements Data
 		Object found = getSearchHit().getSource().get(inId);
 		if( found != null)
 		{
-			return String.valueOf(found);
+			String val = String.valueOf(found);
+			return val;
 		}
 		//if( inId.equals("id"))
 		return null;
