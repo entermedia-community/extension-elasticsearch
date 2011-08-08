@@ -85,7 +85,7 @@
 	  </target>
 	    
 	<target name="zip" >
-		<mkdir dir="${build}/zip/"/>
+		<mkdir dir="${build}/zip/lib"/>
 		
 	  	<copy todir="${build}/zip" preservelastmodified="true" overwrite="true">
 	  		<fileset dir="${basedir}/" followsymlinks="false">
@@ -94,7 +94,7 @@
 	  		</fileset>
 	  	</copy>
 
-	  	<copy todir="${build}/zip" preservelastmodified="true" overwrite="true">
+	  	<copy todir="${build}/zip/lib" preservelastmodified="true" overwrite="true">
 	  		<fileset dir="${deployDir}/builds/" followsymlinks="false">
 				<include name="${appname}-${version}.jar" />
 	  		</fileset>
