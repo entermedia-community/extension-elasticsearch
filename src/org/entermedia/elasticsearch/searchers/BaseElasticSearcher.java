@@ -135,6 +135,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		String json = null;
 		try
 		{
+			if( !( inQuery instanceof ElasticSearchQuery) )
+			{
+					throw new OpenEditException("Elastic search requires elastic query");
+			}
 			long start = System.currentTimeMillis();
 			SearchRequestBuilder search = getClient().prepareSearch(toId(getCatalogId()));
 			search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
@@ -199,7 +203,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 						if( newindexres.acknowledged() )
 						{
 							log.info("index created " + cluster);
-							reindex = true;
 						}
 					}
 					catch( RemoteTransportException exists)
@@ -216,6 +219,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				if( pres.acknowledged() )
 				{
 					log.info("mapping applied " + getSearchType());
+					reindex = true;
 				}
 			}
 			catch( Exception ex)
@@ -333,7 +337,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				String value = term.getValue();
 				QueryBuilder find =buildTerm(term.getDetail(),value);
-				bool.must(find);
+				if( find != null)
+				{
+					bool.must(find);
+				}
 			}
 		}
 		return bool;
@@ -347,7 +354,11 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			for (int i = 0; i < term.getValues().length; i++)
 			{
 				Object val = term.getValues()[i];
-				or.should(buildTerm(term.getDetail(),val));
+				QueryBuilder aterm = buildTerm(term.getDetail(),val);
+				if( aterm != null)
+				{
+					or.should(aterm);
+				}
 			}
 			return or;
 		}
@@ -366,6 +377,11 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		{
 			String valueof = String.valueOf(inValue);
 			
+			if( valueof.equals("*"))
+			{
+				find = QueryBuilders.matchAllQuery();
+				//return null; //this is everything
+			} 
 			if( valueof.contains("*"))
 			{
 				find = QueryBuilders.wildcardQuery(inDetail.getId(), valueof);
@@ -487,15 +503,15 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				continue;
 			}
 			String value = inData.get(detail.getId());
+			if( value != null && value.length() == 0)
+			{
+				value = null;
+			}
 			try
 			{
 				if( detail.isDate())
 				{
-					if( value == null)
-					{
-						inContent.field(detail.getId(), (Date)null);
-					}
-					else
+					if( value != null)
 					{
 						//ie date = DateStorageUtil.getStorageUtil().parseFromStorage(value);
 						inContent.field(detail.getId(), value);

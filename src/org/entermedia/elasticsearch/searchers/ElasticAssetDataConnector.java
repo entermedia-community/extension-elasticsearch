@@ -105,18 +105,19 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			
 			// populateSecurity(doc, asset, catalogs);
 			populatePermission(inContent, asset, "viewasset");
-	
-			for (Iterator iterator = inDetails.findIndexProperties().iterator(); iterator.hasNext();)
-			{
-				PropertyDetail detail = (PropertyDetail)iterator.next();
-				String value = inData.get(detail.getId());
-				if( value != null)
-				{
-					//TODO: Deal with data types and move to indexer object
-					inContent.field(detail.getId(),value);
-					//log.info("Saved" + detail.getId() + "=" + value );
-				}
-			}
+
+			super.updateIndex(inContent, inData, inDetails);
+//			for (Iterator iterator = inDetails.findIndexProperties().iterator(); iterator.hasNext();)
+//			{
+//				PropertyDetail detail = (PropertyDetail)iterator.next();
+//				String value = inData.get(detail.getId());
+//				if( value != null)
+//				{
+//					//TODO: Deal with data types and move to indexer object
+//					inContent.field(detail.getId(),value);
+//					//log.info("Saved" + detail.getId() + "=" + value );
+//				}
+//			}
 		}
 		catch( Exception ex)
 		{

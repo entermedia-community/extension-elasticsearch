@@ -1,6 +1,6 @@
 <node id="singlenode" name="Default Single Node">
 
-    <property id="cluster.name">entermedia</property>
+    <property id="cluster.name">entermedia-test</property>
      <property id="gateway.type">fs</property>
      <property id="gateway.fs.location">./elastic/gateway</property>
      <!-- 
@@ -11,5 +11,8 @@
      <property id="path.data">./elastic/data</property>
      <property id="path.logs">./elastic/logs</property>
      <property id="path.work">./elastic/work</property>
+
+	 <property id="discovery.zen.ping.unicast">1.1.13.3:9300</property>
+	
 
 </node>
