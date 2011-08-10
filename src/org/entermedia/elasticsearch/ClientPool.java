@@ -1,5 +1,8 @@
 package org.entermedia.elasticsearch;
 
+import java.util.Iterator;
+
+import org.dom4j.Element;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.node.NodeBuilder;
 import org.openedit.entermedia.cluster.NodeManager;
@@ -35,6 +38,7 @@ public class ClientPool
 			//Todo Change the port number and work path for this node
 			
 			//required
+			/*
 			String[] keys = new String[] {
 					"cluster.name",
 					"gateway.type",
@@ -44,24 +48,23 @@ public class ClientPool
 					"path.work",
 					"network.host"
 			};
-			
+			*/
 			Page config = getNodeManager().getPageManager().getPage("/WEB-INF/node.xml");
 			if( !config.exists() )
 			{
 				throw new OpenEditException("Missing " + config.getPath());
 			}
 			String abs = config.getContentItem().getAbsolutePath();
-			for (int i = 0; i < keys.length; i++)
+			for (Iterator iterator = getNodeManager().getLocalNode().getElement().elementIterator("property"); iterator.hasNext();)
 			{
-				String val = getNodeManager().getLocalNode().get(keys[i]);
-				if( val != null)
+				Element	prop = (Element) iterator.next();
+				String key = prop.attributeValue("id");
+				String val = prop.getTextTrim();
+				if( val.startsWith("."))
 				{
-					if( val.startsWith("."))
-					{
-						val = PathUtilities.resolveRelativePath(val, abs );
-					}
-					nb.settings().put(keys[i], val);
+					val = PathUtilities.resolveRelativePath(val, abs );
 				}
+				nb.settings().put(key, val);
 			}
 			//extras
             //nb.settings().put("index.store.type", "mmapfs");
