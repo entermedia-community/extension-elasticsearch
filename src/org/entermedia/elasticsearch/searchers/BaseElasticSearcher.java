@@ -288,14 +288,14 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		index.analysis.analyzer.lowercase_keyword.tokenizer=keyword 
 		*/	
 		
-		jsonproperties  = jsonproperties.startObject("_all");
+		//jsonproperties  = jsonproperties.startObject("_all");
 		//jsonproperties = jsonproperties.field("store", "false");
-		jsonproperties = jsonproperties.field("analyzer", "lowersnowball");					
+		//jsonproperties = jsonproperties.field("analyzer", "lowersnowball");					
 		//jsonproperties = jsonproperties.field("index_analyzer", "lowersnowball");					
 		//jsonproperties = jsonproperties.field("search_analyzer", "lowersnowball");			//lower case does not seem to work		
 		//jsonproperties = jsonproperties.field("index", "analyzed");
-		jsonproperties = jsonproperties.field("type", "string");					
-		jsonproperties = jsonproperties.endObject();
+		//jsonproperties = jsonproperties.field("type", "string");					
+		//jsonproperties = jsonproperties.endObject();
 		
 		for (Iterator i = props.iterator() ; i.hasNext();)
 		{
@@ -348,7 +348,8 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	
 	protected QueryBuilder buildTerms(SearchQuery inQuery)
 	{
-		if( inQuery.getTerms().size() == 1)
+		
+		if( inQuery.getTerms().size() == 1 && inQuery.getChildren().size() == 0)
 		{
 			Term term = (Term)inQuery.getTerms().iterator().next();
 
@@ -362,31 +363,75 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				return QueryBuilders.matchAllQuery();
 			}
-			QueryBuilder find =buildTerm(term.getDetail(),value);
+			QueryBuilder find =buildTerm(term.getDetail(),term,value);
 			return find;
 		}
-		
-		//TODO: Deal with subqueries, or, and, not 
+
 		BoolQueryBuilder bool = QueryBuilders.boolQuery();
-		for (Iterator iterator = inQuery.getTerms().iterator(); iterator.hasNext();)
+
+		if( inQuery.isAndTogether() )
 		{
-			Term term = (Term) iterator.next();
-			if ("orsGroup".equals(term.getOperation()))
+			//TODO: Deal with subqueries, or, and, not 
+			for (Iterator iterator = inQuery.getTerms().iterator(); iterator.hasNext();)
 			{
-				BoolQueryBuilder or = addOrsGroup(term);
-				bool.must(or);
-			}
-			else
-			{
-				String value = term.getValue();
-				QueryBuilder find =buildTerm(term.getDetail(),value);
-				if( find != null)
+				Term term = (Term) iterator.next();
+				if ("orsGroup".equals(term.getOperation()))
 				{
-					bool.must(find);
+					BoolQueryBuilder or = addOrsGroup(term);
+					bool.must(or);
+				}
+				else
+				{
+					String value = term.getValue();
+					QueryBuilder find =buildTerm(term.getDetail(),term, value);
+					if( find != null)
+					{
+						bool.must(find);
+					}
+				}
+			}
+		}
+		else
+		{
+			for (Iterator iterator = inQuery.getTerms().iterator(); iterator.hasNext();)
+			{
+				Term term = (Term) iterator.next();
+				if ("orsGroup".equals(term.getOperation()))
+				{
+					BoolQueryBuilder or = addOrsGroup(term);
+					bool.should(or);
+				}
+				else
+				{
+					String value = term.getValue();
+					QueryBuilder find =buildTerm(term.getDetail(),term,  value);
+					if( find != null)
+					{
+						bool.should(find);
+					}
+				}
+			}
+		}
+
+		if( inQuery.getChildren().size() > 0)
+		{
+			for (Iterator iterator = inQuery.getChildren().iterator(); iterator.hasNext();)
+			{
+				SearchQuery query = (SearchQuery) iterator.next();
+				QueryBuilder builder = buildTerms(query);
+				if( inQuery.isAndTogether() )
+				{
+					bool.must(builder);
+				}
+				else
+				{
+					bool.should(builder);
 				}
 			}
 		}
 		return bool;
+
+	
 	}
 
 	protected BoolQueryBuilder addOrsGroup(Term term)
@@ -397,7 +442,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			for (int i = 0; i < term.getValues().length; i++)
 			{
 				Object val = term.getValues()[i];
-				QueryBuilder aterm = buildTerm(term.getDetail(),val);
+				QueryBuilder aterm = buildTerm(term.getDetail(),term, val);
 				if( aterm != null)
 				{
 					or.should(aterm);
@@ -408,7 +453,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		return null;
 	}
 
-	protected QueryBuilder buildTerm(PropertyDetail inDetail, Object inValue)
+	protected QueryBuilder buildTerm(PropertyDetail inDetail, Term inTerm, Object inValue)
 	{
 		//Check for quick date object
 		QueryBuilder find = null;
@@ -436,6 +481,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			if( valueof.contains("*"))
 			{
 				find = QueryBuilders.wildcardQuery(fieldid, valueof);
+			}
+			else if( "startswith".equals( inTerm.getOperation() ) )
+			{
+				find = QueryBuilders.wildcardQuery(fieldid, valueof + "*");				
 			}
 			else if( inDetail.isBoolean())
 			{
