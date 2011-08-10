@@ -46,7 +46,13 @@ public class ElasticAssetTest  extends BaseEnterMediaTest
 		WebPageRequest req = getFixture().createPageRequest("/entermedia/catalogs/testcatalog/index.html");
 		HitTracker tracker = searcher.cachedSearch(req, q);
 		assertTrue(tracker.size() > 0);
-		
+
+		q = searcher.createSearchQuery();
+		q.addMatches("description","test101");
+
+		tracker = searcher.cachedSearch(req, q);
+		assertTrue(tracker.size() > 0);
+
 	}
 	
 }

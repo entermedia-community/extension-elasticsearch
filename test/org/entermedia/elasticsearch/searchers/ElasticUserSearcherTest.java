@@ -70,6 +70,12 @@ public class ElasticUserSearcherTest extends BaseEnterMediaTest
 		q.addOrsGroup("id", "admin testuser");
 		Collection col = userSearcher.search(q);
 		assertTrue(col.size() > 0);
+
+		q = userSearcher.createSearchQuery();
+		q.addMatches("description", "admin");
+		col = userSearcher.search(q);
+		assertTrue(col.size() > 0);
+
 	}
 
 	@Test
