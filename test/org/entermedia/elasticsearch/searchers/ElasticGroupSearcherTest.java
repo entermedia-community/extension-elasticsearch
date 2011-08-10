@@ -4,6 +4,8 @@ import org.junit.Test;
 import org.openedit.Data;
 import org.openedit.entermedia.BaseEnterMediaTest;
 
+import com.openedit.hittracker.HitTracker;
+import com.openedit.hittracker.SearchQuery;
 import com.openedit.users.Group;
 import com.openedit.users.UserManager;
 
@@ -35,7 +37,7 @@ public class ElasticGroupSearcherTest extends BaseEnterMediaTest
 		ElasticGroupSearcher groupSearcher = (ElasticGroupSearcher) getMediaArchive().getSearcherManager().getSearcher("system", "group");
 		groupSearcher.reIndexAll();
 		Data testgroup = groupSearcher.createNewData();
-		testgroup.setName("Test Group");
+		testgroup.setName("Testing");
 		testgroup.setId("testid");
 		groupSearcher.saveData(testgroup, null);
 		Group group = groupSearcher.getGroup("testid");
@@ -62,10 +64,16 @@ public class ElasticGroupSearcherTest extends BaseEnterMediaTest
 	public void testGetGroup()
 	{
 		ElasticGroupSearcher groupSearcher = (ElasticGroupSearcher) getMediaArchive().getSearcherManager().getSearcher("system", "group");
-		groupSearcher.reIndexAll();
 		Group group = groupSearcher.getGroup("users");
 		assertNotNull("NULL group", group);
+		
+		SearchQuery q = groupSearcher.createSearchQuery();
+		q.addMatches("description","Testing");
 
+		HitTracker tracker = groupSearcher.search(q);
+		assertTrue(tracker.size() > 0);
+		
 	}
 
+	
 }

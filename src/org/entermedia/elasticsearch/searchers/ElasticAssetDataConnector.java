@@ -85,7 +85,8 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 	
 			Set categories = buildCategorySet(asset);
 			String desc = populateDescription(asset, inDetails, categories);
-	
+			inContent.field("description", desc );
+
 			String[] catids = new String[categories.size()];
 			int i = 0;
 			for (Iterator iterator = categories.iterator(); iterator.hasNext();)
@@ -154,18 +155,18 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 	{
 		// Low level reading in of text
 		StringBuffer fullDesc = new StringBuffer();
-		fullDesc.append(asset.getName());
-		fullDesc.append(' ');
+//		fullDesc.append(asset.getName());
+//		fullDesc.append(' ');
+//		
+//		fullDesc.append(asset.getFileFormat());
+//		fullDesc.append(' ');
 		
-		fullDesc.append(asset.getFileFormat());
-		fullDesc.append(' ');
-		
-		fullDesc.append(asset.getId());
-		fullDesc.append(' ');
+//		fullDesc.append(asset.getId());
+//		fullDesc.append(' ');
 		String keywords = asTokens(asset.getKeywords());
 		fullDesc.append(keywords);
 		
-		populateKeywords(fullDesc, asset, inDetails);
+		populateListKeywords(fullDesc, asset, inDetails);
 		// add a bunch of stuff to the full text field
 		fullDesc.append(' ');
 		for (Iterator iter = inCategories.iterator(); iter.hasNext();)
@@ -182,6 +183,8 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			fullDesc.append(dirs[i]);
 			fullDesc.append(' ');
 		}
+		
+		
 		String result = fullDesc.toString();//fixInvalidCharacters(fullDesc.toString());
 		return result;
 	}
@@ -199,18 +202,22 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		}
 		return buffer.toString();
 	}
-	protected void populateKeywords(StringBuffer inFullDesc, Asset inAsset, PropertyDetails inDetails)
+	protected void populateListKeywords(StringBuffer inFullDesc, Asset inAsset, PropertyDetails inDetails)
 	{
 		for (Iterator iter = inDetails.getDetails().iterator(); iter.hasNext();)
 		{
 			PropertyDetail det = (PropertyDetail) iter.next();
-			if (det.isKeyword())
+			if (det.isList() && det.isKeyword())
 			{
 				String prop = inAsset.getProperty(det.getId());
 				if (prop != null)
 				{
-					inFullDesc.append(prop);
-					inFullDesc.append(' ');
+					Data data = (Data)getSearcherManager().getData(det.getListCatalogId(), det.getListId(), prop);
+					if( data != null && data.getName() != null)
+					{
+						inFullDesc.append(data.getName());
+						inFullDesc.append(' ');
+					}
 				}
 			}
 		}

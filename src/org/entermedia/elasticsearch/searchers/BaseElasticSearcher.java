@@ -25,6 +25,7 @@ import org.elasticsearch.client.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.client.action.deletebyquery.DeleteByQueryRequestBuilder;
 import org.elasticsearch.client.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -198,8 +199,34 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				{
 					try
 					{
-						CreateIndexRequest newindex = new CreateIndexRequest(cluster);
-						CreateIndexResponse newindexres = admin.indices().create(newindex).actionGet();
+						
+						XContentBuilder jsonBuilder =  XContentFactory.jsonBuilder(); 
+						
+						CreateIndexResponse newindexres = admin.indices().prepareCreate(cluster)
+			            .setSettings(ImmutableSettings.settingsBuilder().loadFromSource(jsonBuilder
+			                .startObject()
+			                    .startObject("analysis")
+			                        .startObject("filter")
+			                            .startObject("snowball")
+			                                .field("type", "snowball")
+			                                .field("language", "English")
+			                            .endObject()
+			                        .endObject()
+			                        .startObject("analyzer")
+			                            .startObject("lowersnowball")
+			                                .field("type", "custom")
+			                                .field("tokenizer", "standard")
+//			                                .field("tokenizer", "keyword")
+			                                .field("filter", new String[]{"lowercase","snowball"})
+//			                                .field("filter", new String[]{"lowercase"})
+			                            .endObject()
+			                        .endObject()			                        
+			                    .endObject()
+			                .endObject().string()))
+			            .execute().actionGet();
+						
+//						CreateIndexRequest newindex = new CreateIndexRequest(cluster);
+//						CreateIndexResponse newindexres = admin.indices().create(newindex).actionGet();
 						if( newindexres.acknowledged() )
 						{
 							log.info("index created " + cluster);
@@ -253,6 +280,23 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		{
 			throw new OpenEditException("No fields defined for " + getSearchType() );
 		}
+		//https://github.com/elasticsearch/elasticsearch/pull/606
+		//https://gist.github.com/870714
+		/*
+		index.analysis.analyzer.lowercase_keyword.type=custom
+		index.analysis.analyzer.lowercase_keyword.filter.0=lowercase
+		index.analysis.analyzer.lowercase_keyword.tokenizer=keyword 
+		*/	
+		
+		jsonproperties  = jsonproperties.startObject("_all");
+		//jsonproperties = jsonproperties.field("store", "false");
+		jsonproperties = jsonproperties.field("analyzer", "lowersnowball");					
+		//jsonproperties = jsonproperties.field("index_analyzer", "lowersnowball");					
+		//jsonproperties = jsonproperties.field("search_analyzer", "lowersnowball");			//lower case does not seem to work		
+		//jsonproperties = jsonproperties.field("index", "analyzed");
+		jsonproperties = jsonproperties.field("type", "string");					
+		jsonproperties = jsonproperties.endObject();
+		
 		for (Iterator i = props.iterator() ; i.hasNext();)
 		{
 			PropertyDetail detail = (PropertyDetail) i.next();
@@ -285,7 +329,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				jsonproperties = jsonproperties.field("store", "yes");
 			}
-			/*
 			if( detail.isKeyword())
 			{
 				jsonproperties = jsonproperties.field("include_in_all", "true");
@@ -294,7 +337,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				jsonproperties = jsonproperties.field("include_in_all", "false");
 			}
-			*/
+
 			jsonproperties = jsonproperties.endObject();
 		}
 		jsonproperties = jsonproperties.endObject();
@@ -377,6 +420,14 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		{
 			String valueof = String.valueOf(inValue);
 			
+			String fieldid = inDetail.getId();
+			if( fieldid.equals("description"))
+			{
+				fieldid = "_all";
+				
+				valueof  = valueof.toLowerCase();
+			}
+			
 			if( valueof.equals("*"))
 			{
 				find = QueryBuilders.matchAllQuery();
@@ -384,24 +435,24 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			} 
 			if( valueof.contains("*"))
 			{
-				find = QueryBuilders.wildcardQuery(inDetail.getId(), valueof);
+				find = QueryBuilders.wildcardQuery(fieldid, valueof);
 			}
 			else if( inDetail.isBoolean())
 			{
-				find = QueryBuilders.termQuery(inDetail.getId(), Boolean.parseBoolean(valueof));
+				find = QueryBuilders.termQuery(fieldid, Boolean.parseBoolean(valueof));
 			}
 			else if( inDetail.isDate())
 			{
 				Date date = DateStorageUtil.getStorageUtil().parseFromStorage(valueof);
-				find = QueryBuilders.termQuery(inDetail.getId(), date);
+				find = QueryBuilders.termQuery(fieldid, date);
 			}
 			else if( inDetail.isDataType("number") )
 			{
-				find = QueryBuilders.termQuery(inDetail.getId(), Long.parseLong(valueof));
+				find = QueryBuilders.termQuery(fieldid, Long.parseLong(valueof));
 			}
 			else
 			{
-				find = QueryBuilders.termQuery(inDetail.getId(), valueof);
+				find = QueryBuilders.termQuery(fieldid, valueof);
 			}
 		}
 		return find;

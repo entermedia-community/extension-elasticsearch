@@ -125,7 +125,7 @@ public class ElasticSearchQuery extends SearchQuery
 		term.setDetail(inField);
 		term.setId(inField.getId());
 		term.setValue(inValue);
-		String[] orwords = inValue.split("\\s");
+		String[] orwords = inValue.split("\\s+");
 		term.setValues(orwords);
 		term.setOperation("orsGroup");
 		getTerms().add(term);
