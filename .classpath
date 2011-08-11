@@ -13,6 +13,6 @@
 	<classpathentry kind="lib" path="lib/lucene-highlighter-3.3.0.jar"/>
 	<classpathentry kind="lib" path="lib/lucene-memory-3.3.0.jar"/>
 	<classpathentry kind="lib" path="lib/lucene-queries-3.3.0.jar"/>
-	<classpathentry kind="lib" path="lib/elasticsearch-0.17.4.jar"/>
+	<classpathentry kind="lib" path="lib/elasticsearch-0.17.4.jar" sourcepath="/home/cburkey/git/extension-elasticsearch/elasticsrc/elasticsearch/modules/elasticsearch/src/main/java"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

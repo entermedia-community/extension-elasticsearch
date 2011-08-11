@@ -95,31 +95,43 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 
 	public void reIndexAll() throws OpenEditException
 	{		
-		//For now just add things to the index. It never deletes
-		deleteAll(null); //This only deleted the index
-		final List buffer = new ArrayList(100);
-		PathProcessor processor = new PathProcessor()
+		if( isReIndexing())
 		{
-			public void processFile(ContentItem inContent, User inUser)
+			return;
+		}
+		setReIndexing(true);
+		try
+		{
+			//For now just add things to the index. It never deletes
+			deleteAll(null); //This only deleted the index
+			final List buffer = new ArrayList(100);
+			PathProcessor processor = new PathProcessor()
 			{
-				if (!inContent.getName().equals(getDataFileName()))
+				public void processFile(ContentItem inContent, User inUser)
 				{
-					return;
+					if (!inContent.getName().equals(getDataFileName()))
+					{
+						return;
+					}
+					String sourcepath = inContent.getPath();
+					sourcepath = sourcepath.substring(getPathToData().length() + 1,
+							sourcepath.length() - getDataFileName().length() - 1);
+					hydrateData( inContent, sourcepath, buffer);
+					incrementCount();
 				}
-				String sourcepath = inContent.getPath();
-				sourcepath = sourcepath.substring(getPathToData().length() + 1,
-						sourcepath.length() - getDataFileName().length() - 1);
-				hydrateData( inContent, sourcepath, buffer);
-				incrementCount();
-			}
-		};
-		processor.setRecursive(true);
-		processor.setRootPath(getPathToData());
-		processor.setPageManager(getPageManager());
-		processor.setFilter("xml");
-		processor.process();
-		updateIndex(buffer,null);
-		log.info("reindexed " + processor.getExecCount());
+			};
+			processor.setRecursive(true);
+			processor.setRootPath(getPathToData());
+			processor.setPageManager(getPageManager());
+			processor.setFilter("xml");
+			processor.process();
+			updateIndex(buffer,null);
+			log.info("reindexed " + processor.getExecCount());
+		}
+		finally
+		{
+			setReIndexing(false);
+		}
 	}
 
 	protected void hydrateData(ContentItem inContent, String sourcepath, List buffer)

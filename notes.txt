@@ -1,4 +1,3 @@
-curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search' -d '{"bool":{"must":[{"term":{"category":"index"}},{"bool":{"should":[{"term":{"viewasset":"true"}},{"term":{"viewasset":""}},{"term":{"viewasset":"sgroupadministrator"}},{"term":{"viewasset":"profileassetadmin"}},{"term":{"viewasset":"visualdata"}},{"term":{"viewasset":"video"}},{"term":{"viewasset":"administrators"}},{"term":{"viewasset":"developers"}},{"term":{"viewasset":"GS"}},{"term":{"viewasset":"photoeditors"}},{"term":{"viewasset":"admin"}}]}}]}}'  | python -mjson.tool
 
 curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search' -d '
 {"query" :
@@ -8,14 +7,13 @@ curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search' -d '
 }' | python -mjson.tool
 
 
-curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search' -d '{"bool":{"must":[{"term":{"category":"index"}},{"bool":{"should":[{"term":{"viewasset":"true"}},{"term":{"viewasset":""}},{"term":{"viewasset":"sgroupadministrator"}},{"term":{"viewasset":"profileassetadmin"}},{"term":{"viewasset":"visualdata"}},{"term":{"viewasset":"video"}},{"term":{"viewasset":"administrators"}},{"term":{"viewasset":"developers"}},{"term":{"viewasset":"GS"}},{"term":{"viewasset":"photoeditors"}},{"term":{"viewasset":"admin"}}]}}]}}'  | python -mjson.tool
 
+curl -XGET 'http://localhost:9200/_cluster/health?pretty=true'
 
+curl -XGET 'http://localhost:9200/_cluster/state?pretty=true' | more
 
 curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search' -d '
 {"query" : 
-
-
 {"bool" :   {
         "must" : 
 	{
@@ -31,30 +29,7 @@ curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search' -d '
         ]
   }
 }
-
-
 }' | python -mjson.tool
-
-
-
-{"bool" :   {
-        "must" : 
-	{
-		"term" : { "category":"index" }
-        },
-        "should" : [
-            {
-                "term" : { "viewasset" : "profileassetadmin" }
-            },
-            {
-                "term" : { "viewasset" : "profileviewassets" }
-            }
-        ]
-  }
-}
-
-
-{"bool":{"must":{"term":{"category":"users"}},"must":{"bool":{"should":{"term":{"viewasset":"true"}},"should":{"term":{"viewasset":""}},"should":{"term":{"viewasset":"sgroupadministrator"}},"should":{"term":{"viewasset":"profileassetadmin"}},"should":{"term":{"viewasset":"video"}},"should":{"term":{"viewasset":"developers"}},"should":{"term":{"viewasset":"photoeditors"}},"should":{"term":{"viewasset":"visualdata"}},"should":{"term":{"viewasset":"administrators"}},"should":{"term":{"viewasset":"admin"}}}}}}
 
 curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search?q=category:index' | python -mjson.tool
 
@@ -66,5 +41,4 @@ curl -XPUT 'http://localhost:9200/media_catalogs_public/asset/_mapping' -d '{"as
 
 
 curl -XPOST 'http://localhost:9200/system/group/_search' -d '{  "query" : {   "term" : {    "_all" : "Users"   }  } }' | python -mjson.tool
-
 

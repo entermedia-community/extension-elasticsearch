@@ -1,8 +1,5 @@
 package org.entermedia.elasticsearch.searchers;
 
-import net.sourceforge.jtds.jdbc.cache.SQLCacheKey;
-
-import org.entermedia.elasticsearch.searchers.ElasticAssetDataConnector;
 import org.junit.Test;
 import org.openedit.data.Searcher;
 import org.openedit.entermedia.Asset;
@@ -53,6 +50,18 @@ public class ElasticAssetTest  extends BaseEnterMediaTest
 		tracker = searcher.cachedSearch(req, q);
 		assertTrue(tracker.size() > 0);
 
+		Asset one = (Asset)searcher.searchById("101");
+		one.setProperty("owner", "admin");
+		getMediaArchive().saveAsset(one,null);
+		
+
+		q = searcher.createSearchQuery();
+		q.addMatches("description","test101");
+
+		tracker = searcher.cachedSearch(req, q);
+		assertTrue(tracker.size() > 0);
+
+		
 	}
 	
 }

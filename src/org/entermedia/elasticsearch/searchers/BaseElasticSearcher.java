@@ -9,7 +9,6 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.exists.IndicesExistsResponse;
@@ -67,7 +66,18 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	protected PageManager fieldPageManager;
 	protected LockManager fieldLockManager;
 	protected boolean fieldAutoIncrementId;
+	protected boolean fieldReIndexing;
 	
+	public boolean isReIndexing()
+	{
+		return fieldReIndexing;
+	}
+
+	public void setReIndexing(boolean inReIndexing)
+	{
+		fieldReIndexing = inReIndexing;
+	}
+
 	public boolean isAutoIncrementId()
 	{
 		return fieldAutoIncrementId;
@@ -133,6 +143,26 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 
 	public HitTracker search(SearchQuery inQuery)
 	{
+		if( isReIndexing() )
+		{
+			int timeout = 0;
+			while(isReIndexing())
+			{
+				try
+				{
+					Thread.sleep(250);
+				}
+				catch( InterruptedException ex)
+				{
+					log.error(ex);
+				}
+				timeout++;
+				if( timeout > 100)
+				{
+					throw new OpenEditException("timeout on search while reindexing" + getSearchType() );
+				}
+			}
+		}
 		String json = null;
 		try
 		{
@@ -185,87 +215,97 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	{
 		if( !isConnected())
 		{
-			fieldConnected =  true;
-			AdminClient admin = getClientPool().getClient().admin();
-			boolean reindex = false;
-			try
+			synchronized (this)
 			{
-
-				String cluster = toId(getCatalogId());
-				IndicesExistsRequest existsreq = Requests.indicesExistsRequest(cluster);
-				IndicesExistsResponse res = admin.indices().exists(existsreq).actionGet();
-				
-				if( !res.exists() )
+				if( isConnected() )
 				{
-					try
-					{
-						
-						XContentBuilder jsonBuilder =  XContentFactory.jsonBuilder(); 
-						
-						CreateIndexResponse newindexres = admin.indices().prepareCreate(cluster)
-			            .setSettings(ImmutableSettings.settingsBuilder().loadFromSource(jsonBuilder
-			                .startObject()
-			                    .startObject("analysis")
-			                        .startObject("filter")
-			                            .startObject("snowball")
-			                                .field("type", "snowball")
-			                                .field("language", "English")
-			                            .endObject()
-			                        .endObject()
-			                        .startObject("analyzer")
-			                            .startObject("lowersnowball")
-			                                .field("type", "custom")
-			                                .field("tokenizer", "standard")
-//			                                .field("tokenizer", "keyword")
-			                                .field("filter", new String[]{"lowercase","snowball"})
-//			                                .field("filter", new String[]{"lowercase"})
-			                            .endObject()
-			                        .endObject()			                        
-			                    .endObject()
-			                .endObject().string()))
-			            .execute().actionGet();
-						
-//						CreateIndexRequest newindex = new CreateIndexRequest(cluster);
-//						CreateIndexResponse newindexres = admin.indices().create(newindex).actionGet();
-						if( newindexres.acknowledged() )
-						{
-							log.info("index created " + cluster);
-						}
-					}
-					catch( RemoteTransportException exists)
-					{
-						//silent error
-						log.debug("Index already exists " +  cluster);
-					}
+					return;
 				}
-				XContentBuilder source = buildMapping();
-				log.info(cluster + "/" + getSearchType() + "/_mapping' -d '" + source.string() + "'");
-				PutMappingRequest  req = Requests.putMappingRequest( cluster ).type(getSearchType());
-				req.source(source);
-				PutMappingResponse pres = getClientPool().getClient().admin().indices().putMapping(req).actionGet(); 
-				if( pres.acknowledged() )
-				{
-					log.info("mapping applied " + getSearchType());
-					reindex = true;
-				}
-			}
-			catch( Exception ex)
-			{
-				log.error("index could not be created ", ex);
-			}
-
-
-			if(reindex)
-			{
+				AdminClient admin = getClientPool().getClient().admin();
+				boolean reindex = false;
 				try
 				{
-					reIndexAll();
+					String cluster = toId(getCatalogId());
+					IndicesExistsRequest existsreq = Requests.indicesExistsRequest(cluster);
+					IndicesExistsResponse res = admin.indices().exists(existsreq).actionGet();
+					
+					if( !res.exists() )
+					{
+						try
+						{
+							XContentBuilder jsonBuilder =  XContentFactory.jsonBuilder(); 
+							
+							CreateIndexResponse newindexres = admin.indices().prepareCreate(cluster)
+				            .setSettings(ImmutableSettings.settingsBuilder().loadFromSource(jsonBuilder
+				                .startObject()
+				                    .startObject("analysis")
+				                        .startObject("filter")
+				                            .startObject("snowball")
+				                                .field("type", "snowball")
+				                                .field("language", "English")
+				                            .endObject()
+				                        .endObject()
+				                        .startObject("analyzer")
+				                            .startObject("lowersnowball")
+				                                .field("type", "custom")
+				                                .field("tokenizer", "standard")
+	//			                                .field("tokenizer", "keyword")
+				                                .field("filter", new String[]{"lowercase","snowball"})
+	//			                                .field("filter", new String[]{"lowercase"})
+				                            .endObject()
+				                        .endObject()			                        
+				                    .endObject()
+				                .endObject().string()))
+				            .execute().actionGet();
+							
+	//						CreateIndexRequest newindex = new CreateIndexRequest(cluster);
+	//						CreateIndexResponse newindexres = admin.indices().create(newindex).actionGet();
+							if( newindexres.acknowledged() )
+							{
+								log.info("index created " + cluster);
+							}
+						}
+						catch( RemoteTransportException exists)
+						{
+							//silent error
+							log.debug("Index already exists " +  cluster);
+						}
+					}
+	
+					admin.cluster().prepareHealth().setWaitForNodes("1").execute().actionGet();
+					log.info("Node is ready for " + getSearchType() );
+	
+					
+					XContentBuilder source = buildMapping();
+					log.info(cluster + "/" + getSearchType() + "/_mapping' -d '" + source.string() + "'");
+					PutMappingRequest  req = Requests.putMappingRequest( cluster ).type(getSearchType());
+					req.source(source);
+					PutMappingResponse pres = getClientPool().getClient().admin().indices().putMapping(req).actionGet(); 
+					if( pres.acknowledged() )
+					{
+						log.info("mapping applied " + getSearchType());
+						reindex = true;
+					}
 				}
 				catch( Exception ex)
 				{
-					log.error("Problem with reindex", ex);
+					log.error("index could not be created ", ex);
 				}
-				
+	
+	
+				if(reindex)
+				{
+					try
+					{
+						fieldConnected =  true;
+						reIndexAll();
+					}
+					catch( Exception ex)
+					{
+						log.error("Problem with reindex", ex);
+					}
+					
+				}
 			}
 		}
 	}
