@@ -8,6 +8,10 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dom4j.Element;
+import org.elasticsearch.action.admin.indices.flush.FlushRequest;
+import org.elasticsearch.action.admin.indices.flush.FlushResponse;
+import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.client.Requests;
 import org.entermedia.elasticsearch.SearchHitData;
 import org.entermedia.locks.Lock;
 import org.openedit.Data;
@@ -127,6 +131,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			processor.process();
 			updateIndex(buffer,null);
 			log.info("reindexed " + processor.getExecCount());
+			flushChanges();			
 		}
 		finally
 		{

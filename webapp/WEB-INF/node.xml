@@ -1,8 +1,8 @@
 <node id="singlenode" name="Default Single Node">
 
     <property id="cluster.name">entermedia-testcb</property>
-     <property id="gateway.type">fs</property>
-     <property id="gateway.fs.location">./elastic/gateway</property>
+     <property id="index.number_of_replicas">1</property>
+     <property id="index.number_of_shards">5</property>
      <!-- 
      <property name="index.store.type">mmapfs</property>
      <property name="index.store.fs.mmapfs.enabled">true</property>

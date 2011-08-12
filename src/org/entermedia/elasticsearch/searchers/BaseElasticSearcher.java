@@ -12,6 +12,8 @@ import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.exists.IndicesExistsResponse;
+import org.elasticsearch.action.admin.indices.flush.FlushRequest;
+import org.elasticsearch.action.admin.indices.flush.FlushResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.index.IndexResponse;
@@ -258,8 +260,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				                .endObject().string()))
 				            .execute().actionGet();
 							
-	//						CreateIndexRequest newindex = new CreateIndexRequest(cluster);
-	//						CreateIndexResponse newindexres = admin.indices().create(newindex).actionGet();
 							if( newindexres.acknowledged() )
 							{
 								log.info("index created " + cluster);
@@ -271,21 +271,19 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 							log.debug("Index already exists " +  cluster);
 						}
 					}
-	
-					admin.cluster().prepareHealth().setWaitForNodes("1").execute().actionGet();
-					log.info("Node is ready for " + getSearchType() );
-	
 					
 					XContentBuilder source = buildMapping();
 					log.info(cluster + "/" + getSearchType() + "/_mapping' -d '" + source.string() + "'");
 					PutMappingRequest  req = Requests.putMappingRequest( cluster ).type(getSearchType());
 					req.source(source);
-					PutMappingResponse pres = getClientPool().getClient().admin().indices().putMapping(req).actionGet(); 
+					PutMappingResponse pres = admin.indices().putMapping(req).actionGet(); 
 					if( pres.acknowledged() )
 					{
 						log.info("mapping applied " + getSearchType());
 						reindex = true;
 					}
+					admin.cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+					log.info("Node is ready for " + getSearchType() );
 				}
 				catch( Exception ex)
 				{
@@ -622,6 +620,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				XContentBuilder content = XContentFactory.jsonBuilder().startObject();
 				updateIndex(content, data, details);
 				content.endObject();
+				log.info(content.string());
 				IndexResponse response = builder.setSource(content).setRefresh(true).execute().actionGet();
 			}
 			catch (Exception ex)
@@ -787,5 +786,16 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	public HitTracker checkCurrent(WebPageRequest inReq, HitTracker inTracker) throws OpenEditException
 	{
 		return inTracker;
+	}
+	
+	protected boolean flushChanges()
+	{
+		FlushRequest  req = Requests.flushRequest( toId(getCatalogId()) );
+		FlushResponse res = getClient().admin().indices().flush(req).actionGet();
+		if( res.successfulShards() > 0)
+		{
+			return true;
+		}
+		return false;
 	}
 }
