@@ -702,7 +702,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	{
 		log.info("Deleted all records database " + getSearchType() );
 		DeleteByQueryRequestBuilder delete = getClient().prepareDeleteByQuery(toId(getCatalogId()));
-
+		delete.setTypes(getSearchType());
 		delete.setQuery(new MatchAllQueryBuilder()).execute().actionGet();
 	}
 
