@@ -9,6 +9,7 @@ import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.DateTools.Resolution;
 import org.openedit.data.PropertyDetail;
 import org.openedit.data.lucene.NumberUtils;
+import org.openedit.util.DateStorageUtil;
 
 import com.openedit.hittracker.SearchQuery;
 import com.openedit.hittracker.Term;
@@ -92,7 +93,7 @@ public class ElasticSearchQuery extends SearchQuery
 		};
 		term.setOperation("beforedate");
 		term.setDetail(inField);
-		term.setValue(getDateFormat().format(inDate));
+		term.setValue(DateStorageUtil.getStorageUtil().formatForStorage(inDate));
 		getTerms().add(term);
 		return term;
 	}

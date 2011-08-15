@@ -239,5 +239,27 @@
 
 	</bean>
 
+	<bean id="elasticUploadQueueSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" singleton="false">
+		<property name="pageManager">
+			<ref bean="pageManager" />
+		</property>
+		<property name="xmlArchive">
+			<ref bean="xmlArchive" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="clientPool">
+			<ref bean="clientPool" />
+		</property>
+		<property name="lockManager">
+			<ref bean="lockManager" />
+		</property>		
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>
 
+		<!-- property name="prefix"><value>assets</value></property-->
+
+	</bean>
 </beans>

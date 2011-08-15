@@ -530,8 +530,19 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			else if( inDetail.isDate())
 			{
-				Date date = DateStorageUtil.getStorageUtil().parseFromStorage(valueof);
-				find = QueryBuilders.termQuery(fieldid, date);
+				if( "beforedate".equals(inTerm.getOperation()))
+				{
+					Date date = DateStorageUtil.getStorageUtil().parseFromStorage(valueof);
+					
+					find = QueryBuilders.rangeQuery(inDetail.getId())
+		                .from(new Date(0))
+		                .to(date);	
+				}
+				else
+				{
+					Date date = DateStorageUtil.getStorageUtil().parseFromStorage(valueof);
+					find = QueryBuilders.termQuery(fieldid, date);
+				}
 			}
 			else if( inDetail.isDataType("number") )
 			{
