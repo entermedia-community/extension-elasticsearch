@@ -347,6 +347,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				jsonproperties = jsonproperties.field("type", "string");					
 				jsonproperties = jsonproperties.field("index", "analyzed");
 				jsonproperties = jsonproperties.field("store", "no");
+				jsonproperties = jsonproperties.field("include_in_all", "false");
 
 				continue;
 			}
@@ -383,14 +384,15 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				jsonproperties = jsonproperties.field("store", "no");
 			}
-			if( detail.isKeyword())
-			{
-				jsonproperties = jsonproperties.field("include_in_all", "true");
-			}
-			else
-			{
-//				jsonproperties = jsonproperties.field("include_in_all", "false");
-			}
+//this does not work yet			
+//			if( detail.isKeyword())
+//			{
+//				jsonproperties = jsonproperties.field("include_in_all", "true");
+//			}
+//			else
+//			{
+				jsonproperties = jsonproperties.field("include_in_all", "false");
+//			}
 
 			jsonproperties = jsonproperties.endObject();
 		}
