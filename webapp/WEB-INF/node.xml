@@ -12,5 +12,5 @@
      <property id="path.logs">./elastic/logs</property>
      <property id="path.work">./elastic/work</property>
 
-	 <property id="discovery.zen.ping.unicast.hosts">1.1.13.3:9300</property>
+	 <!-- property id="discovery.zen.ping.unicast.hosts">1.1.13.3:9300</property -->
 </node>

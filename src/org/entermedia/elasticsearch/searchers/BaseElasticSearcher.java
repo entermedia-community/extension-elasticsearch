@@ -339,7 +339,18 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		{
 			PropertyDetail detail = (PropertyDetail) i.next();
 			jsonproperties  = jsonproperties.startObject(detail.getId());
-			
+
+			if("description".equals( detail.getId() ) )
+			{
+				String analyzer = "lowersnowball";
+				jsonproperties = jsonproperties.field("analyzer", analyzer);
+				jsonproperties = jsonproperties.field("type", "string");					
+				jsonproperties = jsonproperties.field("index", "analyzed");
+				jsonproperties = jsonproperties.field("store", "no");
+
+				continue;
+			}
+
 			if( detail.isDate())
 			{
 				jsonproperties = jsonproperties.field("type", "date");
@@ -363,9 +374,14 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				jsonproperties = jsonproperties.field("index", indextype);
 				jsonproperties = jsonproperties.field("type", "string");					
 			}
+			
 			if( detail.isStored())
 			{
 				jsonproperties = jsonproperties.field("store", "yes");
+			}
+			else
+			{
+				jsonproperties = jsonproperties.field("store", "no");
 			}
 			if( detail.isKeyword())
 			{
@@ -373,7 +389,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			else
 			{
-				jsonproperties = jsonproperties.field("include_in_all", "false");
+//				jsonproperties = jsonproperties.field("include_in_all", "false");
 			}
 
 			jsonproperties = jsonproperties.endObject();
@@ -506,9 +522,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			String fieldid = inDetail.getId();
 			if( fieldid.equals("description"))
 			{
-				fieldid = "_all";
-				
+				//fieldid = "_all";
 				valueof  = valueof.toLowerCase();
+				find = QueryBuilders.textQuery(fieldid, valueof);
+				return find;
 			}
 			
 			if( valueof.equals("*"))

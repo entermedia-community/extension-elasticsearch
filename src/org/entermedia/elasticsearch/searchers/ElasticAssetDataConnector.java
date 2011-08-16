@@ -165,10 +165,10 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 //		fullDesc.append(' ');
 		String keywords = asTokens(asset.getKeywords());
 		fullDesc.append(keywords);
-		
-		populateListKeywords(fullDesc, asset, inDetails);
-		// add a bunch of stuff to the full text field
 		fullDesc.append(' ');
+		
+		populateKeywords(fullDesc, asset, inDetails);
+		// add a bunch of stuff to the full text field
 		for (Iterator iter = inCategories.iterator(); iter.hasNext();)
 		{
 			Category cat = (Category) iter.next();
@@ -183,7 +183,6 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			fullDesc.append(dirs[i]);
 			fullDesc.append(' ');
 		}
-		
 		
 		String result = fullDesc.toString();//fixInvalidCharacters(fullDesc.toString());
 		return result;
@@ -202,12 +201,12 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		}
 		return buffer.toString();
 	}
-	protected void populateListKeywords(StringBuffer inFullDesc, Asset inAsset, PropertyDetails inDetails)
+	protected void populateKeywords(StringBuffer inFullDesc, Asset inAsset, PropertyDetails inDetails)
 	{
-		for (Iterator iter = inDetails.getDetails().iterator(); iter.hasNext();)
+		for (Iterator iter = inDetails.findKeywordProperties().iterator(); iter.hasNext();)
 		{
 			PropertyDetail det = (PropertyDetail) iter.next();
-			if (det.isList() && det.isKeyword())
+			if (det.isList())
 			{
 				String prop = inAsset.getProperty(det.getId());
 				if (prop != null)
@@ -218,6 +217,15 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 						inFullDesc.append(data.getName());
 						inFullDesc.append(' ');
 					}
+				}
+			}
+			else
+			{
+				String val = inAsset.getProperty(det.getId());
+				if( val != null)
+				{
+					inFullDesc.append(val);
+					inFullDesc.append(' ');
 				}
 			}
 		}

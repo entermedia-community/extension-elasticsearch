@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.openedit.data.Searcher;
 import org.openedit.entermedia.Asset;
 import org.openedit.entermedia.BaseEnterMediaTest;
+import org.openedit.entermedia.EnterMedia;
 import org.openedit.entermedia.search.BaseAssetSearcher;
 
 import com.openedit.WebPageRequest;
@@ -63,5 +64,11 @@ public class ElasticAssetTest  extends BaseEnterMediaTest
 
 		
 	}
-	
+
+	public EnterMedia getEnterMedia(String inApplicationId)
+	{
+		EnterMedia media = (EnterMedia)getStaticFixture().getModuleManager().getBean(inApplicationId, "enterMedia");
+		media.setApplicationId(inApplicationId);
+		return media;
+	}
 }
