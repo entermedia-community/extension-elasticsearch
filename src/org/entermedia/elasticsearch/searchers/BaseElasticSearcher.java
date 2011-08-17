@@ -348,6 +348,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				jsonproperties = jsonproperties.field("index", "analyzed");
 				jsonproperties = jsonproperties.field("store", "no");
 				jsonproperties = jsonproperties.field("include_in_all", "false");
+				jsonproperties = jsonproperties.endObject();
 
 				continue;
 			}
