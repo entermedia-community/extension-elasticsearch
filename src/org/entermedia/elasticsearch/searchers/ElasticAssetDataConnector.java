@@ -25,6 +25,8 @@ import org.openedit.repository.ContentItem;
 
 import com.openedit.OpenEditException;
 import com.openedit.hittracker.HitTracker;
+import com.openedit.page.Page;
+import com.openedit.util.IntCounter;
 
 public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements DataConnector
 {
@@ -299,5 +301,15 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			fieldXmlDataArchive.setPathToData(getPathToData());
 		}
 		return fieldXmlDataArchive;
+	}
+	
+	protected IntCounter getIntCounter()
+	{
+		if (fieldIntCounter == null)
+		{
+			fieldIntCounter = super.getIntCounter();
+			fieldIntCounter.setLabelName(getSearchType() + "IdCount");
+		}
+		return fieldIntCounter;
 	}
 }
