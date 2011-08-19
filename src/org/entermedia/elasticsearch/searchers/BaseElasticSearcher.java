@@ -653,7 +653,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				content.endObject();
 				log.info(content.string());
 				IndexResponse response = builder.setSource(content).setRefresh(true).execute().actionGet();
-				data.setId(response.getId());
+				if( response.getId() != null)
+				{
+					data.setId(response.getId());
+				}
 			}
 			catch (Exception ex)
 			{
