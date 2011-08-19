@@ -13,6 +13,38 @@ curl -XGET 'http://localhost:9200/_cluster/health?pretty=true'
 curl -XGET 'http://localhost:9200/_cluster/state?pretty=true' | more
 
 curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search' -d '
+"query" : {
+    "bool" : {
+      "must" : [ {
+        "text" : {
+          "description" : {
+            "query" : "test101",
+            "type" : "boolean"
+          }
+        }
+      }, {
+        "bool" : {
+          "should" : [ {
+            "term" : {
+              "viewasset" : "true"
+            }
+          }, {
+            "term" : {
+              "viewasset" : "administrators"
+            }
+          }, {
+            "term" : {
+              "viewasset" : "admin"
+            }
+          } ]
+        }
+      } ]
+    }
+  }
+}' | python -mjson.tool
+
+
+
 {"query" : 
 {"bool" :   {
         "must" : 
