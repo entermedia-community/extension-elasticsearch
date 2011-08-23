@@ -48,11 +48,11 @@ public class ElasticHitIterator implements Iterator
 	 */
 	public boolean hasNext()
 	{
-		if( fieldCurrentLocation + 1 >= getElasticHitTracker().size() )
+		if( fieldCurrentLocation < getElasticHitTracker().size() )
 		{
-			return false;
+			return true;
 		}
-		return true;
+		return false;
 	}
 
 	/**
@@ -60,8 +60,9 @@ public class ElasticHitIterator implements Iterator
 	 */
 	public Object next()
 	{
+		Object next = getElasticHitTracker().get(fieldCurrentLocation);
 		fieldCurrentLocation++;
-		return getElasticHitTracker().get(fieldCurrentLocation);
+		return next;
 	}
 
 	/**

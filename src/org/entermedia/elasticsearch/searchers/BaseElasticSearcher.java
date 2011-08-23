@@ -324,13 +324,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				{
 					log.error("index could not be created ", ex);
 				}
-	
-	
 				if(reindex)
 				{
 					try
 					{
-						fieldConnected =  true;
 						reIndexAll();
 					}
 					catch( Exception ex)
@@ -339,6 +336,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 					}
 					
 				}
+				fieldConnected =  true;
 			}
 		}
 	}
