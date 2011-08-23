@@ -9,10 +9,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.openedit.Data;
+import org.openedit.data.BaseData;
 import org.openedit.data.DataArchive;
 import org.openedit.data.PropertyDetail;
 import org.openedit.data.PropertyDetails;
@@ -311,5 +313,21 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			fieldIntCounter.setLabelName(getSearchType() + "IdCount");
 		}
 		return fieldIntCounter;
+	}
+
+	
+	public Object searchByField(String inField, String inValue)
+	{
+		if( inField.equals("id") || inField.equals("_id"))
+		{
+			GetResponse response = getClient().prepareGet(toId(getCatalogId()), getSearchType(), inValue).execute().actionGet();
+			if(!response.exists())
+			{
+				return null;
+			}
+			String path = (String)response.getSource().get("sourcepath");
+			return getMediaArchive().getAssetArchive().getAssetBySourcePath(path);
+		}
+		return super.searchByField(inField, inValue);
 	}
 }

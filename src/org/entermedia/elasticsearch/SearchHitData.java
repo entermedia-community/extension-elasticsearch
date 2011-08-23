@@ -33,6 +33,11 @@ public class SearchHitData implements Data
 	}
 	public String get(String inId)
 	{
+		if( inId.equals("id") || inId.equals("_id"))
+		{
+			return getSearchHit().getId();
+		}
+
 		SearchHitField field = getSearchHit().field(inId);
 		if( field != null)
 		{
@@ -48,7 +53,6 @@ public class SearchHitData implements Data
 			String val = String.valueOf(found);
 			return val;
 		}
-		//if( inId.equals("id"))
 		return null;
 	}
 

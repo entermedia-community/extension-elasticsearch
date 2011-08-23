@@ -26,6 +26,14 @@ public class ElasticAssetTest  extends BaseEnterMediaTest
 		Searcher searcher = getMediaArchive().getSearcherManager().getSearcher("entermedia/catalogs/testcatalog", "asset");
 		Asset data = (Asset)searcher.createNewData();
 		assertNotNull("data is NULL!", data);
+		data.setName("newtestdata");
+		data.setSourcePath("junk/testing");
+		searcher.saveData(data, null);
+		
+		Asset one = (Asset)searcher.searchById(data.getId());
+		assertNotNull(one);
+		
+		
 	}
 
 	public void testAssetLoad()

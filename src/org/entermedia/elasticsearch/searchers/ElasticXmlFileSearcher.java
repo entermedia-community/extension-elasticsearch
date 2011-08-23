@@ -8,14 +8,10 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dom4j.Element;
-import org.elasticsearch.action.admin.indices.flush.FlushRequest;
-import org.elasticsearch.action.admin.indices.flush.FlushResponse;
-import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
-import org.elasticsearch.client.Requests;
-import org.entermedia.elasticsearch.SearchHitData;
 import org.entermedia.locks.Lock;
 import org.openedit.Data;
 import org.openedit.data.DataArchive;
+import org.openedit.data.PropertyDetails;
 import org.openedit.data.XmlDataArchive;
 import org.openedit.data.XmlFileSearcher;
 import org.openedit.repository.ContentItem;
@@ -200,56 +196,68 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	//This is the main APU for saving and updates to the index
 	public void saveAllData(Collection<Data> inAll, User inUser)
 	{
-		List<Data> toindex = new ArrayList<Data>(inAll.size());
+		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
+
 		for (Object object: inAll)
 		{
 			Data data = (Data)object;
-			if(data.getId() == null)
-			{
-				data.setId(nextId());
-			}		
 			Lock lock = null;
 			try
 			{
+				updateElasticIndex(details, data);
+
 				lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + data.getSourcePath(),"admin");
 				getDataArchive().saveData(data, inUser);
-				toindex.add(data);
 			}
 			catch(Throwable ex)
 			{
 				log.error("problem saving " + data.getId() , ex);
+				throw new OpenEditException(ex);
 			}
 			finally
 			{
 				getLockManager().release(getCatalogId(), lock);
 			}
 		}
-		updateIndex(toindex, inUser);
 	}
 
 	public Object searchByField(String inField, String inValue)
 	{
 		Object hit =  super.searchByField(inField, inValue);
 		//load up a real object?
-		if( hit instanceof SearchHitData)
+		String sourcepath = null;
+		String id = null;
+		
+		if( hit instanceof Data)
 		{
-			SearchHitData newdata = (SearchHitData)hit;
+			Data newdata = (Data)hit;
 			if( newdata.getSourcePath() == null)
 			{
 				log.info("Source path is null on search results "  +getSearchType() );
 				return null;
 			}
-			String path = getPathToData() + "/" + newdata.getSourcePath() + "/" + getSearchType() + ".xml";
-			XmlFile content = getDataArchive().getXmlArchive().getXml(path, getSearchType());
-			//log.info( newdata.getProperties() );
-			Element element = content.getElementById(newdata.getId());
-			
-			ElementData realdata = (ElementData)createNewData();
-			realdata.setElement(element);
-			realdata.setSourcePath(newdata.getSourcePath());
-
-			return realdata;
+			sourcepath = newdata.getSourcePath();
+			id = newdata.getId();
 		}
-		return hit;
+		else
+		{
+//			Map newdata = (Map)hit;
+//			sourcepath = (String)newdata.get("sourcepath");
+//			id = (String)newdata.get("_id");
+		}
+		String path = getPathToData() + "/" + sourcepath + "/" + getSearchType() + ".xml";
+		XmlFile content = getDataArchive().getXmlArchive().getXml(path, getSearchType());
+		//log.info( newdata.getProperties() );
+		if( !content.isExist() )
+		{
+			log.error("Missing data file " + path);
+		}
+		Element element = content.getElementById(id);
+		
+		ElementData realdata = (ElementData)createNewData();
+		realdata.setElement(element);
+		realdata.setSourcePath(sourcepath);
+
+		return realdata;
 	}
 }

@@ -12,6 +12,21 @@ public class IndexElasticSearcher extends BaseElasticSearcher
 	public void reIndexAll() throws OpenEditException
 	{
 		//there is not reindex step since it is only in memory
+		if( isReIndexing())
+		{
+			return;
+		}
+		try
+		{
+			setReIndexing(true);
+			deleteAll(null); //This only deleted the index
+		}
+		finally
+		{
+			setReIndexing(false);
+		}
+			
+		
 	}
 
 	public void saveAllData(Collection<Data> inAll, User inUser)

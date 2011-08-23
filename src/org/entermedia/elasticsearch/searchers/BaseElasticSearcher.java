@@ -16,6 +16,7 @@ import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
@@ -40,9 +41,11 @@ import org.elasticsearch.transport.RemoteTransportException;
 import org.entermedia.elasticsearch.ClientPool;
 import org.entermedia.elasticsearch.ElasticHitTracker;
 import org.entermedia.elasticsearch.ElasticSearchQuery;
+import org.entermedia.elasticsearch.SearchHitData;
 import org.entermedia.locks.Lock;
 import org.entermedia.locks.LockManager;
 import org.openedit.Data;
+import org.openedit.data.BaseData;
 import org.openedit.data.BaseSearcher;
 import org.openedit.data.PropertyDetail;
 import org.openedit.data.PropertyDetails;
@@ -184,10 +187,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 
 			json = search.toString();
 
-			search.setFrom(0).setSize(60).setExplain(true);
-
-			SearchResponse results = search.execute().actionGet();
-			ElasticHitTracker hits = new ElasticHitTracker(results);
+			ElasticHitTracker hits = new ElasticHitTracker(search);
 			hits.setIndexId(getIndexId());
 			hits.setSearchQuery(inQuery);
 
@@ -338,8 +338,16 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		for (Iterator i = props.iterator() ; i.hasNext();)
 		{
 			PropertyDetail detail = (PropertyDetail) i.next();
-			jsonproperties  = jsonproperties.startObject(detail.getId());
 
+			if("_id".equals( detail.getId() ) || "id".equals( detail.getId() ) )
+			{
+				jsonproperties  = jsonproperties.startObject("_id");
+				jsonproperties = jsonproperties.field("index", "not_analyzed");
+				jsonproperties = jsonproperties.field("type", "string");					
+				jsonproperties = jsonproperties.endObject();
+				continue;
+			}
+			jsonproperties  = jsonproperties.startObject(detail.getId());
 			if("description".equals( detail.getId() ) )
 			{
 				String analyzer = "lowersnowball";
@@ -530,6 +538,12 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				find = QueryBuilders.textQuery(fieldid, valueof);
 				return find;
 			}
+			if(fieldid.equals("id"))
+			{
+			//	valueof  = valueof.toLowerCase();				
+				find = QueryBuilders.termQuery("_id", valueof);
+				return find;
+			}
 			
 			if( valueof.equals("*"))
 			{
@@ -645,26 +659,44 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 
 		for (Data data : inBuffer)
 		{
-			try
-			{
-				IndexRequestBuilder builder = getClient().prepareIndex(catid, getSearchType(), data.getId());
-				XContentBuilder content = XContentFactory.jsonBuilder().startObject();
-				updateIndex(content, data, details);
-				content.endObject();
-				log.info(content.string());
-				IndexResponse response = builder.setSource(content).setRefresh(true).execute().actionGet();
-				if( response.getId() != null)
-				{
-					data.setId(response.getId());
-				}
-			}
-			catch (Exception ex)
-			{
-				throw new OpenEditException(ex);
-			}
+			updateElasticIndex(details, data);
 		}
 		log.info("Saved "  + inBuffer.size() + " records into " + toId(getCatalogId()) + "/" + getSearchType() );
 		inBuffer.clear();
+	}
+
+	protected void updateElasticIndex(PropertyDetails details, Data data)
+	{
+		try
+		{
+			String catid = toId(getCatalogId() );
+			IndexRequestBuilder builder = null;
+			if( data.getId() == null)
+			{
+				builder = getClient().prepareIndex(catid, getSearchType());
+			}
+			else
+			{
+				builder = getClient().prepareIndex(catid, getSearchType(), data.getId());
+			}
+			XContentBuilder content = XContentFactory.jsonBuilder().startObject();
+			updateIndex(content, data, details);
+			content.endObject();
+			log.info(content.string());
+			IndexResponse response = builder.setSource(content).setRefresh(true).execute().actionGet();
+			if( response.getId() != null)
+			{
+				data.setId(response.getId());
+			}
+		}
+		catch (Exception ex)
+		{
+			if( ex instanceof OpenEditException)
+			{
+				throw (OpenEditException)ex;
+			}
+			throw new OpenEditException(ex);
+		}
 	}
 
 	protected void updateIndex(XContentBuilder inContent, Data inData, PropertyDetails inDetails)
@@ -672,10 +704,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		for (Iterator iterator = inDetails.findIndexProperties().iterator(); iterator.hasNext();)
 		{
 			PropertyDetail detail = (PropertyDetail) iterator.next();
-			if( "_id".equals( detail.getId() ) )
-			{
-				continue;
-			}
 			String value = inData.get(detail.getId());
 			if( value != null && value.length() == 0)
 			{
@@ -683,6 +711,16 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			try
 			{
+				if( "_id".equals( detail.getId() ) || "id".equals(detail.getId() ) )
+				{
+//					if( value != null)
+//					{
+//						inContent.field("_id", value);
+//						continue;
+//					}
+					continue;
+				}
+
 				if( detail.isDate())
 				{
 					if( value != null)
@@ -753,13 +791,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	//Base class only updated the index in bulk
 	public void saveAllData(Collection<Data> inAll, User inUser)
 	{
-		for(Data data:inAll)
-		{
-			if( data.getId() == null)
-			{
-				data.setId(nextId());
-			}
-		}
 		updateIndex(inAll, inUser);
 	}
 
@@ -774,6 +805,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		{
 			getLockManager().release(getCatalogId(), lock);
 		}
+//		throw new OpenEditException("Should not call next ID");
 	}
 
 	protected IntCounter getIntCounter()
@@ -832,5 +864,16 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			return true;
 		}
 		return false;
+	}
+	public Object searchByField(String inField, String inValue)
+	{
+		if( inField.equals("id") || inField.equals("_id"))
+		{
+			GetResponse response = getClient().prepareGet(toId(getCatalogId()), getSearchType(), inValue).execute().actionGet();
+			Data data = new BaseData(response.getSource());
+			data.setId(inValue);
+			return data;
+		}
+		return super.searchByField(inField, inValue);
 	}
 }

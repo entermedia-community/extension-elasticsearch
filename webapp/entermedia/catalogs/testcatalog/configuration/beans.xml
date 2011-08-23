@@ -2,5 +2,8 @@
 
 	<bean id="assetSearcher" bean="elasticAssetSearcher" /> 
 	<bean id="approvalsSearcher" bean="elasticXmlFileSearcher" /> 
+	<bean id="userprofileSearcher" bean="elasticUserProfileSearcher" /> 
+	<bean id="conversiontaskSearcher" bean="elasticConversionTaskSearcher" /> 
+	<bean id="uploadqueueSearcher" bean="elasticUploadQueueSearcher" />
 	     
 </beans>

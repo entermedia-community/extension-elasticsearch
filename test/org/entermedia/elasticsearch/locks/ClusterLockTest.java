@@ -16,7 +16,25 @@ import org.openedit.util.DateStorageUtil;
 
 public class ClusterLockTest extends LockTest
 {
-	
+	//Had some problems with the very first lock not being saved ok
+	public void testLock()
+	{
+		LockManager manager = (LockManager)getStaticFixture().getModuleManager().getBean("lockManager");
+		
+		String path = "/entermedia/catalogs/testcatalog/assets/users/101/index.html";
+		String catid = "entermedia/catalogs/testcatalog";
+		
+		Lock lock = manager.lock(catid, path, "admin");
+		assertNotNull(lock);
+
+		manager.releaseAll(catid, path);
+		lock = manager.loadLock(catid, path);
+		assertNull(lock);
+
+		//clear
+		//manager.lockIfPossible(inCatId, inPath, inOwnerId)
+		//manager.release(inCatId, inPath, inOwnerId)
+	}
 	public void testLockOrder()
 	{
 		//create a bunch of locks out of order make sure the come back in the correct order

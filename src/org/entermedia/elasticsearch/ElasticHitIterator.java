@@ -25,22 +25,22 @@ import com.openedit.OpenEditRuntimeException;
  */
 public class ElasticHitIterator implements Iterator
 {
-	protected Iterator fieldSearchHitIterator;
+	protected ElasticHitTracker fieldElasticHitTracker;
+	int fieldCurrentLocation = 0;
 	
-	public Iterator getSearchHitIterator()
+	public ElasticHitIterator(ElasticHitTracker inTracker)
 	{
-		return fieldSearchHitIterator;
+		setElasticHitTracker(inTracker);
 	}
-	public void setSearchHitIterator(Iterator inSearchHitIterator)
+
+	protected ElasticHitTracker getElasticHitTracker()
 	{
-		fieldSearchHitIterator = inSearchHitIterator;
+		return fieldElasticHitTracker;
 	}
-	public ElasticHitIterator(Iterator inIter)
+
+	protected void setElasticHitTracker(ElasticHitTracker inElasticHitTracker)
 	{
-		setSearchHitIterator(inIter);
-	}
-	public ElasticHitIterator()
-	{
+		fieldElasticHitTracker = inElasticHitTracker;
 	}
 
 	/**
@@ -48,7 +48,11 @@ public class ElasticHitIterator implements Iterator
 	 */
 	public boolean hasNext()
 	{
-		return getSearchHitIterator().hasNext();
+		if( fieldCurrentLocation + 1 >= getElasticHitTracker().size() )
+		{
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -56,8 +60,8 @@ public class ElasticHitIterator implements Iterator
 	 */
 	public Object next()
 	{
-		SearchHit hit = (SearchHit)getSearchHitIterator().next();
-		return new SearchHitData(hit);
+		fieldCurrentLocation++;
+		return getElasticHitTracker().get(fieldCurrentLocation);
 	}
 
 	/**
@@ -65,6 +69,6 @@ public class ElasticHitIterator implements Iterator
 	 */
 	public void remove()
 	{
-		getSearchHitIterator().remove();
+		throw new UnsupportedOperationException();
 	}
 }
