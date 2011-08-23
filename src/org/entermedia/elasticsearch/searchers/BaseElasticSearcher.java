@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.IndicesExistsRequest;
 import org.elasticsearch.action.admin.indices.exists.IndicesExistsResponse;
@@ -16,9 +17,10 @@ import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
+import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.Client;
@@ -27,6 +29,9 @@ import org.elasticsearch.client.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.client.action.deletebyquery.DeleteByQueryRequestBuilder;
 import org.elasticsearch.client.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.action.search.SearchRequestBuilder;
+import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.metadata.IndexMetaData;
+import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -41,7 +46,6 @@ import org.elasticsearch.transport.RemoteTransportException;
 import org.entermedia.elasticsearch.ClientPool;
 import org.entermedia.elasticsearch.ElasticHitTracker;
 import org.entermedia.elasticsearch.ElasticSearchQuery;
-import org.entermedia.elasticsearch.SearchHitData;
 import org.entermedia.locks.Lock;
 import org.entermedia.locks.LockManager;
 import org.openedit.Data;
@@ -227,7 +231,15 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				boolean reindex = false;
 				try
 				{
-					String cluster = toId(getCatalogId());
+					String indexid = toId(getCatalogId());
+					String cluster = indexid;
+
+					ClusterHealthResponse health = admin.cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet(); //yellow works when you only have one node
+					if( health.timedOut() )
+					{
+						throw new OpenEditException("Could not get yellow status");
+					}
+					
 					IndicesExistsRequest existsreq = Requests.indicesExistsRequest(cluster);
 					IndicesExistsResponse res = admin.indices().exists(existsreq).actionGet();
 					
@@ -271,18 +283,41 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 							log.debug("Index already exists " +  cluster);
 						}
 					}
-					
-					XContentBuilder source = buildMapping();
-					log.info(cluster + "/" + getSearchType() + "/_mapping' -d '" + source.string() + "'");
-					PutMappingRequest  req = Requests.putMappingRequest( cluster ).type(getSearchType());
-					req.source(source);
-					PutMappingResponse pres = admin.indices().putMapping(req).actionGet(); 
-					if( pres.acknowledged() )
+
+					ClusterState cs = admin.cluster().prepareState().setFilterIndices(indexid).execute().actionGet().getState(); 
+					IndexMetaData data = cs.getMetaData().index(indexid);
+					boolean runmapping = true;
+					if( data != null)
 					{
-						log.info("mapping applied " + getSearchType());
-						reindex = true;
+						if( data.getMappings() != null )
+						{
+							MappingMetaData fields = data.getMappings().get(getSearchType());
+							if( fields != null && fields.source() != null)
+							{
+								runmapping = false;
+							}
+						}
 					}
-					admin.cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+					if( runmapping )
+					{
+						XContentBuilder source = buildMapping();
+						log.info(cluster + "/" + getSearchType() + "/_mapping' -d '" + source.string() + "'");
+						PutMappingRequest  req = Requests.putMappingRequest( cluster ).type(getSearchType());
+						req.source(source);
+						PutMappingResponse pres = admin.indices().putMapping(req).actionGet(); 
+						if( pres.acknowledged() )
+						{
+							log.info("mapping applied " + getSearchType());
+							reindex = true;
+						}
+					}
+					RefreshRequest  req = Requests.refreshRequest( indexid );
+					RefreshResponse rres = admin.indices().refresh(req).actionGet();
+					if( rres.getFailedShards() > 0 )
+					{
+						log.error("Could not refresh shards");
+					}
+					
 					log.info("Node is ready for " + getSearchType() );
 				}
 				catch( Exception ex)

@@ -1,6 +1,6 @@
 <node id="singlenode" name="Default Single Node">
 
-    <property id="cluster.name">entermedia-testcb</property>
+    <property id="cluster.name">entermedia-testcburkey</property>
      <property id="index.number_of_replicas">1</property>
      <property id="index.number_of_shards">5</property>
      <property id="index.mapping._id.indexed">true</property>
