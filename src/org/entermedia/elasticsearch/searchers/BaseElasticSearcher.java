@@ -564,13 +564,13 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			String valueof = String.valueOf(inValue);
 			
 			String fieldid = inDetail.getId();
-			if( fieldid.equals("description"))
-			{
-				//fieldid = "_all";
-				valueof  = valueof.toLowerCase();
-				find = QueryBuilders.textQuery(fieldid, valueof);
-				return find;
-			}
+//			if( fieldid.equals("description"))
+//			{
+//				//fieldid = "_all";
+//				//valueof  = valueof.toLowerCase();
+//				find = QueryBuilders.textQuery(fieldid, valueof);
+//				return find;
+//			}
 			if(fieldid.equals("id"))
 			{
 			//	valueof  = valueof.toLowerCase();				
@@ -581,14 +581,21 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			if( valueof.equals("*"))
 			{
 				find = QueryBuilders.matchAllQuery();
-				//return null; //this is everything
-			} 
-			if( valueof.contains("*"))
+			}
+			else if( valueof.contains("*"))
 			{
+				if( fieldid.equals("description"))
+				{
+					valueof  = valueof.toLowerCase();
+				}
 				find = QueryBuilders.wildcardQuery(fieldid, valueof);
 			}
 			else if( "startswith".equals( inTerm.getOperation() ) )
 			{
+				if( fieldid.equals("description"))
+				{
+					valueof  = valueof.toLowerCase();
+				}
 				find = QueryBuilders.wildcardQuery(fieldid, valueof + "*");				
 			}
 			else if( inDetail.isBoolean())
@@ -614,6 +621,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			else if( inDetail.isDataType("number") )
 			{
 				find = QueryBuilders.termQuery(fieldid, Long.parseLong(valueof));
+			}
+			else if( fieldid.equals("description"))
+			{
+				find = QueryBuilders.textQuery(fieldid, valueof);				
 			}
 			else
 			{
@@ -784,6 +795,15 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 						inContent.field(detail.getId(), Long.valueOf(value));
 					}
 				}
+				else if( detail.getId().equals("description") )
+				{
+					StringBuffer desc = new StringBuffer();
+					populateKeywords(desc, inData, inDetails);
+					if( desc.length() > 0)
+					{
+						inContent.field(detail.getId(), desc.toString());
+					}
+				}
 				else
 				{
 					if( value == null)
@@ -909,4 +929,35 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		}
 		return super.searchByField(inField, inValue);
 	}
+	
+	protected void populateKeywords(StringBuffer inFullDesc, Data inData, PropertyDetails inDetails)
+	{
+		for (Iterator iter = inDetails.findKeywordProperties().iterator(); iter.hasNext();)
+		{
+			PropertyDetail det = (PropertyDetail) iter.next();
+			if (det.isList())
+			{
+				String prop = inData.get(det.getId());
+				if (prop != null)
+				{
+					Data data = (Data)getSearcherManager().getData(det.getListCatalogId(), det.getListId(), prop);
+					if( data != null && data.getName() != null)
+					{
+						inFullDesc.append(data.getName());
+						inFullDesc.append(' ');
+					}
+				}
+			}
+			else
+			{
+				String val = inData.get(det.getId());
+				if( val != null)
+				{
+					inFullDesc.append(val);
+					inFullDesc.append(' ');
+				}
+			}
+		}
+	}
+
 }

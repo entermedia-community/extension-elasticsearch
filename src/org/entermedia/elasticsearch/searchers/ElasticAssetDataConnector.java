@@ -205,36 +205,6 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		}
 		return buffer.toString();
 	}
-	protected void populateKeywords(StringBuffer inFullDesc, Asset inAsset, PropertyDetails inDetails)
-	{
-		for (Iterator iter = inDetails.findKeywordProperties().iterator(); iter.hasNext();)
-		{
-			PropertyDetail det = (PropertyDetail) iter.next();
-			if (det.isList())
-			{
-				String prop = inAsset.getProperty(det.getId());
-				if (prop != null)
-				{
-					Data data = (Data)getSearcherManager().getData(det.getListCatalogId(), det.getListId(), prop);
-					if( data != null && data.getName() != null)
-					{
-						inFullDesc.append(data.getName());
-						inFullDesc.append(' ');
-					}
-				}
-			}
-			else
-			{
-				String val = inAsset.getProperty(det.getId());
-				if( val != null)
-				{
-					inFullDesc.append(val);
-					inFullDesc.append(' ');
-				}
-			}
-		}
-	}
-
 	protected Set buildCategorySet(Asset inAsset)
 	{
 		HashSet allCatalogs = new HashSet();

@@ -1,5 +1,6 @@
 package org.entermedia.elasticsearch.searchers;
 
+import org.entermedia.elasticsearch.BaseElasticTest;
 import org.junit.Test;
 import org.openedit.Data;
 import org.openedit.entermedia.BaseEnterMediaTest;
@@ -9,7 +10,7 @@ import com.openedit.hittracker.SearchQuery;
 import com.openedit.users.Group;
 import com.openedit.users.UserManager;
 
-public class ElasticGroupSearcherTest extends BaseEnterMediaTest
+public class ElasticGroupSearcherTest extends BaseElasticTest
 {
 
 	@Test
@@ -68,11 +69,25 @@ public class ElasticGroupSearcherTest extends BaseEnterMediaTest
 		assertNotNull("NULL group", group);
 		
 		SearchQuery q = groupSearcher.createSearchQuery();
-		q.addMatches("description","Testing");
+		q.addStartsWith("description","tes");
+	//	q.addMatches("description","tes");
 
 		HitTracker tracker = groupSearcher.search(q);
 		assertTrue(tracker.size() > 0);
 		
+		q = groupSearcher.createSearchQuery();
+		q.addStartsWith("description","Tes");
+
+		tracker = groupSearcher.search(q);
+		assertTrue(tracker.size() > 0);
+
+		
+		q = groupSearcher.createSearchQuery();
+		q.addMatches("description","NOTinDB");
+
+		tracker = groupSearcher.search(q);
+		assertTrue(tracker.size() == 0);
+
 	}
 
 	
