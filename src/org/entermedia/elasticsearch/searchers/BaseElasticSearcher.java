@@ -39,6 +39,7 @@ import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TextQueryBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -582,21 +583,22 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				find = QueryBuilders.matchAllQuery();
 			}
+			else if ( valueof.endsWith("*"))
+			{
+				valueof = valueof.substring(0,valueof.length()-1);
+				TextQueryBuilder text = QueryBuilders.textPhrasePrefixQuery(fieldid, valueof);
+				text.maxExpansions(10);
+				find = text;
+			}
 			else if( valueof.contains("*"))
 			{
-				if( fieldid.equals("description"))
-				{
-					valueof  = valueof.toLowerCase();
-				}
 				find = QueryBuilders.wildcardQuery(fieldid, valueof);
 			}
 			else if( "startswith".equals( inTerm.getOperation() ) )
 			{
-				if( fieldid.equals("description"))
-				{
-					valueof  = valueof.toLowerCase();
-				}
-				find = QueryBuilders.wildcardQuery(fieldid, valueof + "*");				
+				TextQueryBuilder text = QueryBuilders.textPhrasePrefixQuery(fieldid, valueof);
+				text.maxExpansions(10);
+				find = text;
 			}
 			else if( inDetail.isBoolean())
 			{
