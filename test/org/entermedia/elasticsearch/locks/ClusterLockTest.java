@@ -4,6 +4,7 @@ import java.util.ConcurrentModificationException;
 
 import org.entermedia.locks.Lock;
 import org.entermedia.locks.LockManager;
+import org.openedit.entermedia.cluster.ClusterLockManager;
 import org.openedit.entermedia.model.LockTest;
 
 import com.openedit.OpenEditException;
@@ -34,7 +35,7 @@ public class ClusterLockTest extends LockTest
 
 	public void testVersion() throws Exception
 	{
-		LockManager manager = (LockManager)getStaticFixture().getModuleManager().getBean("lockManager");
+		ClusterLockManager manager = (ClusterLockManager)getStaticFixture().getModuleManager().getBean("lockManager");
 		String path = "/entermedia/catalogs/testcatalog/assets/users/101/index.html";
 		String catid = "entermedia/catalogs/testcatalog";
 		
