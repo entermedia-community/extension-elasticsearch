@@ -709,7 +709,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		{
 			updateElasticIndex(details, data);
 		}
-		log.info("Saved "  + inBuffer.size() + " records into " + toId(getCatalogId()) + "/" + getSearchType() );
+		log.info("Saved "  + inBuffer.size() + " records into " + catid + "/" + getSearchType() );
 		inBuffer.clear();
 	}
 
@@ -734,10 +734,13 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			
 			//ConcurrentModificationException
 			builder = builder.setSource(content).setRefresh(true);
-			String version = data.get("version");
-			if( version != null)
+			if( details.getDetail("version") != null)
 			{
-				builder.setVersion(Long.parseLong( version ) );
+				String version = data.get("version");
+				if( version != null)
+				{
+					builder.setVersion(Long.parseLong( version ) );
+				}
 			}
 			IndexResponse response = null;
 			
