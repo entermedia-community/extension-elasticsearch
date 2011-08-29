@@ -734,16 +734,13 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			
 			//ConcurrentModificationException
 			builder = builder.setSource(content).setRefresh(true);
-			if( details.getDetail("version") != null)
+			String version = data.get("version");
+			if( version != null)
 			{
-				String version = data.get("version");
-				if( version != null)
+				long val = Long.parseLong( version );
+				if( val > -1)
 				{
-					long val = Long.parseLong( version );
-					if( val > -1)
-					{
-						builder.setVersion(val);
-					}
+					builder.setVersion(val);
 				}
 			}
 			IndexResponse response = null;
