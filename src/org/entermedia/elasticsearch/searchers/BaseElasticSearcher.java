@@ -739,7 +739,11 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				String version = data.get("version");
 				if( version != null)
 				{
-					builder.setVersion(Long.parseLong( version ) );
+					long val = Long.parseLong( version );
+					if( val > -1)
+					{
+						builder.setVersion(val);
+					}
 				}
 			}
 			IndexResponse response = null;
@@ -949,10 +953,17 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		if( inField.equals("id") || inField.equals("_id"))
 		{
 			GetResponse response = getClient().prepareGet(toId(getCatalogId()), getSearchType(), inValue).execute().actionGet();
-			Data data = new BaseData(response.getSource());
-			data.setId(inValue);
-			data.setProperty("version",String.valueOf( response.getVersion() ) );
-			return data;
+			if( response.exists() )
+			{
+				Data data = new BaseData(response.getSource());
+				data.setId(inValue);
+				if( response.getVersion() > -1)
+				{
+					data.setProperty("version",String.valueOf(response.getVersion()) );
+				}
+				return data;
+			}
+			return null;
 		}
 		return super.searchByField(inField, inValue);
 	}
