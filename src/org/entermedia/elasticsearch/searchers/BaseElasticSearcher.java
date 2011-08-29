@@ -3,6 +3,7 @@ package org.entermedia.elasticsearch.searchers;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -35,6 +36,7 @@ import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.index.engine.VersionConflictEngineException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -728,12 +730,31 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			XContentBuilder content = XContentFactory.jsonBuilder().startObject();
 			updateIndex(content, data, details);
 			content.endObject();
-			log.info(content.string());
-			IndexResponse response = builder.setSource(content).setRefresh(true).execute().actionGet();
+			log.info("Saving " + content.string());
+			
+			//ConcurrentModificationException
+			builder = builder.setSource(content).setRefresh(true);
+			String version = data.get("version");
+			if( version != null)
+			{
+				builder.setVersion(Long.parseLong( version ) );
+			}
+			IndexResponse response = null;
+			
+			try
+			{
+				response = builder.execute().actionGet();
+			}
+			catch(VersionConflictEngineException ex)
+			{
+				throw new ConcurrentModificationException(ex.getMessage());
+			}
+			
 			if( response.getId() != null)
 			{
 				data.setId(response.getId());
 			}
+			data.setProperty("version", String.valueOf( response.getVersion() ) );
 		}
 		catch (Exception ex)
 		{
@@ -927,6 +948,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			GetResponse response = getClient().prepareGet(toId(getCatalogId()), getSearchType(), inValue).execute().actionGet();
 			Data data = new BaseData(response.getSource());
 			data.setId(inValue);
+			data.setProperty("version",String.valueOf( response.getVersion() ) );
 			return data;
 		}
 		return super.searchByField(inField, inValue);

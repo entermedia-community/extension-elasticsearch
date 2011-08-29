@@ -1,17 +1,12 @@
 package org.entermedia.elasticsearch.locks;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
+import java.util.ConcurrentModificationException;
 
 import org.entermedia.locks.Lock;
 import org.entermedia.locks.LockManager;
-import org.openedit.Data;
-import org.openedit.data.Searcher;
-import org.openedit.data.SearcherManager;
-import org.openedit.entermedia.BaseEnterMediaTest;
 import org.openedit.entermedia.model.LockTest;
-import org.openedit.util.DateStorageUtil;
+
+import com.openedit.OpenEditException;
 
 
 public class ClusterLockTest extends LockTest
@@ -23,58 +18,50 @@ public class ClusterLockTest extends LockTest
 		
 		String path = "/entermedia/catalogs/testcatalog/assets/users/101/index.html";
 		String catid = "entermedia/catalogs/testcatalog";
+		manager.releaseAll(catid, path);
 		
 		Lock lock = manager.lock(catid, path, "admin");
 		assertNotNull(lock);
 
 		manager.releaseAll(catid, path);
 		lock = manager.loadLock(catid, path);
-		assertNull(lock);
+		assertFalse(lock.isLocked());
 
 		//clear
 		//manager.lockIfPossible(inCatId, inPath, inOwnerId)
 		//manager.release(inCatId, inPath, inOwnerId)
 	}
-	public void testLockOrder()
+
+	public void testVersion() throws Exception
 	{
-		//create a bunch of locks out of order make sure the come back in the correct order
 		LockManager manager = (LockManager)getStaticFixture().getModuleManager().getBean("lockManager");
-		SearcherManager searcherManager = (SearcherManager)getStaticFixture().getModuleManager().getBean("searcherManager");
-		
 		String path = "/entermedia/catalogs/testcatalog/assets/users/101/index.html";
-		String cat = "entermedia/catalogs/testcatalog";
-		int numLocks = 3;
-		manager.releaseAll(cat, path);
+		String catid = "entermedia/catalogs/testcatalog";
 		
-		Searcher searcher = searcherManager.getSearcher(cat, "lock");
-		for (int i = 0; i < numLocks; i++)
+		Lock lockfirst = manager.loadLock(catid, path);
+		String version = lockfirst.get("version");
+		assertNotNull(version);
+
+		Lock locksecond = manager.loadLock(catid, path);
+		locksecond.setOwnerId("fastdude");
+		manager.getLockSearcher(catid).saveData(locksecond, null);
+
+		String version2 = locksecond.get("version");
+		assertNotNull(version2);
+		
+		lockfirst.setOwnerId("slowdude");
+		boolean failed = false;
+		try
 		{
-			Lock lockrequest = (Lock) searcher.createNewData();
-			lockrequest.setPath(path);
-			lockrequest.setOwnerId("admin");
-			Date current = new Date();
-			Date locktime = new Date(current.getTime() - i * 100000000);
-			lockrequest.setDate(locktime);
-			//lockrequest.setProperty("date", DateStorageUtil.getStorageUtil().formatForStorage(locktime));
-			searcher.saveData(lockrequest, null);
+			manager.getLockSearcher(catid).saveData(lockfirst, null);
 		}
-		
-		Collection locks = manager.getLocksByDate(cat, path);
-		assertNotNull(locks);
-		
-		//make sure pastlock is the first one
-		Data prevLock = null;
-		for (Iterator iterator = locks.iterator(); iterator.hasNext();)
+		catch( OpenEditException ex)
 		{
-			Data lock = (Data) iterator.next();
-			if(prevLock != null)
+			if( ex.getCause() instanceof ConcurrentModificationException)
 			{
-				Date prevDate = DateStorageUtil.getStorageUtil().parseFromStorage(prevLock.get("date"));
-				Date currentDate = DateStorageUtil.getStorageUtil().parseFromStorage(lock.get("date"));
-				assertTrue(prevDate.getTime() < currentDate.getTime());
+				failed = true;
 			}
-			prevLock = lock;
 		}
+		assertTrue(failed);
 	}
-		
 }

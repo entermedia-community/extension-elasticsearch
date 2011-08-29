@@ -37,6 +37,14 @@ public class SearchHitData implements Data
 		{
 			return getSearchHit().getId();
 		}
+		if( inId.equals("version") || inId.equals("_version"))
+		{
+			if( getSearchHit().getVersion() > -1)
+			{
+				return String.valueOf( getSearchHit().getVersion() );
+			}
+			return null;
+		}
 
 		SearchHitField field = getSearchHit().field(inId);
 		if( field != null)
@@ -106,6 +114,12 @@ public class SearchHitData implements Data
 			String val = get(key);
 			all.put(key, val);
 		}
+		String version = get("_version");
+		if( version != null)
+		{
+			all.put("version",version);
+		}
+	
 		return all;
 	}
 	public String toString()

@@ -204,9 +204,8 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			Lock lock = null;
 			try
 			{
-				updateElasticIndex(details, data);
-
 				lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + data.getSourcePath(),"admin");
+				updateElasticIndex(details, data);
 				getDataArchive().saveData(data, inUser);
 			}
 			catch(Throwable ex)
