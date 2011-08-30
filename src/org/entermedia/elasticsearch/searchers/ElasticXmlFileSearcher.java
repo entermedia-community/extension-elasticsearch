@@ -222,6 +222,10 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 
 	public Object searchByField(String inField, String inValue)
 	{
+		if( inValue == null)
+		{
+			throw new OpenEditException("Can't search for null value on field " + inField);
+		}
 		Object hit =  super.searchByField(inField, inValue);
 		//load up a real object?
 		String sourcepath = null;
@@ -249,7 +253,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		//log.info( newdata.getProperties() );
 		if( !content.isExist() )
 		{
-			log.error("Missing data file " + path);
+			throw new OpenEditException("Missing data file " + path);
 		}
 		Element element = content.getElementById(id);
 		
