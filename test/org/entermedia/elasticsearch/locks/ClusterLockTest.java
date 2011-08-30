@@ -40,14 +40,14 @@ public class ClusterLockTest extends LockTest
 		String catid = "entermedia/catalogs/testcatalog";
 		
 		Lock lockfirst = manager.loadLock(catid, path);
-		String version = lockfirst.get("version");
+		String version = lockfirst.get("_version");
 		assertNotNull(version);
 
 		Lock locksecond = manager.loadLock(catid, path);
 		locksecond.setOwnerId("fastdude");
 		manager.getLockSearcher(catid).saveData(locksecond, null);
 
-		String version2 = locksecond.get("version");
+		String version2 = locksecond.get("_version");
 		assertNotNull(version2);
 		
 		lockfirst.setOwnerId("slowdude");
@@ -56,12 +56,9 @@ public class ClusterLockTest extends LockTest
 		{
 			manager.getLockSearcher(catid).saveData(lockfirst, null);
 		}
-		catch( OpenEditException ex)
+		catch( ConcurrentModificationException ex)
 		{
-			if( ex.getCause() instanceof ConcurrentModificationException)
-			{
-				failed = true;
-			}
+			failed = true;
 		}
 		assertTrue(failed);
 	}

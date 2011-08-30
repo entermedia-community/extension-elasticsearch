@@ -37,7 +37,7 @@ public class SearchHitData implements Data
 		{
 			return getSearchHit().getId();
 		}
-		if( inId.equals("version") || inId.equals("_version"))
+		if( inId.equals("_version"))
 		{
 			if( getSearchHit().getVersion() > -1)
 			{
@@ -117,7 +117,7 @@ public class SearchHitData implements Data
 		String version = get("_version");
 		if( version != null)
 		{
-			all.put("version",version);
+			all.put("_version",version);
 		}
 	
 		return all;

@@ -734,7 +734,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			
 			//ConcurrentModificationException
 			builder = builder.setSource(content).setRefresh(true);
-			String version = data.get("version");
+			String version = data.get("_version");
 			if( version != null)
 			{
 				long val = Long.parseLong( version );
@@ -745,20 +745,17 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			IndexResponse response = null;
 			
-			try
-			{
-				response = builder.execute().actionGet();
-			}
-			catch(VersionConflictEngineException ex)
-			{
-				throw new ConcurrentModificationException(ex.getMessage());
-			}
+			response = builder.execute().actionGet();
 			
 			if( response.getId() != null)
 			{
 				data.setId(response.getId());
 			}
-			data.setProperty("version", String.valueOf( response.getVersion() ) );
+			data.setProperty("_version", String.valueOf( response.getVersion() ) );
+		}
+		catch(VersionConflictEngineException ex)
+		{
+			throw new ConcurrentModificationException(ex.getMessage());
 		}
 		catch (Exception ex)
 		{
@@ -956,7 +953,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				data.setId(inValue);
 				if( response.getVersion() > -1)
 				{
-					data.setProperty("version",String.valueOf(response.getVersion()) );
+					data.setProperty("_version",String.valueOf(response.getVersion()) );
 				}
 				return data;
 			}
