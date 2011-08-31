@@ -231,6 +231,11 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		String sourcepath = null;
 		String id = null;
 		
+		if( hit == null)
+		{
+			return null;	
+		}
+		
 		if( hit instanceof Data)
 		{
 			Data newdata = (Data)hit;
@@ -244,6 +249,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		}
 		else
 		{
+			
 //			Map newdata = (Map)hit;
 //			sourcepath = (String)newdata.get("sourcepath");
 //			id = (String)newdata.get("_id");
