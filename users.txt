@@ -1,0 +1,10 @@
+sectiona@mba2013.hbs.edu
+sectionb@mba2013.hbs.edu
+sectionc@mba2013.hbs.edu
+sectiond@mba2013.hbs.edu
+sectione@mba2013.hbs.edu
+sectionf@mba2013.hbs.edu
+sectionh@mba2013.hbs.edu
+sectioni@mba2013.hbs.edu
+sectionj@mba2013.hbs.edu
+

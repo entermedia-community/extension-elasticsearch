@@ -79,7 +79,18 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	protected LockManager fieldLockManager;
 	protected boolean fieldAutoIncrementId;
 	protected boolean fieldReIndexing;
+	protected boolean fieldCheckVersions;
 	
+	public boolean isCheckVersions()
+	{
+		return fieldCheckVersions;
+	}
+
+	public void setCheckVersions(boolean inCheckVersions)
+	{
+		fieldCheckVersions = inCheckVersions;
+	}
+
 	public boolean isReIndexing()
 	{
 		return fieldReIndexing;
@@ -734,13 +745,16 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			
 			//ConcurrentModificationException
 			builder = builder.setSource(content).setRefresh(true);
-			String version = data.get("_version");
-			if( version != null)
+			if( isCheckVersions())
 			{
-				long val = Long.parseLong( version );
-				if( val > -1)
+				String version = data.get("_version");
+				if( version != null)
 				{
-					builder.setVersion(val);
+					long val = Long.parseLong( version );
+					if( val > -1)
+					{
+						builder.setVersion(val);
+					}
 				}
 			}
 			IndexResponse response = null;

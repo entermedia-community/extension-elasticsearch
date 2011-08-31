@@ -119,6 +119,7 @@
 			<ref bean="pageManager" />
 		</property>
 		<property name="newDataName"><value>lock</value></property>
+		<property name="checkVersions"><value>true</value></property>
 	</bean>
 
 	<bean id="lockManager" class="org.openedit.entermedia.cluster.ClusterLockManager" >

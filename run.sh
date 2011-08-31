@@ -1,77 +1,64 @@
-curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search' -d '
-{"query":
+set -o verbose  #echo on
+curl -XPOST 'http://localhost:9200/system/group/_search' -d '{
+   "query" : {
+     "bool" : {
+       "must" : [ {
+         "bool" : {
+           "should" : [ {
+             "term" : {
+               "_id" : "GS"
+             }
+           }, {
+             "term" : {
+               "_id" : "video"
+             }
+           }, {
+             "term" : {
+               "_id" : "photoeditors"
+             }
+           }, {
+             "term" : {
+               "_id" : "administrators"
+             }
+           }, {
+             "term" : {
+               "_id" : "developers"
+             }
+           }, {
+             "term" : {
+               "_id" : "visualdata"
+             }
+           } ]
+         }
+       }, {
+         "wildcard" : {
+           "description" : {
+             "wildcard" : "a*"
+           }
+         }
+       } ]
+     }
+   }
+}' | python -mjson.tool
+
+
+
+curl -XPOST 'http://localhost:9200/system/group/_search' -d '{
+"query":
 	{
-	    "bool": {
-		"must": [
-		    {
-		        "term": {
-		            "category": "index"
-		        }
-		    }, 
-            {
-                "bool": {
- "should": [
-                        {
-                            "term": {
-                                "viewasset": "true"
-                            }
-                        }, 
-                        {
-                            "term": {
-                                "viewasset": ""
-                            }
-                        }, 
-                        {
-                            "term": {
-                                "viewasset": "sgroupadministrator"
-                            }
-                        }, 
-                        {
-                            "term": {
-                                "viewasset": "profileassetadmin"
-                            }
-                        }, 
-                        {
-                            "term": {
-                                "viewasset": "visualdata"
-                            }
-                        }, 
-                        {
-                            "term": {
-                                "viewasset": "video"
-                            }
-                        }, 
-                        {
-                            "term": {
-                                "viewasset": "administrators"
-                            }
-                        }, 
-                        {
-                            "term": {
-                                "viewasset": "developers"
-                            }
-                        }, 
-                        {
-                            "term": {
-                                "viewasset": "GS"
-                            }
-                        }, 
-                        {
-                            "term": {
-                                "viewasset": "photoeditors"
-                            }
-                        }, 
-                        {
-                            "term": {
-                                "viewasset": "admin"
-                            }
-                        }
-
-
-
-                    ]
-}}
-		]
-	    }
+		"wildcard" : 
+		{
+   			"description" : "a*"
+		}
 	}
 }' | python -mjson.tool
+
+
+curl -XPOST 'http://localhost:9200/system/group/_search' -d '{
+"query":
+	{
+		"match_all" : {}
+	}
+}' | python -mjson.tool
+
+
