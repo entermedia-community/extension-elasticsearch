@@ -2,6 +2,7 @@ package org.entermedia.elasticsearch.locks;
 
 import java.util.ConcurrentModificationException;
 
+import org.entermedia.elasticsearch.searchers.LockSearcher;
 import org.entermedia.locks.Lock;
 import org.entermedia.locks.LockManager;
 import org.openedit.entermedia.cluster.ClusterLockManager;
@@ -15,16 +16,19 @@ public class ClusterLockTest extends LockTest
 	//Had some problems with the very first lock not being saved ok
 	public void testLock()
 	{
-		LockManager manager = (LockManager)getStaticFixture().getModuleManager().getBean("lockManager");
+		ClusterLockManager manager = (ClusterLockManager)getStaticFixture().getModuleManager().getBean("lockManager");
 		
 		String path = "/entermedia/catalogs/testcatalog/assets/users/101/index.html";
 		String catid = "entermedia/catalogs/testcatalog";
+		
 		manager.releaseAll(catid, path);
 		
 		Lock lock = manager.lock(catid, path, "admin");
 		assertNotNull(lock);
 
-		manager.releaseAll(catid, path);
+		LockSearcher searcher = (LockSearcher)manager.getLockSearcher(catid);
+		searcher.clearStaleLocks();
+		
 		lock = manager.loadLock(catid, path);
 		assertFalse(lock.isLocked());
 

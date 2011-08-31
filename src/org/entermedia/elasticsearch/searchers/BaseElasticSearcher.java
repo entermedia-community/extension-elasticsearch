@@ -940,6 +940,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		if( fieldClientPool != null)
 		{
 			getClient().close();
+			fieldConnected = false;
 		}
 	}
 	
