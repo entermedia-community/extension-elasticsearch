@@ -767,6 +767,13 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			data.setProperty("_version", String.valueOf( response.getVersion() ) );
 		}
+		catch(RemoteTransportException ex)
+		{
+			if( ex.getCause() instanceof VersionConflictEngineException)
+			{
+				throw new ConcurrentModificationException(ex.getMessage());
+			}
+		}
 		catch(VersionConflictEngineException ex)
 		{
 			throw new ConcurrentModificationException(ex.getMessage());
