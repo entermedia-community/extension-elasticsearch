@@ -693,11 +693,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 
 	}
 
-	public void saveData(Object inData, User inUser)
-	{
-		saveData((Data) inData, inUser);
-	}
-
 	public void saveData(Data inData, User inUser)
 	{
 		//update the index
