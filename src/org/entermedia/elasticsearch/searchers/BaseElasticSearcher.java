@@ -569,13 +569,16 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	{
 		//Check for quick date object
 		QueryBuilder find = null;
-		if( inValue instanceof Date)
-		{
-			find = QueryBuilders.termQuery(inDetail.getId(), (Date)inValue);
-		}
-		else
-		{
-			String valueof = String.valueOf(inValue);
+			String valueof = null;
+			
+			if( inValue instanceof Date)
+			{
+				valueof= DateStorageUtil.getStorageUtil().formatForStorage((Date)inValue);
+			}
+			else
+			{
+				valueof = String.valueOf(inValue);
+			}
 			
 			String fieldid = inDetail.getId();
 //			if( fieldid.equals("description"))
@@ -621,16 +624,21 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				if( "beforedate".equals(inTerm.getOperation()))
 				{
-					Date date = DateStorageUtil.getStorageUtil().parseFromStorage(valueof);
-					
+					String start = DateStorageUtil.getStorageUtil().formatForStorage(new Date(0));
 					find = QueryBuilders.rangeQuery(inDetail.getId())
-		                .from(new Date(0))
-		                .to(date);	
+		                .from(start)
+		                .to(valueof);	
+				}
+				else if( "afterdate".equals(inTerm.getOperation()))
+				{
+					String end = DateStorageUtil.getStorageUtil().formatForStorage(new Date(Long.MAX_VALUE));
+					find = QueryBuilders.rangeQuery(fieldid)
+			                .from(valueof);
+			            //    .to(end);
 				}
 				else
 				{
-					Date date = DateStorageUtil.getStorageUtil().parseFromStorage(valueof);
-					find = QueryBuilders.termQuery(fieldid, date);
+					find = QueryBuilders.termQuery(fieldid, valueof); //TODO make it a range query? from 0-24 hours
 				}
 			}
 			else if( inDetail.isDataType("number") )
@@ -645,7 +653,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				find = QueryBuilders.termQuery(fieldid, valueof);
 			}
-		}
 		return find;
 	}
 
