@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.lucene.document.Field;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.exists.IndicesExistsRequest;
@@ -382,6 +383,15 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		//jsonproperties = jsonproperties.field("type", "string");					
 		//jsonproperties = jsonproperties.endObject();
 		
+		//Add in namesorted
+		if( getPropertyDetails().contains("name") && !getPropertyDetails().contains("namesorted"))
+		{
+			props = new ArrayList(props);
+			PropertyDetail detail = new PropertyDetail();
+			detail.setId("namesorted");
+			props.add(detail);
+		}
+		
 		for (Iterator i = props.iterator() ; i.hasNext();)
 		{
 			PropertyDetail detail = (PropertyDetail) i.next();
@@ -407,7 +417,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 
 				continue;
 			}
-
 			if( detail.isDate())
 			{
 				jsonproperties = jsonproperties.field("type", "date");
@@ -564,8 +573,18 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		}
 		return null;
 	}
-
 	protected QueryBuilder buildTerm(PropertyDetail inDetail, Term inTerm, Object inValue)
+	{
+		QueryBuilder find = buildNewTerm(inDetail, inTerm, inValue);
+		if( "not".equals( inTerm.getOperation() ) )
+		{
+			BoolQueryBuilder or = QueryBuilders.boolQuery();
+			or.mustNot(find);
+			return or;
+		}
+		return find;
+	}
+	protected QueryBuilder buildNewTerm(PropertyDetail inDetail, Term inTerm, Object inValue)
 	{
 		//Check for quick date object
 		QueryBuilder find = null;
@@ -849,6 +868,15 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 					if( desc.length() > 0)
 					{
 						inContent.field(detail.getId(), desc.toString());
+					}
+				}
+				else if( detail.getId().equals("name") )
+				{
+					//This matches how we do it on Lucene
+					if( value != null)
+					{
+						inContent.field(detail.getId(), value);
+						inContent.field(detail.getId() + "sorted", value);
 					}
 				}
 				else
