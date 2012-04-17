@@ -262,18 +262,6 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 	{
 	}
 
-	protected DataArchive getDataArchive()
-	{
-		if (fieldXmlDataArchive == null)
-		{
-			fieldXmlDataArchive = getMediaArchive().getAssetArchive();
-			fieldXmlDataArchive.setXmlArchive(getXmlArchive());
-			fieldXmlDataArchive.setDataFileName(getDataFileName());
-			fieldXmlDataArchive.setElementName(getSearchType());
-			fieldXmlDataArchive.setPathToData(getPathToData());
-		}
-		return fieldXmlDataArchive;
-	}
 	
 	protected IntCounter getIntCounter()
 	{

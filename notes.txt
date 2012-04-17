@@ -65,7 +65,7 @@ curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search' -d '
 
 curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search?q=category:index' | python -mjson.tool
 
-curl -XGET 'http://localhost:9200/media_catalogs_public/asset/_mapping' | python -mjson.tool
+curl -XGET 'http://localhost:9200/media_catalogs_public/asset/_mapping?pretty=true'
 
 curl -XGET 'http://localhost:9200/system/user/_search' -d '{"term":{"_all":"admin"}}'
 
@@ -73,4 +73,14 @@ curl -XPUT 'http://localhost:9200/media_catalogs_public/asset/_mapping' -d '{"as
 
 
 curl -XPOST 'http://localhost:9200/system/group/_search' -d '{  "query" : {   "term" : {    "_all" : "Users"   }  } }' | python -mjson.tool
-
+curl -XPOST 'http://localhost:9200/system/group/_search' -d '{
+  "query" : {
+    "match_all" : {
+    }
+  },
+  "sort" : [ {
+    "namesorted" : {
+      "order" : "asc"
+    }
+  } ]
+}'

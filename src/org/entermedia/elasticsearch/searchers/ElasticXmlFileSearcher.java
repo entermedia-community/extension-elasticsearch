@@ -28,7 +28,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 {
 	protected Log log = LogFactory.getLog(ElasticXmlFileSearcher.class);
 	protected XmlArchive fieldXmlArchive;
-	protected DataArchive fieldXmlDataArchive; //lazy loaded
+	protected DataArchive fieldDataArchive; //lazy loaded
 	protected String fieldPrefix;
 	protected String fieldDataFileName;
 
@@ -58,18 +58,6 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	public void setDataFileName(String inName)
 	{
 		fieldDataFileName = inName;
-	}
-	protected DataArchive getDataArchive()
-	{
-		if (fieldXmlDataArchive == null)
-		{
-			fieldXmlDataArchive = new XmlDataArchive();
-			fieldXmlDataArchive.setXmlArchive(getXmlArchive());
-			fieldXmlDataArchive.setDataFileName(getDataFileName());
-			fieldXmlDataArchive.setElementName(getSearchType());
-			fieldXmlDataArchive.setPathToData(getPathToData());
-		}
-		return fieldXmlDataArchive;
 	}
 	public XmlArchive getXmlArchive()
 	{
@@ -220,6 +208,42 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		}
 	}
 
+	public void saveData(Data inData, User inUser)
+	{
+		//update the index
+		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
+
+		Lock lock = null;
+		try
+		{
+			lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath(),"admin");
+			updateElasticIndex(details, inData);
+			getDataArchive().saveData(inData, inUser);
+		}
+		catch(Throwable ex)
+		{
+			log.error("problem saving " + inData.getId() , ex);
+			throw new OpenEditException(ex);
+		}
+		finally
+		{
+			getLockManager().release(getCatalogId(), lock);
+		}
+	}
+	protected DataArchive getDataArchive()
+	{
+		if (fieldDataArchive == null)
+		{
+			XmlDataArchive archive = new XmlDataArchive();
+			archive.setXmlArchive(getXmlArchive());
+			archive.setDataFileName(getDataFileName());
+			archive.setElementName(getSearchType());
+			archive.setPathToData(getPathToData());
+			fieldDataArchive = archive;
+		}
+
+		return fieldDataArchive;
+	}
 	public Object searchByField(String inField, String inValue)
 	{
 		if( inValue == null)
