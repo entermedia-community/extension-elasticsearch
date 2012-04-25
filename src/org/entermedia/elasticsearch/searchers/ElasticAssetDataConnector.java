@@ -11,23 +11,22 @@ import java.util.Set;
 
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.action.delete.DeleteRequestBuilder;
-import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.openedit.Data;
-import org.openedit.data.BaseData;
 import org.openedit.data.DataArchive;
-import org.openedit.data.PropertyDetail;
 import org.openedit.data.PropertyDetails;
+import org.openedit.data.XmlDataArchive;
 import org.openedit.entermedia.Asset;
+import org.openedit.entermedia.AssetArchive;
 import org.openedit.entermedia.Category;
 import org.openedit.entermedia.MediaArchive;
 import org.openedit.entermedia.search.AssetSecurityArchive;
 import org.openedit.entermedia.search.DataConnector;
+import org.openedit.entermedia.xmldb.XmlAssetArchive;
 import org.openedit.repository.ContentItem;
 
 import com.openedit.OpenEditException;
 import com.openedit.hittracker.HitTracker;
-import com.openedit.page.Page;
 import com.openedit.util.IntCounter;
 
 public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements DataConnector
@@ -284,8 +283,18 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 				return null;
 			}
 			String path = (String)response.getSource().get("sourcepath");
-			return getMediaArchive().getAssetArchive().getAssetBySourcePath(path);
+			return getAssetArchive().getAssetBySourcePath(path);
 		}
 		return super.searchByField(inField, inValue);
+	}
+
+	protected AssetArchive getAssetArchive()
+	{
+		return getMediaArchive().getAssetArchive();
+	}
+
+	protected DataArchive getDataArchive()
+	{
+		return getMediaArchive().getAssetArchive();
 	}
 }
