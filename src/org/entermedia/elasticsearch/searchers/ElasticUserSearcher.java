@@ -18,7 +18,6 @@ import org.openedit.data.PropertyDetailsArchive;
 import org.openedit.users.UserSearcher;
 
 import com.openedit.OpenEditException;
-import com.openedit.WebPageRequest;
 import com.openedit.hittracker.HitTracker;
 import com.openedit.hittracker.SearchQuery;
 import com.openedit.users.BaseUser;

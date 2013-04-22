@@ -13,7 +13,6 @@ import org.openedit.Data;
 import org.openedit.data.DataArchive;
 import org.openedit.data.PropertyDetails;
 import org.openedit.data.XmlDataArchive;
-import org.openedit.data.XmlFileSearcher;
 import org.openedit.repository.ContentItem;
 import org.openedit.xml.ElementData;
 import org.openedit.xml.XmlArchive;

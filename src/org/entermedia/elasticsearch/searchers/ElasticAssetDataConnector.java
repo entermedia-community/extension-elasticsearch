@@ -9,20 +9,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.client.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.openedit.Data;
 import org.openedit.data.DataArchive;
 import org.openedit.data.PropertyDetails;
-import org.openedit.data.XmlDataArchive;
 import org.openedit.entermedia.Asset;
 import org.openedit.entermedia.AssetArchive;
 import org.openedit.entermedia.Category;
 import org.openedit.entermedia.MediaArchive;
 import org.openedit.entermedia.search.AssetSecurityArchive;
 import org.openedit.entermedia.search.DataConnector;
-import org.openedit.entermedia.xmldb.XmlAssetArchive;
 import org.openedit.repository.ContentItem;
 
 import com.openedit.OpenEditException;
@@ -278,7 +276,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		if( inField.equals("id") || inField.equals("_id"))
 		{
 			GetResponse response = getClient().prepareGet(toId(getCatalogId()), getSearchType(), inValue).execute().actionGet();
-			if(!response.exists())
+			if(!response.isExists())
 			{
 				return null;
 			}
