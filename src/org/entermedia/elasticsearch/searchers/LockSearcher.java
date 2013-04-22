@@ -1,16 +1,10 @@
 package org.entermedia.elasticsearch.searchers;
 
-import java.io.IOException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.client.action.deletebyquery.DeleteByQueryRequestBuilder;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.action.deletebyquery.DeleteByQueryRequestBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
-
-import com.openedit.OpenEditException;
 
 public class LockSearcher extends IndexElasticSearcher 
 {

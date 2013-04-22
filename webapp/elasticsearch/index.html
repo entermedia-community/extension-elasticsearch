@@ -1,0 +1,10 @@
+<h1>ElasticSearch Cluster</h1>
+#set($nodemanager = $mediaarchive.getModuleManager().getBean("nodeManager"))
+
+Local Node Info:
+ID: $nodemanager.getLocalNodeId() <br/>
+Name : $nodemanager.getLocalNode()
+
+
+
+$mediaarchive.getAssetSearcher().getClass()
