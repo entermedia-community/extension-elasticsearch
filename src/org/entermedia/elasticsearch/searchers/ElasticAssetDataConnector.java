@@ -9,16 +9,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.client.action.delete.DeleteRequestBuilder;
-import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.openedit.Data;
-import org.openedit.data.BaseData;
 import org.openedit.data.DataArchive;
-import org.openedit.data.PropertyDetail;
 import org.openedit.data.PropertyDetails;
 import org.openedit.entermedia.Asset;
+import org.openedit.entermedia.AssetArchive;
 import org.openedit.entermedia.Category;
 import org.openedit.entermedia.MediaArchive;
 import org.openedit.entermedia.search.AssetSecurityArchive;
@@ -27,7 +25,6 @@ import org.openedit.repository.ContentItem;
 
 import com.openedit.OpenEditException;
 import com.openedit.hittracker.HitTracker;
-import com.openedit.page.Page;
 import com.openedit.util.IntCounter;
 
 public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements DataConnector
@@ -262,18 +259,6 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 	{
 	}
 
-	protected DataArchive getDataArchive()
-	{
-		if (fieldXmlDataArchive == null)
-		{
-			fieldXmlDataArchive = getMediaArchive().getAssetArchive();
-			fieldXmlDataArchive.setXmlArchive(getXmlArchive());
-			fieldXmlDataArchive.setDataFileName(getDataFileName());
-			fieldXmlDataArchive.setElementName(getSearchType());
-			fieldXmlDataArchive.setPathToData(getPathToData());
-		}
-		return fieldXmlDataArchive;
-	}
 	
 	protected IntCounter getIntCounter()
 	{
@@ -291,13 +276,23 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		if( inField.equals("id") || inField.equals("_id"))
 		{
 			GetResponse response = getClient().prepareGet(toId(getCatalogId()), getSearchType(), inValue).execute().actionGet();
-			if(!response.exists())
+			if(!response.isExists())
 			{
 				return null;
 			}
 			String path = (String)response.getSource().get("sourcepath");
-			return getMediaArchive().getAssetArchive().getAssetBySourcePath(path);
+			return getAssetArchive().getAssetBySourcePath(path);
 		}
 		return super.searchByField(inField, inValue);
+	}
+
+	protected AssetArchive getAssetArchive()
+	{
+		return getMediaArchive().getAssetArchive();
+	}
+
+	protected DataArchive getDataArchive()
+	{
+		return getMediaArchive().getAssetArchive();
 	}
 }

@@ -12,24 +12,24 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
-import org.elasticsearch.action.admin.indices.exists.IndicesExistsRequest;
-import org.elasticsearch.action.admin.indices.exists.IndicesExistsResponse;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
+import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
+import org.elasticsearch.action.delete.DeleteRequestBuilder;
+import org.elasticsearch.action.deletebyquery.DeleteByQueryRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.client.Requests;
-import org.elasticsearch.client.action.delete.DeleteRequestBuilder;
-import org.elasticsearch.client.action.deletebyquery.DeleteByQueryRequestBuilder;
-import org.elasticsearch.client.action.index.IndexRequestBuilder;
-import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
@@ -39,9 +39,9 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
+import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.TextQueryBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -73,7 +73,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 {
 	private static final Log log = LogFactory.getLog(BaseElasticSearcher.class);
 	protected ClientPool fieldClientPool;
-	protected boolean fieldConnected;
+	protected boolean fieldConnected = false;
 	protected IntCounter fieldIntCounter;
 	protected PageManager fieldPageManager;
 	protected LockManager fieldLockManager;
@@ -249,7 +249,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 					String cluster = indexid;
 
 					ClusterHealthResponse health = admin.cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet(); //yellow works when you only have one node
-					if( health.timedOut() )
+					if( health.isTimedOut() )
 					{
 						throw new OpenEditException("Could not get yellow status");
 					}
@@ -257,7 +257,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 					IndicesExistsRequest existsreq = Requests.indicesExistsRequest(cluster);
 					IndicesExistsResponse res = admin.indices().exists(existsreq).actionGet();
 					
-					if( !res.exists() )
+					if( !res.isExists() )
 					{
 						try
 						{
@@ -286,7 +286,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				                .endObject().string()))
 				            .execute().actionGet();
 							
-							if( newindexres.acknowledged() )
+							if( newindexres.isAcknowledged() )
 							{
 								log.info("index created " + cluster);
 							}
@@ -319,7 +319,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 						PutMappingRequest  req = Requests.putMappingRequest( cluster ).type(getSearchType());
 						req.source(source);
 						PutMappingResponse pres = admin.indices().putMapping(req).actionGet(); 
-						if( pres.acknowledged() )
+						if( pres.isAcknowledged() )
 						{
 							log.info("mapping applied " + getSearchType());
 							reindex = true;
@@ -382,6 +382,15 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		//jsonproperties = jsonproperties.field("type", "string");					
 		//jsonproperties = jsonproperties.endObject();
 		
+		//Add in namesorted
+		if( getPropertyDetails().contains("name") && !getPropertyDetails().contains("namesorted"))
+		{
+			props = new ArrayList(props);
+			PropertyDetail detail = new PropertyDetail();
+			detail.setId("namesorted");
+			props.add(detail);
+		}
+		
 		for (Iterator i = props.iterator() ; i.hasNext();)
 		{
 			PropertyDetail detail = (PropertyDetail) i.next();
@@ -407,7 +416,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 
 				continue;
 			}
-
 			if( detail.isDate())
 			{
 				jsonproperties = jsonproperties.field("type", "date");
@@ -564,18 +572,31 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		}
 		return null;
 	}
-
 	protected QueryBuilder buildTerm(PropertyDetail inDetail, Term inTerm, Object inValue)
+	{
+		QueryBuilder find = buildNewTerm(inDetail, inTerm, inValue);
+		if( "not".equals( inTerm.getOperation() ) )
+		{
+			BoolQueryBuilder or = QueryBuilders.boolQuery();
+			or.mustNot(find);
+			return or;
+		}
+		return find;
+	}
+	protected QueryBuilder buildNewTerm(PropertyDetail inDetail, Term inTerm, Object inValue)
 	{
 		//Check for quick date object
 		QueryBuilder find = null;
-		if( inValue instanceof Date)
-		{
-			find = QueryBuilders.termQuery(inDetail.getId(), (Date)inValue);
-		}
-		else
-		{
-			String valueof = String.valueOf(inValue);
+			String valueof = null;
+			
+			if( inValue instanceof Date)
+			{
+				valueof= DateStorageUtil.getStorageUtil().formatForStorage((Date)inValue);
+			}
+			else
+			{
+				valueof = String.valueOf(inValue);
+			}
 			
 			String fieldid = inDetail.getId();
 //			if( fieldid.equals("description"))
@@ -599,7 +620,8 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			else if ( valueof.endsWith("*"))
 			{
 				valueof = valueof.substring(0,valueof.length()-1);
-				TextQueryBuilder text = QueryBuilders.textPhrasePrefixQuery(fieldid, valueof);
+								
+				MatchQueryBuilder text = QueryBuilders.textPhrasePrefixQuery(fieldid, valueof);
 				text.maxExpansions(10);
 				find = text;
 			}
@@ -609,7 +631,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			else if( "startswith".equals( inTerm.getOperation() ) )
 			{
-				TextQueryBuilder text = QueryBuilders.textPhrasePrefixQuery(fieldid, valueof);
+				MatchQueryBuilder text = QueryBuilders.textPhrasePrefixQuery(fieldid, valueof);
 				text.maxExpansions(10);
 				find = text;
 			}
@@ -621,16 +643,21 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				if( "beforedate".equals(inTerm.getOperation()))
 				{
-					Date date = DateStorageUtil.getStorageUtil().parseFromStorage(valueof);
-					
+					String start = DateStorageUtil.getStorageUtil().formatForStorage(new Date(0));
 					find = QueryBuilders.rangeQuery(inDetail.getId())
-		                .from(new Date(0))
-		                .to(date);	
+		                .from(start)
+		                .to(valueof);	
+				}
+				else if( "afterdate".equals(inTerm.getOperation()))
+				{
+					String end = DateStorageUtil.getStorageUtil().formatForStorage(new Date(Long.MAX_VALUE));
+					find = QueryBuilders.rangeQuery(fieldid)
+			                .from(valueof);
+			            //    .to(end);
 				}
 				else
 				{
-					Date date = DateStorageUtil.getStorageUtil().parseFromStorage(valueof);
-					find = QueryBuilders.termQuery(fieldid, date);
+					find = QueryBuilders.termQuery(fieldid, valueof); //TODO make it a range query? from 0-24 hours
 				}
 			}
 			else if( inDetail.isDataType("number") )
@@ -645,7 +672,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				find = QueryBuilders.termQuery(fieldid, valueof);
 			}
-		}
 		return find;
 	}
 
@@ -844,6 +870,15 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 						inContent.field(detail.getId(), desc.toString());
 					}
 				}
+				else if( detail.getId().equals("name") )
+				{
+					//This matches how we do it on Lucene
+					if( value != null)
+					{
+						inContent.field(detail.getId(), value);
+						inContent.field(detail.getId() + "sorted", value);
+					}
+				}
 				else
 				{
 					if( value == null)
@@ -953,7 +988,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	{
 		FlushRequest  req = Requests.flushRequest( toId(getCatalogId()) );
 		FlushResponse res = getClient().admin().indices().flush(req).actionGet();
-		if( res.successfulShards() > 0)
+		if( res.getSuccessfulShards() > 0)
 		{
 			return true;
 		}
@@ -964,7 +999,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		if( inField.equals("id") || inField.equals("_id"))
 		{
 			GetResponse response = getClient().prepareGet(toId(getCatalogId()), getSearchType(), inValue).execute().actionGet();
-			if( response.exists() )
+			if( response.isExists() )
 			{
 				Data data = new BaseData(response.getSource());
 				data.setId(inValue);

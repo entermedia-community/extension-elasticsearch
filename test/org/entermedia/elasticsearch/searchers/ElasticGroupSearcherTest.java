@@ -3,7 +3,6 @@ package org.entermedia.elasticsearch.searchers;
 import org.entermedia.elasticsearch.BaseElasticTest;
 import org.junit.Test;
 import org.openedit.Data;
-import org.openedit.entermedia.BaseEnterMediaTest;
 
 import com.openedit.hittracker.HitTracker;
 import com.openedit.hittracker.SearchQuery;

@@ -39,6 +39,18 @@ public class ElasticSearchQuery extends SearchQuery
 		fieldNumberUtils = inNumberUtils;
 	}
 
+	public Term addAfter(String inString, Date inSearchDate)
+	{
+		PropertyDetail detail = getPropertyDetails().getDetail(inString);
+		if(detail == null)
+		{
+			detail = new PropertyDetail();
+			detail.setId(inString);
+			detail.setDataType("date");
+		}
+		return addAfter(detail, inSearchDate);
+	}
+
 	public Term addAfter(PropertyDetail inFieldId,final Date inDate)
 	{
 		Term term = new Term()
@@ -51,7 +63,9 @@ public class ElasticSearchQuery extends SearchQuery
 			}
 		};
 		term.setDetail(inFieldId);
-		term.setValue(getDateFormat().format(inDate));
+		String valueof= DateStorageUtil.getStorageUtil().formatForStorage(inDate);
+
+		term.setValue(valueof);
 		term.setOperation("afterdate");
 		getTerms().add(term);
 		return term;
@@ -93,7 +107,10 @@ public class ElasticSearchQuery extends SearchQuery
 		};
 		term.setOperation("beforedate");
 		term.setDetail(inField);
-		term.setValue(DateStorageUtil.getStorageUtil().formatForStorage(inDate));
+
+		String valueof= DateStorageUtil.getStorageUtil().formatForStorage(inDate);
+		term.setValue(valueof);
+
 		getTerms().add(term);
 		return term;
 	}

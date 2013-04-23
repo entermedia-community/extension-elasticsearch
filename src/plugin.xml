@@ -65,7 +65,7 @@
 			<ref bean="clientPool" />
 		</property>
 		<property name="assetSecurityArchive">
-			<ref bean="assetSecurityArchive" />
+			<ref bean="assetSecurityDataArchive" />
 		</property>
 		<property name="lockManager">
 			<ref bean="lockManager" />
@@ -241,6 +241,39 @@
 
 	</bean>
 
+	
+
+
+
+	<bean id="elasticListSearcher" class="org.entermedia.elasticsearch.searchers.ElasticListSearcher" singleton="false">
+		<property name="pageManager">
+		
+			<ref bean="pageManager" />
+		</property>
+		
+		<property name="xmlSearcher">
+			<ref bean="xmlSearcher" />
+		</property>
+		
+		
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="clientPool">
+			<ref bean="clientPool" />
+		</property>
+		<property name="lockManager">
+			<ref bean="lockManager" />
+		</property>		
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>
+
+
+	</bean>
+
+
+
 	<bean id="elasticUploadQueueSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" singleton="false">
 		<property name="pageManager">
 			<ref bean="pageManager" />
@@ -264,4 +297,24 @@
 		<!-- property name="prefix"><value>assets</value></property-->
 
 	</bean>
+
+
+<bean id="elasticCategorySearcher" class="org.entermedia.elasticsearch.categories.ElasticCategorySearcher" singleton="false">
+		<property name="clientPool">
+			<ref bean="clientPool" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="pageManager">
+			<ref bean="pageManager" />
+		</property>
+		<property name="newDataName"><value>elasticCategory</value></property>
+		<property name="checkVersions"><value>false</value></property>
+	</bean>
+
+	<bean id="elasticCategory" class="org.entermedia.elasticsearch.categories.ElasticCategory" singleton="false" >
+	</bean>	
+	
+
 </beans>

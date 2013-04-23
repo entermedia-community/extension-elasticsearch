@@ -2,11 +2,11 @@ package org.entermedia.elasticsearch;
 
 import java.util.Date;
 
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.action.index.IndexRequestBuilder;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -14,6 +14,7 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.entermedia.elasticsearch.searchers.ElasticListSearcher;
 import org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher;
 import org.openedit.Data;
 import org.openedit.data.Searcher;
@@ -117,6 +118,25 @@ public void xxtestBasicRead() throws Exception
 		HitTracker tracker = searcher.search(q);
 		assertTrue(tracker.size() > 0);
 	}
+	
+	
+	
+	public void testListSearcher()
+	{
+		ElasticListSearcher searcher = (ElasticListSearcher)getMediaArchive().getSearcherManager().getSearcher("entermedia/catalogs/testcatalog", "somerandom" );
+
+		Data asset = searcher.createNewData();
+		asset.setName("Bermuda");
+		asset.setId("102");
+		asset.setSourcePath("states/102");
+		searcher.saveData(asset, null);
+		
+		SearchQuery q = searcher.createSearchQuery();
+		q.addExact("name", "Bermuda");
+		HitTracker tracker = searcher.search(q);
+		assertTrue(tracker.size() > 0);
+	}
+	
 	
 	
 }

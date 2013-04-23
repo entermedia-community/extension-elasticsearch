@@ -4,11 +4,8 @@ import java.util.ConcurrentModificationException;
 
 import org.entermedia.elasticsearch.searchers.LockSearcher;
 import org.entermedia.locks.Lock;
-import org.entermedia.locks.LockManager;
 import org.openedit.entermedia.cluster.ClusterLockManager;
 import org.openedit.entermedia.model.LockTest;
-
-import com.openedit.OpenEditException;
 
 
 public class ClusterLockTest extends LockTest

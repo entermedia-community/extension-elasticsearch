@@ -1,6 +1,5 @@
 package org.entermedia.elasticsearch;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -8,7 +7,6 @@ import java.util.Map;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
 import org.openedit.Data;
-import org.openedit.util.DateStorageUtil;
 
 import com.openedit.OpenEditException;
 
@@ -129,6 +127,11 @@ public class SearchHitData implements Data
 		} else{
 			return getId();
 		}
+	}
+	@Override
+	public void setProperties(Map<String, String> inProperties) {
+		// TODO Auto-generated method stub
+		throw new OpenEditException("Search results are not editable");
 	}
 
 	public void setProperties(Map<String,String> inProperties)

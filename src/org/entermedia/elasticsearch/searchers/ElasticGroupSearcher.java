@@ -10,14 +10,12 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.entermedia.locks.Lock;
 import org.openedit.Data;
 import org.openedit.data.PropertyDetails;
 import org.openedit.users.GroupSearcher;
 
 import com.openedit.OpenEditException;
-import com.openedit.users.BaseGroup;
 import com.openedit.users.Group;
 import com.openedit.users.User;
 import com.openedit.users.UserManager;

@@ -6,8 +6,8 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.action.search.SearchRequestBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.openedit.Data;
 

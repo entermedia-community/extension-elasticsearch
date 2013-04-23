@@ -16,6 +16,8 @@
 
     <property name="wardir" location="${build}/wartmp"/>
 	<property name="webinf" location="${webapp}/WEB-INF"/>
+		<property name="branch" value="" />
+			<property name="majorversion" value="7" />
 
 	<!-- 
 		========================================================================
@@ -27,7 +29,7 @@
 		========================================================================
 	--> 
 	<property environment="env" />
-  	<property name="version"  value="7.${env.BUILD_NUMBER}"/>
+  	<property name="version"  value="${majorversion}.${env.BUILD_NUMBER}"/>
   	<property name="deployDir" location="deploy"/>
   	
   	<!-- A convenience variable for documentation output -->
@@ -39,7 +41,7 @@
 	<target name="update-dependencies"  >
 	    <mkdir dir="${build}"/>
 	    <mkdir dir="${wardir}/WEB-INF/" />
-		<get dest="${build}/install.xml" src="http://dev.entermediasoftware.com/jenkins/job/entermedia-server/lastSuccessfulBuild/artifact/deploy/install.xml"/>
+		<get dest="${build}/install.xml" src="http://dev.entermediasoftware.com/jenkins/job/${branch}entermedia-server/lastSuccessfulBuild/artifact/deploy/install.xml"/>
 		<ant antfile="${build}/install.xml" inheritAll="false" dir="${wardir}/WEB-INF/" target="default"/> 
 	</target>
 
@@ -107,8 +109,12 @@
 	   
 	<target name="publish" depends="zip">
 		<!-- publish results to anthill -->
-	 	<copy file="${etc}/install.js" overwrite="true"
-	        tofile="${deployDir}/install.js"/>
+			<copy overwrite="true"  file="${etc}/install.js" 
+					    tofile="${deployDir}/install.js">
+					 		 <filterset>
+					 		      <filter token="BRANCH" value="${branch}"/>
+					 		    </filterset>
+					 	</copy>	
 	 	<!-- copy file="${etc}/install.xml" overwrite="true"
 	        tofile="${deployDir}/install.xml"/ -->
 	</target>

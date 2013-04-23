@@ -13,7 +13,6 @@ import org.openedit.Data;
 import org.openedit.data.DataArchive;
 import org.openedit.data.PropertyDetails;
 import org.openedit.data.XmlDataArchive;
-import org.openedit.data.XmlFileSearcher;
 import org.openedit.repository.ContentItem;
 import org.openedit.xml.ElementData;
 import org.openedit.xml.XmlArchive;
@@ -28,7 +27,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 {
 	protected Log log = LogFactory.getLog(ElasticXmlFileSearcher.class);
 	protected XmlArchive fieldXmlArchive;
-	protected DataArchive fieldXmlDataArchive; //lazy loaded
+	protected DataArchive fieldDataArchive; //lazy loaded
 	protected String fieldPrefix;
 	protected String fieldDataFileName;
 
@@ -59,18 +58,6 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	{
 		fieldDataFileName = inName;
 	}
-	protected DataArchive getDataArchive()
-	{
-		if (fieldXmlDataArchive == null)
-		{
-			fieldXmlDataArchive = new XmlDataArchive();
-			fieldXmlDataArchive.setXmlArchive(getXmlArchive());
-			fieldXmlDataArchive.setDataFileName(getDataFileName());
-			fieldXmlDataArchive.setElementName(getSearchType());
-			fieldXmlDataArchive.setPathToData(getPathToData());
-		}
-		return fieldXmlDataArchive;
-	}
 	public XmlArchive getXmlArchive()
 	{
 		return fieldXmlArchive;
@@ -89,7 +76,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			
 			return data;
 		}
-		return (Data)getModuleManager().getBean(getNewDataName());
+		return (Data)getModuleManager().getBean(getCatalogId(), getNewDataName());
 	}
 
 
@@ -123,7 +110,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			processor.setRecursive(true);
 			processor.setRootPath(getPathToData());
 			processor.setPageManager(getPageManager());
-			processor.setFilter("xml");
+			processor.setIncludeExtensions("xml");
 			processor.process();
 			updateIndex(buffer,null);
 			log.info("reindexed " + processor.getExecCount());
@@ -220,25 +207,60 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		}
 	}
 
+	public void saveData(Data inData, User inUser)
+	{
+		//update the index
+		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
+
+		Lock lock = null;
+		try
+		{
+			lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath(),"admin");
+			updateElasticIndex(details, inData);
+			getDataArchive().saveData(inData, inUser);
+		}
+		catch(Throwable ex)
+		{
+			log.error("problem saving " + inData.getId() , ex);
+			throw new OpenEditException(ex);
+		}
+		finally
+		{
+			getLockManager().release(getCatalogId(), lock);
+		}
+	}
+	protected DataArchive getDataArchive()
+	{
+		if (fieldDataArchive == null)
+		{
+			XmlDataArchive archive = new XmlDataArchive();
+			archive.setXmlArchive(getXmlArchive());
+			archive.setDataFileName(getDataFileName());
+			archive.setElementName(getSearchType());
+			archive.setPathToData(getPathToData());
+			fieldDataArchive = archive;
+		}
+
+		return fieldDataArchive;
+	}
 	public Object searchByField(String inField, String inValue)
 	{
 		if( inValue == null)
 		{
 			throw new OpenEditException("Can't search for null value on field " + inField);
 		}
-		Object hit =  super.searchByField(inField, inValue);
+		Data newdata =  (Data) super.searchByField(inField, inValue);
 		//load up a real object?
 		String sourcepath = null;
 		String id = null;
 		
-		if( hit == null)
+		if( newdata == null)
 		{
 			return null;	
 		}
 		
-		if( hit instanceof Data)
-		{
-			Data newdata = (Data)hit;
+		
+		
 			if( newdata.getSourcePath() == null)
 			{
 				log.info("Source path is null on search results "  +getSearchType() );
@@ -246,14 +268,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			}
 			sourcepath = newdata.getSourcePath();
 			id = newdata.getId();
-		}
-		else
-		{
-			
-//			Map newdata = (Map)hit;
-//			sourcepath = (String)newdata.get("sourcepath");
-//			id = (String)newdata.get("_id");
-		}
+		
 		String path = getPathToData() + "/" + sourcepath + "/" + getSearchType() + ".xml";
 		XmlFile content = getDataArchive().getXmlArchive().getXml(path, getSearchType());
 		//log.info( newdata.getProperties() );
