@@ -742,7 +742,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			builder = builder.setSource(content).setRefresh(true);
 			if( isCheckVersions())
 			{
-				String version = data.get("_version");
+				String version = data.get(".version");
 				if( version != null)
 				{
 					long val = Long.parseLong( version );
@@ -760,7 +760,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				data.setId(response.getId());
 			}
-			data.setProperty("_version", String.valueOf( response.getVersion() ) );
+			data.setProperty(".version", String.valueOf( response.getVersion() ) );
 		}
 		catch(RemoteTransportException ex)
 		{
@@ -970,7 +970,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				data.setId(inValue);
 				if( response.getVersion() > -1)
 				{
-					data.setProperty("_version",String.valueOf(response.getVersion()) );
+					data.setProperty(".version",String.valueOf(response.getVersion()) );
 				}
 				return data;
 			}
