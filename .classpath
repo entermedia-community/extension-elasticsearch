@@ -9,5 +9,11 @@
 	<classpathentry kind="lib" path="lib/jna-3.3.0.jar"/>
 	<classpathentry kind="lib" path="lib/jts-1.12.jar"/>
 	<classpathentry kind="lib" path="lib/spatial4j-0.3.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-codecs-4.2.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-highlighter-4.2.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-join-4.2.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-sandbox-4.2.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-spatial-4.2.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-queries-4.2.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
