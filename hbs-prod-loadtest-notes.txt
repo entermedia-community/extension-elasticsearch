@@ -1,2 +1,0 @@
-- Make sure you modify the file used for uploading.
-- Also up the iteration count if doing a real load test, modified under TC ALL
