@@ -76,7 +76,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			
 			return data;
 		}
-		return (Data)getModuleManager().getBean(getNewDataName());
+		return (Data)getModuleManager().getBean(getCatalogId(), getNewDataName());
 	}
 
 
@@ -249,19 +249,18 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		{
 			throw new OpenEditException("Can't search for null value on field " + inField);
 		}
-		Object hit =  super.searchByField(inField, inValue);
+		Data newdata =  (Data) super.searchByField(inField, inValue);
 		//load up a real object?
 		String sourcepath = null;
 		String id = null;
 		
-		if( hit == null)
+		if( newdata == null)
 		{
 			return null;	
 		}
 		
-		if( hit instanceof Data)
-		{
-			Data newdata = (Data)hit;
+		
+		
 			if( newdata.getSourcePath() == null)
 			{
 				log.info("Source path is null on search results "  +getSearchType() );
@@ -269,14 +268,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			}
 			sourcepath = newdata.getSourcePath();
 			id = newdata.getId();
-		}
-		else
-		{
-			
-//			Map newdata = (Map)hit;
-//			sourcepath = (String)newdata.get("sourcepath");
-//			id = (String)newdata.get("_id");
-		}
+		
 		String path = getPathToData() + "/" + sourcepath + "/" + getSearchType() + ".xml";
 		XmlFile content = getDataArchive().getXmlArchive().getXml(path, getSearchType());
 		//log.info( newdata.getProperties() );
