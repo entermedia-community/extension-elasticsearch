@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -813,7 +814,11 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	protected void updateIndex(XContentBuilder inContent, Data inData, PropertyDetails inDetails)
 	{
 		Map props = inData.getProperties();
-		for (Iterator iterator = props.keySet().iterator(); iterator.hasNext();) 
+		HashSet everything = new HashSet(props.keySet());
+		everything.add("name");
+		everything.add("sourcepath");
+		everything.remove(".version"); //is this correct?
+		for (Iterator iterator = everything.iterator(); iterator.hasNext();) 
 		{
 			String key = (String) iterator.next();
 			
@@ -838,6 +843,8 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				PropertyDetail detail = (PropertyDetail) inDetails.getDetail(key);
 				if( detail != null && !detail.isIndex() )
 				{
+					//inContent.field(key, value);
+
 					continue;
 				}
 				if(detail != null && detail.isDate())

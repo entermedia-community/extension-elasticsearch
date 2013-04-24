@@ -177,7 +177,8 @@ public class ElasticListSearcher extends BaseElasticSearcher
 		Lock lock = null;
 		try
 		{
-			lock = getLockManager().lock(getCatalogId(), getSearchType() + "/" + inData.getSourcePath(),"admin");
+			
+			lock = getLockManager().lock(getCatalogId(), getSearchType(),"admin");
 			updateElasticIndex(details, inData);
 			getXmlSearcher().saveData(inData, inUser);
 		}

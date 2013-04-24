@@ -13,6 +13,7 @@ import org.openedit.Data;
 import org.openedit.data.DataArchive;
 import org.openedit.data.PropertyDetails;
 import org.openedit.data.XmlDataArchive;
+import org.openedit.entermedia.SourcePathCreator;
 import org.openedit.repository.ContentItem;
 import org.openedit.xml.ElementData;
 import org.openedit.xml.XmlArchive;
@@ -30,7 +31,16 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	protected DataArchive fieldDataArchive; //lazy loaded
 	protected String fieldPrefix;
 	protected String fieldDataFileName;
-
+protected SourcePathCreator fieldSourcePathCreator;
+	
+	public SourcePathCreator getSourcePathCreator()
+	{
+		return fieldSourcePathCreator;
+	}
+	public void setSourcePathCreator(SourcePathCreator inSourcePathCreator)
+	{
+		fieldSourcePathCreator = inSourcePathCreator;
+	}
 	public PageManager getPageManager()
 	{
 		return fieldPageManager;
@@ -216,7 +226,17 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		try
 		{
 			lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath(),"admin");
+			
+			
 			updateElasticIndex(details, inData);
+			//TODO - we might need the sourcepath saved in the below case.
+			if( inData.getSourcePath() == null)
+			{
+				String sourcepath = getSourcePathCreator().createSourcePath(inData, inData.getId() );
+				inData.setSourcePath(sourcepath);
+			}
+			
+			
 			getDataArchive().saveData(inData, inUser);
 		}
 		catch(Throwable ex)
@@ -258,16 +278,16 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		{
 			return null;	
 		}
+			
 		
-		
-		
-			if( newdata.getSourcePath() == null)
-			{
-				log.info("Source path is null on search results "  +getSearchType() );
-				return null;
-			}
-			sourcepath = newdata.getSourcePath();
-			id = newdata.getId();
+		if( newdata.getSourcePath() == null)
+		{
+				sourcepath = getSourcePathCreator().createSourcePath(newdata, newdata.getId() );
+				
+		}	else{		
+		sourcepath = newdata.getSourcePath();
+		}
+		id = newdata.getId();
 		
 		String path = getPathToData() + "/" + sourcepath + "/" + getSearchType() + ".xml";
 		XmlFile content = getDataArchive().getXmlArchive().getXml(path, getSearchType());
