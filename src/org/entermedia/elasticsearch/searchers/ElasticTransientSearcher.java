@@ -7,7 +7,7 @@ import org.openedit.Data;
 import com.openedit.OpenEditException;
 import com.openedit.users.User;
 
-public class IndexElasticSearcher extends BaseElasticSearcher
+public class ElasticTransientSearcher extends BaseElasticSearcher
 {
 	public void reIndexAll() throws OpenEditException
 	{

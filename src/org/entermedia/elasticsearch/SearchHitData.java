@@ -134,9 +134,4 @@ public class SearchHitData implements Data
 		throw new OpenEditException("Search results are not editable");
 	}
 
-	public void setProperties(Map<String,String> inProperties)
-	{
-		getProperties().putAll(inProperties);
-	}
-
 }

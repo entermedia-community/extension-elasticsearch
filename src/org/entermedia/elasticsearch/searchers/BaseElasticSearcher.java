@@ -7,6 +7,7 @@ import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -762,7 +763,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			XContentBuilder content = XContentFactory.jsonBuilder().startObject();
 			updateIndex(content, data, details);
 			content.endObject();
-			log.info("Saving " + content.string());
+			log.info("Saving " + getSearchType() + " " + data.getId() + " = " + content.string());
 			
 			//ConcurrentModificationException
 			builder = builder.setSource(content).setRefresh(true);
@@ -811,17 +812,20 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 
 	protected void updateIndex(XContentBuilder inContent, Data inData, PropertyDetails inDetails)
 	{
-		for (Iterator iterator = inDetails.findIndexProperties().iterator(); iterator.hasNext();)
+		Map props = inData.getProperties();
+		for (Iterator iterator = props.keySet().iterator(); iterator.hasNext();) 
 		{
-			PropertyDetail detail = (PropertyDetail) iterator.next();
-			String value = inData.get(detail.getId());
+			String key = (String) iterator.next();
+			
+			
+			String value = inData.get(key);
 			if( value != null && value.length() == 0)
 			{
 				value = null;
 			}
 			try
 			{
-				if( "_id".equals( detail.getId() ) || "id".equals(detail.getId() ) )
+				if( "_id".equals( key ) || "id".equals(key ) )
 				{
 //					if( value != null)
 //					{
@@ -831,66 +835,71 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 					continue;
 				}
 
-				if( detail.isDate())
+				PropertyDetail detail = (PropertyDetail) inDetails.getDetail(key);
+				if( detail != null && !detail.isIndex() )
+				{
+					continue;
+				}
+				if(detail != null && detail.isDate())
 				{
 					if( value != null)
 					{
 						//ie date = DateStorageUtil.getStorageUtil().parseFromStorage(value);
-						inContent.field(detail.getId(), value);
+						inContent.field(key, value);
 					}
 				}
-				else if( detail.isBoolean())
+				else if(detail != null && detail.isBoolean())
 				{
 					if( value == null)
 					{
-						inContent.field(detail.getId(), Boolean.FALSE);
+						inContent.field(key, Boolean.FALSE);
 					}
 					else
 					{
-						inContent.field(detail.getId(), Boolean.valueOf(value));
+						inContent.field(key, Boolean.valueOf(value));
 					}
 				}
-				else if( detail.isDataType("number"))
+				else if(detail != null &&  detail.isDataType("number"))
 				{
 					if( value == null)
 					{
-						inContent.field(detail.getId(), Long.valueOf(0));
+						inContent.field(key, Long.valueOf(0));
 					}
 					else
 					{
-						inContent.field(detail.getId(), Long.valueOf(value));
+						inContent.field(key, Long.valueOf(value));
 					}
 				}
-				else if( detail.getId().equals("description") )
+				else if( key.equals("description") )
 				{
 					StringBuffer desc = new StringBuffer();
 					populateKeywords(desc, inData, inDetails);
 					if( desc.length() > 0)
 					{
-						inContent.field(detail.getId(), desc.toString());
+						inContent.field(key, desc.toString());
 					}
 				}
-				else if( detail.getId().equals("name") )
+				else if( key.equals("name") )
 				{
 					//This matches how we do it on Lucene
 					if( value != null)
 					{
-						inContent.field(detail.getId(), value);
-						inContent.field(detail.getId() + "sorted", value);
+						inContent.field(key, value);
+						inContent.field(key + "sorted", value);
 					}
 				}
 				else
 				{
 					if( value == null)
 					{
-						//inContent.field(detail.getId(), ""); // this ok?
+						//inContent.field(key, ""); // this ok?
 					}
 					else
 					{
-						inContent.field(detail.getId(), value);
+						inContent.field(key, value);
 					}
 				}
-				//log.info("Saved" + detail.getId() + "=" + value );
+				//log.info("Saved" + key + "=" + value );
 			}
 			catch (Exception ex)
 			{
@@ -949,7 +958,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		}
 		return fieldIntCounter;
 	}
-
+	/** TODO: Update this location to match the new standard location */
 	protected String loadCounterPath()
 	{
 		return "/WEB-INF/data/" + getCatalogId() + "/" + getSearchType() + "s/idcounter.properties";

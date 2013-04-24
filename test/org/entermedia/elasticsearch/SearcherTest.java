@@ -125,11 +125,18 @@ public void xxtestBasicRead() throws Exception
 	{
 		ElasticListSearcher searcher = (ElasticListSearcher)getMediaArchive().getSearcherManager().getSearcher("entermedia/catalogs/testcatalog", "somerandom" );
 
+		assertTrue( searcher.getPropertyDetails().size() > 0 ); 	//Make sure webapp/entermedia/catalogs/testcatalog/_site.xconf has fallback 
+		
 		Data asset = searcher.createNewData();
 		asset.setName("Bermuda");
 		asset.setId("102");
 		asset.setSourcePath("states/102");
 		searcher.saveData(asset, null);
+
+		Data hit = (Data)searcher.searchById("102");
+		assertNotNull(hit);
+		
+		searcher.getAllHits();
 		
 		SearchQuery q = searcher.createSearchQuery();
 		q.addExact("name", "Bermuda");

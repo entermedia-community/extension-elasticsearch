@@ -6,7 +6,7 @@ import org.elasticsearch.action.deletebyquery.DeleteByQueryRequestBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 
-public class LockSearcher extends IndexElasticSearcher 
+public class LockSearcher extends ElasticTransientSearcher 
 {
 	private static final Log log = LogFactory.getLog(LockSearcher.class);
 
