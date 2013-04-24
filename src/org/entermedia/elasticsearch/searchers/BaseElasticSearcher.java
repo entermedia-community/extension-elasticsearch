@@ -815,6 +815,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	{
 		Map props = inData.getProperties();
 		HashSet everything = new HashSet(props.keySet());
+		everything.add("id");
 		everything.add("name");
 		everything.add("sourcepath");
 		everything.remove(".version"); //is this correct?
@@ -830,7 +831,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			try
 			{
-				if( "_id".equals( key ) || "id".equals(key ) )
+				if( "_id".equals( key ) )
 				{
 //					if( value != null)
 //					{
