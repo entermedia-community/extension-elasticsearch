@@ -48,6 +48,6 @@ files.copyFileByMatch( tmp + "/lib/spatial-*.jar", web + "/lib/");
 
 
 log.add("5. CLEAN UP");
-//files.deleteAll(tmp);
+files.deleteAll(tmp);
 
 log.add("6. UPGRADE COMPLETED");
