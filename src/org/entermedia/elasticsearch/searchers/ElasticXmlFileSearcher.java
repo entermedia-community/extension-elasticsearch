@@ -86,7 +86,7 @@ protected SourcePathCreator fieldSourcePathCreator;
 			
 			return data;
 		}
-		return (Data)getModuleManager().getBean(getCatalogId(), getNewDataName());
+		return (Data)getModuleManager().getBean( getNewDataName());
 	}
 
 

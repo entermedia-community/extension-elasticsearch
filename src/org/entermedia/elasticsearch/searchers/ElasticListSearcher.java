@@ -80,7 +80,7 @@ public class ElasticListSearcher extends BaseElasticSearcher
 			
 			return data;
 		}
-		return (Data)getModuleManager().getBean(getCatalogId(), getNewDataName());
+		return (Data)getModuleManager().getBean(getNewDataName());
 	}
 
 
