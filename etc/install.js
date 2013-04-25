@@ -30,7 +30,7 @@ files.deleteMatch( web + "/lib/lucene-join-*.jar");
 files.deleteMatch( web + "/lib/lucene-queries-*.jar");
 files.deleteMatch( web + "/lib/lucene-sandbox-*.jar");
 files.deleteMatch( web + "/lib/lucene-spatial-*.jar");
-files.deleteMatch( web + "/lib/spatial-*.jar");
+files.deleteMatch( web + "/lib/spatial4j-*.jar");
 
 
 files.copyFileByMatch( tmp + "/lib/extension-elasticsearch*.jar", web + "/lib/");
@@ -43,7 +43,7 @@ files.copyFileByMatch( tmp + "/lib/lucene-join-*.jar", web + "/lib/");
 files.copyFileByMatch( tmp + "/lib/lucene-queries-*.jar", web + "/lib/");
 files.copyFileByMatch( tmp + "/lib/lucene-sandbox-*.jar", web + "/lib/");
 files.copyFileByMatch( tmp + "/lib/lucene-spatial-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/spatial-*.jar", web + "/lib/");
+files.copyFileByMatch( tmp + "/lib/spatial4j-*.jar", web + "/lib/");
 
 
 
