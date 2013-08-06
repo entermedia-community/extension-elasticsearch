@@ -209,6 +209,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 
 			ElasticHitTracker hits = new ElasticHitTracker(search);
 			hits.setIndexId(getIndexId());
+			hits.setSearcher(this);
 			hits.setSearchQuery(inQuery);
 
 			long end = System.currentTimeMillis() - start;
