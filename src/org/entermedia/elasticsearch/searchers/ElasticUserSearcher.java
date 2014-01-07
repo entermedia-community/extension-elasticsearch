@@ -77,6 +77,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 			Collection usernames = getUserManager().listUserNames();
 			if( usernames != null)
 			{
+				deleteAll(null);
 				List users = new ArrayList();
 				for (Iterator iterator = usernames.iterator(); iterator.hasNext();)
 				{
@@ -99,11 +100,20 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 
 	}
 
-
-	//TODO: Replace with search?
+	//TODO: Replace with in-memory copy for performance reasons?
 	public Object searchById(String inId)
 	{
-		return getUserManager().getUser(inId);
+		
+		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/users/" + inId + ".xml","admin");
+		try
+		{
+			return getUserManager().loadUser(inId);
+		}
+		finally
+		{
+			getLockManager().release(getCatalogId(), lock);
+		}
+
 	}
 
 	/* (non-Javadoc)
@@ -120,7 +130,12 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 	 */
 	public User getUserByEmail(String inEmail)
 	{
-		return getUserManager().getUserByEmail(inEmail);
+		User user =  getUserManager().getUserByEmail(inEmail);
+		if( user != null)
+		{
+			return getUser(user.getId());
+		}
+		return null;
 	}
 
 	public HitTracker getUsersInGroup(Group inGroup)
