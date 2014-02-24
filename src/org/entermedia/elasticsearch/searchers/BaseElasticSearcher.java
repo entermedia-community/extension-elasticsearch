@@ -301,7 +301,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 						}
 					}
 
-					ClusterState cs = admin.cluster().prepareState().setFilterIndices(indexid).execute().actionGet().getState(); 
+					ClusterState cs = admin.cluster().prepareState().setIndices(indexid).execute().actionGet().getState(); 
 					IndexMetaData data = cs.getMetaData().index(indexid);
 					boolean runmapping = true;
 					if( data != null)
@@ -671,7 +671,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			else if( fieldid.equals("description"))
 			{
-				find = QueryBuilders.textQuery(fieldid, valueof);				
+				find = QueryBuilders.matchQuery(fieldid, valueof);				
 			}
 			else
 			{
