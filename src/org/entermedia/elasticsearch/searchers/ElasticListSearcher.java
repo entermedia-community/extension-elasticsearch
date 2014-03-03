@@ -17,6 +17,7 @@ import org.openedit.xml.XmlSearcher;
 
 import com.openedit.OpenEditException;
 import com.openedit.hittracker.HitTracker;
+import com.openedit.hittracker.SearchQuery;
 import com.openedit.page.manage.PageManager;
 import com.openedit.users.User;
 
@@ -192,6 +193,14 @@ public class ElasticListSearcher extends BaseElasticSearcher
 			getLockManager().release(getCatalogId(), lock);
 		}
 	}
+	
+	
+	public Object searchById(String inId)
+	{
+		return getXmlSearcher().searchById(inId, false);
+	}
+	
+	
 	
 	
 	
