@@ -17,7 +17,6 @@ import org.openedit.xml.XmlSearcher;
 
 import com.openedit.OpenEditException;
 import com.openedit.hittracker.HitTracker;
-import com.openedit.hittracker.SearchQuery;
 import com.openedit.page.manage.PageManager;
 import com.openedit.users.User;
 
@@ -40,6 +39,7 @@ public class ElasticListSearcher extends BaseElasticSearcher
 			PropertyDetailsArchive newarchive = getSearcherManager().getPropertyDetailsArchive(getCatalogId());
 			fieldXmlSearcher.setPropertyDetailsArchive(newarchive);
 		}
+		fieldXmlSearcher.setCacheManager(null);//Important
 		return fieldXmlSearcher;
 	}
 
@@ -197,7 +197,7 @@ public class ElasticListSearcher extends BaseElasticSearcher
 	
 	public Object searchById(String inId)
 	{
-		return getXmlSearcher().searchById(inId, false);
+		return getXmlSearcher().searchById(inId);
 	}
 	
 	
