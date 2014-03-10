@@ -405,7 +405,17 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			}
 		}
 		
-		List categories= (List) inResponse.getSource().get("category-exact");
+		Object exactcats =  (Object) inResponse.getSource().get("category-exact");
+		List categories;
+		
+		if(exactcats instanceof List){
+			categories = (List) exactcats;
+		}
+		else{
+			categories = new ArrayList();
+			categories.add(exactcats);
+		}
+		
 		for (Iterator iterator = categories.iterator(); iterator.hasNext();)
 		{
 			String categoryid = (String) iterator.next();
