@@ -8,6 +8,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.IdsQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.openedit.Data;
 
@@ -21,6 +25,16 @@ public class ElasticHitTracker extends HitTracker
 	protected SearchRequestBuilder fieldSearcheRequestBuilder;
 	protected Map fieldChunks;
 	protected int fieldHitsPerChunk = 40;
+	protected QueryBuilder terms;
+	
+	public QueryBuilder getTerms()
+	{
+		return terms;
+	}
+	public void setTerms(QueryBuilder inTerms)
+	{
+		terms = inTerms;
+	}
 	public SearchRequestBuilder getSearcheRequestBuilder()
 	{
 		return fieldSearcheRequestBuilder;
@@ -35,10 +49,37 @@ public class ElasticHitTracker extends HitTracker
 	{
 		
 	}
-	public ElasticHitTracker(SearchRequestBuilder	builder)
+	public ElasticHitTracker(SearchRequestBuilder	builder, QueryBuilder inTerms )
 	{
+		setTerms(inTerms);;
 		setSearcheRequestBuilder(builder);
 	}
+	
+	
+	
+	public void setShowOnlySelected(boolean inShowOnlySelected)
+	{
+		fieldShowOnlySelected = inShowOnlySelected;
+		
+		if (isShowOnlySelected() && fieldSelections != null && fieldSelections.size() > 0)
+		{
+
+			BoolQueryBuilder bool = QueryBuilders.boolQuery();
+			bool.must(getTerms());
+			String []fieldSelected =  fieldSelections.toArray(new String[fieldSelections.size()]);
+			IdsQueryBuilder b = QueryBuilders.idsQuery();
+			b.addIds(fieldSelected);
+			bool.must(b);
+			getSearcheRequestBuilder().setQuery(bool);
+		} else{
+			
+			getSearcheRequestBuilder().setQuery(getTerms());
+
+		}
+		getChunks().clear();
+	}
+	
+	
 	public SearchResponse getSearchResponse(int inChunk)
 	{
 		Integer chunk = Integer.valueOf(inChunk);
@@ -49,6 +90,7 @@ public class ElasticHitTracker extends HitTracker
 			int end = (inChunk+1) * fieldHitsPerChunk;
 			
 			getSearcheRequestBuilder().setFrom(start).setSize(end).setExplain(false);
+			
 			response = getSearcheRequestBuilder().execute().actionGet();
 			if( getChunks().size() > 30)
 			{

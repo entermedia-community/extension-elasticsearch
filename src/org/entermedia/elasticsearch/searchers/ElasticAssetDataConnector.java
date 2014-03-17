@@ -8,11 +8,18 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
 import org.openedit.Data;
 import org.openedit.data.DataArchive;
 import org.openedit.data.PropertyDetails;
@@ -44,7 +51,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 	{
 		// TODO Auto-generated method stub
 		DeleteRequestBuilder delete = getClient().prepareDelete(toId(getCatalogId()), getSearchType(), inId);
-		delete.setOperationThreaded(false).execute().actionGet();
+		delete.setOperationThreaded(false).setRefresh(true).execute().actionGet();
 		// delete()
 	}
 
@@ -347,7 +354,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		if (inField.equals("id") || inField.equals("_id"))
 		{
 			GetResponse response = getClient().prepareGet(toId(getCatalogId()), getSearchType(), inValue).execute().actionGet();
-			return createAssetFromResponse(response);
+			return createAssetFromResponse(response.getSource());
 			// if(!response.isExists())
 			// {
 			// return null;
@@ -357,26 +364,42 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			// return getAssetArchive().getAssetBySourcePath(path);
 		}
 		if(inField.equals("sourcepath") || inField.equals("_sourcepath")){
-			GetResponse response = getClient().prepareGet(toId(getCatalogId()), getSearchType(), inValue).execute().actionGet();
-			return createAssetFromResponse(response);
+			
+			SearchRequestBuilder search = getClient().prepareSearch(toId(getCatalogId()));
+		
+			search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
+			search.setTypes(getSearchType());
+			
+			QueryBuilder b = QueryBuilders.termQuery("sourcepath", inValue);
+			search.setQuery(b);
+			SearchResponse response = search.execute().actionGet();
+			Iterator <SearchHit> responseiter = response.getHits().iterator();
+			if(responseiter.hasNext()){
+				SearchHit hit = responseiter.next();
+				return createAssetFromResponse(hit.getSource());
+				
+				
+			}
+			return null;
+
+	        	
+			
+		
 			
 		}
 		return super.searchByField(inField, inValue);
 	}
 
-	protected Asset createAssetFromResponse(GetResponse inResponse)
+	protected Asset createAssetFromResponse(Map inSource)
 	{
 		Asset asset = new Asset();
-		if(inResponse.getSource() == null){
-			return null;
-		}
-		String id = inResponse.getId();
+		String id = (String) inSource.get("_id");
 		asset.setId(id);
 		
-		for (Iterator iterator = inResponse.getSourceAsMap().keySet().iterator(); iterator.hasNext();)
+		for (Iterator iterator = inSource.keySet().iterator(); iterator.hasNext();)
 		{
 			String key = (String) iterator.next();
-			Object object = inResponse.getSource().get(key);
+			Object object = inSource.get(key);
 			if("categories".equals(key)){
 				continue;
 			}
@@ -405,7 +428,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			}
 		}
 		
-		Object exactcats =  (Object) inResponse.getSource().get("category-exact");
+		Object exactcats =  (Object)inSource.get("category-exact");
 		List categories;
 		
 		if(exactcats instanceof List){

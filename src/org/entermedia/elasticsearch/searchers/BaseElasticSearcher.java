@@ -207,7 +207,8 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 
 			json = search.toString();
 
-			ElasticHitTracker hits = new ElasticHitTracker(search);
+			ElasticHitTracker hits = new ElasticHitTracker(search, terms);
+			
 			hits.setIndexId(getIndexId());
 			hits.setSearcher(this);
 			hits.setSearchQuery(inQuery);
@@ -675,8 +676,18 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			else
 			{
-				find = QueryBuilders.termQuery(fieldid, valueof);
+				
+				if("matches".equals(inTerm.getOperation())){
+					find = QueryBuilders.matchQuery(fieldid, valueof);
+				} 
+				else if("contains".equals(inTerm.getOperation())){
+					find = QueryBuilders.matchQuery(fieldid, valueof);
+				} 
+				else{
+					find = QueryBuilders.termQuery(fieldid, valueof);
+				}
 			}
+//			QueryBuilders.idsQuery(types)
 		return find;
 	}
 
