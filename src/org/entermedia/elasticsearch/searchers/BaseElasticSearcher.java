@@ -875,8 +875,20 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				{
 					if( value != null)
 					{
+						
 						//ie date = DateStorageUtil.getStorageUtil().parseFromStorage(value);
-						inContent.field(key, value);
+						if (value.length() > 21 && value.contains("T")) {
+								
+							
+							inContent.field(key, value);
+						} else{
+							 
+							Date date = DateStorageUtil.getStorageUtil().parseFromStorage(value);
+							if(date != null){
+								value = DateStorageUtil.getStorageUtil().formatForStorage(date);
+								inContent.field(key, value);
+							}
+						}
 					}
 				}
 				else if(detail != null && detail.isBoolean())
