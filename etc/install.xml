@@ -124,9 +124,9 @@ files.copyFileByMatch( tmp + "/lib/spatial4j-*.jar", web + "/lib/");
     <copy todir="./lib" overwrite="true" preservelastmodified="true" >
       <fileset dir="${build}/unpacked/lib"/>
     </copy> 
-  	<mkdir dir="./lib/sigjar"/>
-    <copy todir="./lib/sigjar" overwrite="true" preservelastmodified="true" >
-      <fileset dir="${build}/unpacked/lib/sigjar"/>
+  	<mkdir dir="./lib/sigar"/>
+    <copy todir="./lib/sigar" overwrite="true" preservelastmodified="true" >
+      <fileset dir="${build}/unpacked/lib/sigar"/>
     </copy> 
 
     <delete dir="${build}"/>
