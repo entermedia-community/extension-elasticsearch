@@ -115,7 +115,6 @@
 					 		      <filter token="BRANCH" value="${branch}"/>
 					 		    </filterset>
 					 	</copy>	
-	 	<!-- copy file="${etc}/install.xml" overwrite="true"
-	        tofile="${deployDir}/install.xml"/ -->
+	 	<copy file="${etc}/install.xml" overwrite="true"      tofile="${deployDir}/install.xml" />
 	</target>
 </project>
