@@ -44,37 +44,7 @@
     </unzip>
   </target>
   
-	<!--
-log.add("3. REPLACE LIBS");
-var files = new FileUtils();
-files.deleteMatch( web + "/lib/extension-elasticsearch*.jar");
-files.deleteMatch( web + "/lib/jline-*.jar");
-files.deleteMatch( web + "/lib/jna-*.jar");
-files.deleteMatch( web + "/lib/jts-*.jar");
-files.deleteMatch( web + "/lib/elasticsearch-*.jar");
-files.deleteMatch( web + "/lib/lucene-codecs-*.jar");
-files.deleteMatch( web + "/lib/lucene-highlighter-*.jar");
-files.deleteMatch( web + "/lib/lucene-join-*.jar");
-files.deleteMatch( web + "/lib/lucene-queries-*.jar");
-files.deleteMatch( web + "/lib/lucene-sandbox-*.jar");
-files.deleteMatch( web + "/lib/lucene-spatial-*.jar");
-files.deleteMatch( web + "/lib/lucene-memory-*.jar");
-files.deleteMatch( web + "/lib/spatial4j-*.jar");
 
-
-files.copyFileByMatch( tmp + "/lib/extension-elasticsearch*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/jna-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/jts-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/elasticsearch-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-codecs-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-highlighter-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-join-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-queries-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-sandbox-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-spatial-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-memory-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/spatial4j-*.jar", web + "/lib/");
-	-->
   <target name="upgrade">
   	<echo>Delete old libs</echo>
 	<mkdir dir="./lib"/>
@@ -93,16 +63,20 @@ files.copyFileByMatch( tmp + "/lib/spatial4j-*.jar", web + "/lib/");
   	<delete>
       <fileset dir="./lib" includes="elasticsearch-**.jar"/>
     </delete>
-	<delete>
-      <fileset dir="./lib" includes="lucene-codecs-**.jar"/>
+  	<delete>
+  	      <fileset dir="./lib" includes="lucene-grouping-**.jar"/>
+  	    </delete>
+	  	<delete>
+	      <fileset dir="./lib" includes="lucene-highlighter-**.jar"/>
     </delete>
-	<delete>
-      <fileset dir="./lib" includes="lucene-highlighter-**.jar"/>
-    </delete>
-	<delete>
-      <fileset dir="./lib" includes="lucene-join-**.jar"/>
-    </delete>
-	<delete>
+  	<delete>
+  	      <fileset dir="./lib" includes="lucene-memory-**.jar"/>
+  	    </delete>
+  	<delete>
+  	      <fileset dir="./lib" includes="lucene-misc-**.jar"/>
+  	    </delete>
+  		
+  	<delete>
       <fileset dir="./lib" includes="lucene-queries-**.jar"/>
     </delete>
 	<delete>
@@ -112,23 +86,18 @@ files.copyFileByMatch( tmp + "/lib/spatial4j-*.jar", web + "/lib/");
       <fileset dir="./lib" includes="lucene-spatial-**.jar"/>
     </delete>
 	<delete>
-      <fileset dir="./lib" includes="lucene-memory-**.jar"/>
-    </delete>
-	<delete>
       <fileset dir="./lib" includes="spatial4j-**.jar"/>
     </delete>
-	<delete>
-      <fileset dir="./lib" includes="spatial4j-**.jar"/>
-    </delete>
-
+	
     <copy todir="./lib" overwrite="true" preservelastmodified="true" >
       <fileset dir="${build}/unpacked/lib"/>
     </copy> 
+<!--
   	<mkdir dir="./lib/sigar"/>
     <copy todir="./lib/sigar" overwrite="true" preservelastmodified="true" >
       <fileset dir="${build}/unpacked/lib/sigar"/>
     </copy> 
-
+-->
     <delete dir="${build}"/>
     
   </target>
