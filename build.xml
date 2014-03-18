@@ -75,7 +75,7 @@
 		-->	  
 		<target name="jar" depends="compile">
 			<mkdir dir="${deployDir}/builds/"/>
-			<jar jarfile="${deployDir}/builds/${appname}-${version}.jar" basedir="${compiled}" >
+			<jar jarfile="${deployDir}/builds/${appname}-${branch}${version}.jar" basedir="${compiled}" >
 				<exclude name="**/*Test*"/>
 				<manifest>
 			    	<attribute name="Built-By" value="${user.name}"/>
@@ -98,7 +98,7 @@
 
 	  	<copy todir="${build}/zip/lib" preservelastmodified="true" overwrite="true">
 	  		<fileset dir="${deployDir}/builds/" followsymlinks="false">
-				<include name="${appname}-${version}.jar" />
+				<include name="${appname}-${branch}${version}.jar" />
 	  		</fileset>
 	  	</copy>
 
