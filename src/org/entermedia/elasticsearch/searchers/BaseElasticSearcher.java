@@ -2,6 +2,7 @@ package org.entermedia.elasticsearch.searchers;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
@@ -425,7 +426,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			if( detail.isDate())
 			{
 				jsonproperties = jsonproperties.field("type", "date");
-				jsonproperties = jsonproperties.field("format", "yyyy-MM-dd HH:mm:ss Z");
+				//jsonproperties = jsonproperties.field("format", "yyyy-MM-dd HH:mm:ss Z");
 			}
 			else if ( detail.isBoolean())
 			{
@@ -649,21 +650,55 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				if( "beforedate".equals(inTerm.getOperation()))
 				{
-					String start = DateStorageUtil.getStorageUtil().formatForStorage(new Date(0));
-					find = QueryBuilders.rangeQuery(inDetail.getId())
-		                .from(start)
-		                .to(valueof);	
+					//Date after = new Date(0);
+					Date before = DateStorageUtil.getStorageUtil().parseFromStorage(valueof); 
+					find = QueryBuilders.rangeQuery(inDetail.getId()).to(before);	
 				}
 				else if( "afterdate".equals(inTerm.getOperation()))
 				{
-					String end = DateStorageUtil.getStorageUtil().formatForStorage(new Date(Long.MAX_VALUE));
-					find = QueryBuilders.rangeQuery(fieldid)
-			                .from(valueof);
-			            //    .to(end);
+					Date before = new Date(Long.MAX_VALUE);
+					Date after = DateStorageUtil.getStorageUtil().parseFromStorage(valueof); 
+					find = QueryBuilders.rangeQuery(fieldid).from(after);//.to(before);
 				}
+				else if( "betweendates".equals(inTerm.getOperation()))
+				{
+					//String end = DateStorageUtil.getStorageUtil().formatForStorage(new Date(Long.MAX_VALUE));
+					Date after = DateStorageUtil.getStorageUtil().parseFromStorage(inTerm.getParameter("afterDate"));
+					Date before =DateStorageUtil.getStorageUtil().parseFromStorage(inTerm.getParameter("beforeDate")); 
+							
+							//inTerm.getParameter("beforeDate");
+					
+					//	String before
+					find = QueryBuilders.rangeQuery(fieldid).from(after).to(before);
+				}
+				
+				
+				
+				
+				
 				else
 				{
-					find = QueryBuilders.termQuery(fieldid, valueof); //TODO make it a range query? from 0-24 hours
+					//Think this doesn't ever run.  I think we use betweendates.
+					Date target = DateStorageUtil.getStorageUtil().parseFromStorage(valueof);
+					Calendar calendar = Calendar.getInstance();
+					calendar.setTime(target);
+					int year = calendar.get(Calendar.YEAR);
+				    int month = calendar.get(Calendar.MONTH);
+				    int day = calendar.get(Calendar.DATE);
+				    calendar.set(Calendar.MILLISECOND, 0);
+					calendar.set(year, month, day, 0, 0, 0);
+
+					Date after =calendar.getTime();
+					calendar.set(year, month, day, 23, 59, 59);
+				    calendar.set(Calendar.MILLISECOND, 999);
+
+					
+					
+					Date before = calendar.getTime();
+					
+					find = QueryBuilders.rangeQuery(fieldid).from(after).to(before);
+					
+					//find = QueryBuilders.termQuery(fieldid, valueof); //TODO make it a range query? from 0-24 hours
 				}
 			}
 			else if( inDetail.isDataType("number") )
@@ -877,18 +912,11 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 					{
 						
 						//ie date = DateStorageUtil.getStorageUtil().parseFromStorage(value);
-						if (value.length() > 21 && value.contains("T")) {
-								
-							
-							inContent.field(key, value);
-						} else{
-							 
-							Date date = DateStorageUtil.getStorageUtil().parseFromStorage(value);
-							if(date != null){
-								value = DateStorageUtil.getStorageUtil().formatForStorage(date);
-								inContent.field(key, value);
-							}
+						Date date = DateStorageUtil.getStorageUtil().parseFromStorage(value);
+						if(date != null){
+						inContent.field(key, date);
 						}
+						
 					}
 				}
 				else if(detail != null && detail.isBoolean())
