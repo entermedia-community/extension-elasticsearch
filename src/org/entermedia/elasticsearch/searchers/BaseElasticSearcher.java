@@ -672,7 +672,16 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			else if( fieldid.equals("description"))
 			{
-				find = QueryBuilders.matchQuery(fieldid, valueof);				
+				List <PropertyDetail>keywords = getKeywordProperties();
+				ArrayList <String> vals = new ArrayList();
+				for (PropertyDetail detail : keywords) {
+					vals.add(detail.getId());
+				}
+				String[] array = new String[vals.size()];
+				
+				array =  vals.toArray(array);
+				find=QueryBuilders.multiMatchQuery(valueof, array);
+				//find = QueryBuilders.matchQuery(fieldid, valueof);				
 			}
 			else
 			{
