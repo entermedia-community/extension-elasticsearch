@@ -159,19 +159,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 				inContent.array("category", catids);
 			}
 
-			//This is for saving and loading.
-			ArrayList <String>realcats = new ArrayList();
-			for (Iterator iterator = asset.getCategories().iterator(); iterator.hasNext();)
-			{
-				Category cat = (Category)iterator.next();
-				String catid = cat.getId();
-				realcats.add(catid);
-				
-
-			}
-			String[] array = new String[realcats.size()];
-			array =  realcats.toArray(array);
-			inContent.array("category-exact",array );
+		
 			
 			// Searcher searcher =
 			// getSearcherManager().getSearcher(asset.getCatalogId(),"assetalbums");
@@ -196,6 +184,20 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			// //log.info("Saved" + detail.getId() + "=" + value );
 			// }
 			// }
+			
+			//This is for saving and loading.
+			ArrayList <String>realcats = new ArrayList();
+			for (Iterator iterator = asset.getCategories().iterator(); iterator.hasNext();)
+			{
+				Category cat = (Category)iterator.next();
+				String catid = cat.getId();
+				realcats.add(catid);
+				
+
+			}
+			String[] array = new String[realcats.size()];
+			array =  realcats.toArray(array);
+			inContent.array("category-exact",array );
 		}
 		catch (Exception ex)
 		{
@@ -393,14 +395,17 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 	protected Asset createAssetFromResponse(Map inSource)
 	{
 		Asset asset = new Asset();
-		String id = (String) inSource.get("_id");
+		if(inSource == null){
+			return null;
+		}
+		String id = (String) inSource.get("id");
 		asset.setId(id);
 		
 		for (Iterator iterator = inSource.keySet().iterator(); iterator.hasNext();)
 		{
 			String key = (String) iterator.next();
 			Object object = inSource.get(key);
-			if("categories".equals(key)){
+			if("category".equals(key)){
 				continue;
 			}
 			String val = null;

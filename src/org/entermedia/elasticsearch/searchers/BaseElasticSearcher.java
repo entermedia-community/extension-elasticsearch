@@ -615,8 +615,13 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 //			}
 			if(fieldid.equals("id"))
 			{
-			//	valueof  = valueof.toLowerCase();				
-				find = QueryBuilders.termQuery("_id", valueof);
+			//	valueof  = valueof.toLowerCase();
+				if( valueof.equals("*"))
+				{
+					find = QueryBuilders.matchAllQuery();
+				} else{
+					find = QueryBuilders.termQuery("_id", valueof);
+				}
 				return find;
 			}
 			

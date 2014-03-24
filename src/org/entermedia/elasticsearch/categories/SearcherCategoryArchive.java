@@ -45,7 +45,7 @@ public class SearcherCategoryArchive implements CategoryArchive
 	public CategoryArchive getBackingArchive() {
 		if (fieldBackingArchive == null)
 		{
-			fieldBackingArchive = (CategoryArchive) getModuleManager().getBean(getCatalogId(), "xmlCategoryArchive");
+			fieldBackingArchive = (CategoryArchive) getModuleManager().getBean(getCatalogId(), "categoryArchive");
 			fieldBackingArchive.setCatalogId(getCatalogId());
 		}
 		return fieldBackingArchive;

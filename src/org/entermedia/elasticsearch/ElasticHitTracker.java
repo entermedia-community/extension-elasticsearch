@@ -71,7 +71,10 @@ public class ElasticHitTracker extends HitTracker
 			b.addIds(fieldSelected);
 			bool.must(b);
 			getSearcheRequestBuilder().setQuery(bool);
-		} else{
+		} 
+		
+		
+		else{
 			
 			getSearcheRequestBuilder().setQuery(getTerms());
 
@@ -151,6 +154,12 @@ public class ElasticHitTracker extends HitTracker
 
 	public int size()
 	{
+		
+		if( !isAllSelected() && isShowOnlySelected() && ( fieldSelections == null || fieldSelections.size() == 0 ) )
+		{
+			return 0;
+		}
+		
 		return (int)getSearchResponse(0).getHits().getTotalHits();
 	}
 

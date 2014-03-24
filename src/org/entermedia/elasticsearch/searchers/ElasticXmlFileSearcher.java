@@ -8,6 +8,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dom4j.Element;
+import org.entermedia.elasticsearch.SearchHitData;
 import org.entermedia.locks.Lock;
 import org.openedit.Data;
 import org.openedit.data.DataArchive;
@@ -173,9 +174,13 @@ protected SourcePathCreator fieldSourcePathCreator;
 
 	public void delete(Data inData, User inUser)
 	{
+		if(inData instanceof SearchHitData){
+			inData = (Data) searchById(inData.getId());
+		}
 		if( inData == null || inData.getSourcePath() == null || inData.getId() == null )
 		{
 			throw new OpenEditException("Cannot delete null data.");
+			//return;
 		}
 		Lock lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath(),"admin");
 		try

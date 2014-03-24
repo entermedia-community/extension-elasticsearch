@@ -264,6 +264,11 @@
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
+
+		<property name="categoryArchive">
+			<ref bean="searcherCategoryArchive" />
+		</property>
+
 		<property name="newDataName"><value>elasticCategory</value></property>
 		<property name="checkVersions"><value>false</value></property>
 	</bean>
@@ -271,5 +276,14 @@
 	<bean id="elasticCategory" class="org.entermedia.elasticsearch.categories.ElasticCategory" singleton="false" >
 	</bean>	
 	
-
+<bean id="searcherCategoryArchive" class="org.entermedia.elasticsearch.categories.SearcherCategoryArchive"
+		singleton="false">
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+				<property name="searcherManager"><ref bean="searcherManager" /></property>
+		
+		
+		
+	</bean>
 </beans>
