@@ -883,6 +883,12 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		everything.add("id");
 		everything.add("name");
 		everything.add("sourcepath");
+		for (Iterator iterator = inDetails.iterator(); iterator.hasNext();)
+		{
+			PropertyDetail detail = (PropertyDetail) iterator.next();
+			everything.add(detail.getId());//We need this to handle booleans and potentially other things.
+			
+		}
 		everything.remove(".version"); //is this correct?
 		for (Iterator iterator = everything.iterator(); iterator.hasNext();) 
 		{
@@ -890,7 +896,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			
 			
 			String value = inData.get(key);
-			if( value != null && value.length() == 0)
+			if( value != null && value.trim().length() == 0)
 			{
 				value = null;
 			}
