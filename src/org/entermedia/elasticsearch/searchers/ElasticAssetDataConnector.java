@@ -356,7 +356,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		if (inField.equals("id") || inField.equals("_id"))
 		{
 			GetResponse response = getClient().prepareGet(toId(getCatalogId()), getSearchType(), inValue).execute().actionGet();
-			return createAssetFromResponse(response.getSource());
+			return createAssetFromResponse(response.getId(),response.getSource());
 			// if(!response.isExists())
 			// {
 			// return null;
@@ -378,7 +378,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			Iterator <SearchHit> responseiter = response.getHits().iterator();
 			if(responseiter.hasNext()){
 				SearchHit hit = responseiter.next();
-				return createAssetFromResponse(hit.getSource());
+				return createAssetFromResponse(hit.getId(),hit.getSource());
 				
 				
 			}
@@ -392,14 +392,15 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		return super.searchByField(inField, inValue);
 	}
 
-	protected Asset createAssetFromResponse(Map inSource)
+	protected Asset createAssetFromResponse(String inId, Map inSource)
 	{
 		Asset asset = new Asset();
 		if(inSource == null){
 			return null;
 		}
-		String id = (String) inSource.get("id");
-		asset.setId(id);
+		
+		
+		asset.setId(inId);
 		
 		for (Iterator iterator = inSource.keySet().iterator(); iterator.hasNext();)
 		{

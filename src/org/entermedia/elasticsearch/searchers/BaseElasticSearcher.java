@@ -204,6 +204,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			QueryBuilder terms = buildTerms(inQuery);
 			
 			search.setQuery(terms);
+			//search.
 			addSorts(inQuery, search);
 
 			json = search.toString();
@@ -761,6 +762,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				field = field.substring(0, field.length() - 2);
 			}
 			FieldSortBuilder sort = SortBuilders.fieldSort(field);
+			sort.ignoreUnmapped(true);
 			if (direction)
 			{
 				sort.order(SortOrder.DESC);
