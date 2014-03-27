@@ -41,6 +41,8 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.ExistsFilterBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -628,7 +630,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			
 			if( valueof.equals("*"))
 			{
-				find = QueryBuilders.matchAllQuery();
+				QueryBuilder all = QueryBuilders.matchAllQuery();
+				ExistsFilterBuilder filter = FilterBuilders.existsFilter(fieldid);
+				 find = QueryBuilders.filteredQuery(all,filter);
+				
 			}
 			else if ( valueof.endsWith("*"))
 			{
