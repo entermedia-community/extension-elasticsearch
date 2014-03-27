@@ -454,6 +454,9 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			}
 			
 		}
+		
+		ContentItem originalPage = getPageManager().getRepository().getStub("/WEB-INF/data/" + getCatalogId() + "/originals/" + asset.getSourcePath());
+		asset.setFolder(originalPage.isFolder());
 		return asset;
 	}
 	
