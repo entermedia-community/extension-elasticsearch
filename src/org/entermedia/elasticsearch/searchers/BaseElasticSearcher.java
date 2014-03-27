@@ -40,13 +40,18 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
+import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.ExistsFilterBuilder;
+import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermFilterBuilder;
+import org.elasticsearch.search.facet.FacetBuilder;
+import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -66,6 +71,7 @@ import org.openedit.util.DateStorageUtil;
 import com.openedit.OpenEditException;
 import com.openedit.Shutdownable;
 import com.openedit.WebPageRequest;
+import com.openedit.hittracker.FilterNode;
 import com.openedit.hittracker.HitTracker;
 import com.openedit.hittracker.SearchQuery;
 import com.openedit.hittracker.Term;
@@ -204,14 +210,24 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			search.setTypes(getSearchType());
 
 			QueryBuilder terms = buildTerms(inQuery);
-			
+
+
 			search.setQuery(terms);
 			//search.
 			addSorts(inQuery, search);
-
+			addFacets(inQuery, search);
+			
+			
 			json = search.toString();
 
 			ElasticHitTracker hits = new ElasticHitTracker(search, terms);
+			
+			if(inQuery.hasFilters()){
+				FilterBuilder filter = addFilters(inQuery, search);
+				hits.setFilterBuilder(filter);
+			}
+			
+			
 			
 			hits.setIndexId(getIndexId());
 			hits.setSearcher(this);
@@ -236,6 +252,59 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			throw new OpenEditException(ex);
 		}
+	}
+
+	protected FilterBuilder addFilters(SearchQuery inQuery, SearchRequestBuilder inSearch)
+	{
+		
+		AndFilterBuilder andFilter = FilterBuilders.andFilter();
+		for (Iterator iterator = inQuery.getFilters().iterator(); iterator.hasNext();)
+		{
+			FilterNode node = (FilterNode) iterator.next();
+			
+			TermFilterBuilder filter = FilterBuilders.termFilter(node.getId(), node.get("value"));
+			andFilter.add(filter);
+		}
+		return andFilter;
+		
+		
+	}
+
+	
+	
+//	protected void addQueryFilters(SearchQuery inQuery, QueryBuilder inTerms)
+//	{
+//		
+//		BoolQueryBuilder andFilter = inTerms.bo
+//
+//		for (Iterator iterator = inQuery.getFilters().iterator(); iterator.hasNext();)
+//		{
+//			FilterNode node = (FilterNode) iterator.next();
+//			
+//			QueryBuilder filter = QueryBuilders.termQuery(node.getId(), node.get("value"));
+//			andFilter.must(filter);
+//		}
+//		.
+//		//return andFilter;
+//		
+//		
+//	}
+//	
+//	
+	protected void addFacets(SearchQuery inQuery, SearchRequestBuilder inSearch)
+	{
+		for (Iterator iterator = getPropertyDetails().iterator(); iterator.hasNext();)
+		{
+			PropertyDetail detail = (PropertyDetail) iterator.next();
+			if(detail.isFilter()){
+				FacetBuilder b= FacetBuilders.termsFacet(detail.getId())
+			    .field(detail.getId())
+			    .size(10);
+				inSearch.addFacet(b);
+			}
+			
+		}
+		
 	}
 
 	@SuppressWarnings("rawtypes")
