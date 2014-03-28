@@ -81,8 +81,12 @@ protected SourcePathCreator fieldSourcePathCreator;
 	
 	public Data createNewData()
 	{
-		if( fieldNewDataName == null)
+		if( getNewDataName() == null)
 		{
+			
+		
+
+		
 			ElementData data = new ElementData();
 			
 			return data;
