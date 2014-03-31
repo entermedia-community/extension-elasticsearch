@@ -795,8 +795,8 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				String[] array = new String[vals.size()];
 				
 				array =  vals.toArray(array);
-				find=QueryBuilders.multiMatchQuery(valueof, array);
-				//find = QueryBuilders.matchQuery(fieldid, valueof);				
+				//find=QueryBuilders.multiMatchQuery(valueof, array);
+				find = QueryBuilders.matchQuery("_all", valueof);				
 			}
 			else
 			{
