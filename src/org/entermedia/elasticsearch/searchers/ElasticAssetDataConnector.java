@@ -77,6 +77,8 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		setReIndexing(true);
 		try
 		{
+			buildMapping();
+
 			getMediaArchive().getAssetArchive().clearAssets();
 			//For now just add things to the index. It never deletes
 			deleteAll(null); //This only deleted the index
@@ -105,6 +107,9 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			//updateIndex(buffer,null);
 			log.info("reindexed " + processor.getExecCount());
 			flushChanges();			
+		}
+		catch(Exception e){
+			throw new OpenEditException(e);
 		}
 		finally
 		{

@@ -21,6 +21,7 @@ import org.openedit.xml.XmlArchive;
 import org.openedit.xml.XmlFile;
 
 import com.openedit.OpenEditException;
+import com.openedit.OpenEditRuntimeException;
 import com.openedit.page.manage.PageManager;
 import com.openedit.users.User;
 import com.openedit.util.PathProcessor;
@@ -97,6 +98,7 @@ protected SourcePathCreator fieldSourcePathCreator;
 
 	public void reIndexAll() throws OpenEditException
 	{		
+		
 		if( isReIndexing())
 		{
 			return;
@@ -104,6 +106,7 @@ protected SourcePathCreator fieldSourcePathCreator;
 		setReIndexing(true);
 		try
 		{
+			buildMapping();
 			//For now just add things to the index. It never deletes
 			deleteAll(null); //This only deleted the index
 			final List buffer = new ArrayList(100);
@@ -130,6 +133,8 @@ protected SourcePathCreator fieldSourcePathCreator;
 			updateIndex(buffer,null);
 			log.info("reindexed " + processor.getExecCount());
 			flushChanges();			
+		} catch(Exception e){
+			throw new OpenEditRuntimeException(e);
 		}
 		finally
 		{

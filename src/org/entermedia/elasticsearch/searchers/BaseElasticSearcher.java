@@ -452,14 +452,14 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		index.analysis.analyzer.lowercase_keyword.tokenizer=keyword 
 		*/	
 		
-		//jsonproperties  = jsonproperties.startObject("_all");
-		//jsonproperties = jsonproperties.field("store", "false");
-		//jsonproperties = jsonproperties.field("analyzer", "lowersnowball");					
-		//jsonproperties = jsonproperties.field("index_analyzer", "lowersnowball");					
-		//jsonproperties = jsonproperties.field("search_analyzer", "lowersnowball");			//lower case does not seem to work		
-		//jsonproperties = jsonproperties.field("index", "analyzed");
-		//jsonproperties = jsonproperties.field("type", "string");					
-		//jsonproperties = jsonproperties.endObject();
+		jsonproperties  = jsonproperties.startObject("_all");
+		jsonproperties = jsonproperties.field("store", "false");
+		jsonproperties = jsonproperties.field("analyzer", "lowersnowball");					
+		jsonproperties = jsonproperties.field("index_analyzer", "lowersnowball");					
+		jsonproperties = jsonproperties.field("search_analyzer", "lowersnowball");			//lower case does not seem to work		
+		jsonproperties = jsonproperties.field("index", "analyzed");
+		jsonproperties = jsonproperties.field("type", "string");					
+		jsonproperties = jsonproperties.endObject();
 		
 		//Add in namesorted
 		if( getPropertyDetails().contains("name") && !getPropertyDetails().contains("namesorted"))
@@ -708,7 +708,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				valueof = valueof.substring(0,valueof.length()-1);
 								
-				MatchQueryBuilder text = QueryBuilders.textPhrasePrefixQuery(fieldid, valueof);
+				MatchQueryBuilder text = QueryBuilders.matchPhrasePrefixQuery(fieldid, valueof);
 				text.maxExpansions(10);
 				find = text;
 			}
@@ -718,7 +718,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			else if( "startswith".equals( inTerm.getOperation() ) )
 			{
-				MatchQueryBuilder text = QueryBuilders.textPhrasePrefixQuery(fieldid, valueof);
+				MatchQueryBuilder text = QueryBuilders.matchPhrasePrefixQuery(fieldid, valueof);
 				text.maxExpansions(10);
 				find = text;
 			}
@@ -787,16 +787,11 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			else if( fieldid.equals("description"))
 			{
-				List <PropertyDetail>keywords = getKeywordProperties();
-				ArrayList <String> vals = new ArrayList();
-				for (PropertyDetail detail : keywords) {
-					vals.add(detail.getId());
-				}
-				String[] array = new String[vals.size()];
+//					valueof = valueof.substring(0,valueof.length()-1);
 				
-				array =  vals.toArray(array);
-				//find=QueryBuilders.multiMatchQuery(valueof, array);
-				find = QueryBuilders.matchQuery("_all", valueof);				
+MatchQueryBuilder text = QueryBuilders.matchPhrasePrefixQuery("_all", valueof);
+text.maxExpansions(10);
+find = text;		
 			}
 			else
 			{
@@ -1210,5 +1205,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 		}
 	}
+	
+	
 
 }
