@@ -286,4 +286,28 @@
 		
 		
 	</bean>
+	
+	
+<bean id="elasticOrderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticOrderSearcher" singleton="false">
+		<property name="clientPool">
+			<ref bean="clientPool" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="pageManager">
+			<ref bean="pageManager" />
+		</property>
+
+		<property name="lockManager">
+			<ref bean="elasticLockManager" />
+		</property>		
+				<property name="orderManager"><ref bean="orderManager" /></property>
+				<property name="xmlArchive"><ref bean="xmlArchive" /></property>
+		
+		<property name="newDataName"><value>order</value></property>
+		
+	</bean>
+	
+	
 </beans>

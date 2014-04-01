@@ -304,11 +304,13 @@ protected SourcePathCreator fieldSourcePathCreator;
 		id = newdata.getId();
 		
 		String path = getPathToData() + "/" + sourcepath + "/" + getSearchType() + ".xml";
-		XmlFile content = getDataArchive().getXmlArchive().getXml(path, getSearchType());
+		XmlArchive archive = getDataArchive().getXmlArchive();
+		XmlFile content = archive.getXml(path, getSearchType());
 		//log.info( newdata.getProperties() );
 		if( !content.isExist() )
 		{
-			throw new OpenEditException("Missing data file " + path);
+			//throw new OpenEditException("Missing data file " + path);
+			return null;
 		}
 		Element element = content.getElementById(id);
 		
