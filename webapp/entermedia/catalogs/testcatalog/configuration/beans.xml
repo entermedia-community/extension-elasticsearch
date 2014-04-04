@@ -9,6 +9,8 @@
 	<bean id="assetSearcher" bean="elasticAssetSearcher" /> 
 	<bean id="lockSearcher" bean="elasticLockSearcher" /> 
 
+	<bean id="assetAutoCompleteSearcher" bean="assetAutoCompleteElasticSearcher" /> 
+
 
 	<!-- Override custom settings? TODO: Remove these -->
 	<bean id="userprofileSearcher" bean="elasticUserProfileSearcher" /> 

@@ -197,6 +197,7 @@
 
 	</bean>
 
+	<!-- Why is this a LockSearcher? So I can delete the index on boot up -->
 	<bean id="elasticTransientSearcher" class="org.entermedia.elasticsearch.searchers.LockSearcher" singleton="false">
 		<property name="clientPool">
 			<ref bean="clientPool" />
@@ -307,6 +308,20 @@
 		
 		<property name="newDataName"><value>order</value></property>
 		
+	</bean>
+
+
+	<bean id="assetAutoCompleteElasticSearcher" class="org.entermedia.elasticsearch.searchers.ElasticAutoCompleteSearcher" singleton="false">
+		<property name="clientPool">
+			<ref bean="clientPool" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="pageManager">
+			<ref bean="pageManager" />
+		</property>
+		<property name="checkVersions"><value>false</value></property>
 	</bean>
 	
 	
