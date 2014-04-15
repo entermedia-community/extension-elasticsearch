@@ -8,6 +8,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dom4j.Element;
+import org.entermedia.elasticsearch.SearchHitData;
 import org.entermedia.locks.Lock;
 import org.openedit.Data;
 import org.openedit.data.DataArchive;
@@ -20,6 +21,7 @@ import org.openedit.xml.XmlArchive;
 import org.openedit.xml.XmlFile;
 
 import com.openedit.OpenEditException;
+import com.openedit.OpenEditRuntimeException;
 import com.openedit.page.manage.PageManager;
 import com.openedit.users.User;
 import com.openedit.util.PathProcessor;
@@ -80,8 +82,12 @@ protected SourcePathCreator fieldSourcePathCreator;
 	
 	public Data createNewData()
 	{
-		if( fieldNewDataName == null)
+		if( getNewDataName() == null)
 		{
+			
+		
+
+		
 			ElementData data = new ElementData();
 			
 			return data;
@@ -92,6 +98,7 @@ protected SourcePathCreator fieldSourcePathCreator;
 
 	public void reIndexAll() throws OpenEditException
 	{		
+		
 		if( isReIndexing())
 		{
 			return;
@@ -99,6 +106,7 @@ protected SourcePathCreator fieldSourcePathCreator;
 		setReIndexing(true);
 		try
 		{
+			buildMapping();
 			//For now just add things to the index. It never deletes
 			deleteAll(null); //This only deleted the index
 			final List buffer = new ArrayList(100);
@@ -125,6 +133,8 @@ protected SourcePathCreator fieldSourcePathCreator;
 			updateIndex(buffer,null);
 			log.info("reindexed " + processor.getExecCount());
 			flushChanges();			
+		} catch(Exception e){
+			throw new OpenEditRuntimeException(e);
 		}
 		finally
 		{
@@ -173,9 +183,13 @@ protected SourcePathCreator fieldSourcePathCreator;
 
 	public void delete(Data inData, User inUser)
 	{
+		if(inData instanceof SearchHitData){
+			inData = (Data) searchById(inData.getId());
+		}
 		if( inData == null || inData.getSourcePath() == null || inData.getId() == null )
 		{
 			throw new OpenEditException("Cannot delete null data.");
+			//return;
 		}
 		Lock lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath(),"admin");
 		try
@@ -290,11 +304,13 @@ protected SourcePathCreator fieldSourcePathCreator;
 		id = newdata.getId();
 		
 		String path = getPathToData() + "/" + sourcepath + "/" + getSearchType() + ".xml";
-		XmlFile content = getDataArchive().getXmlArchive().getXml(path, getSearchType());
+		XmlArchive archive = getDataArchive().getXmlArchive();
+		XmlFile content = archive.getXml(path, getSearchType());
 		//log.info( newdata.getProperties() );
 		if( !content.isExist() )
 		{
-			throw new OpenEditException("Missing data file " + path);
+			//throw new OpenEditException("Missing data file " + path);
+			return null;
 		}
 		Element element = content.getElementById(id);
 		

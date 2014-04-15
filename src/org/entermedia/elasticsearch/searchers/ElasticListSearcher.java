@@ -6,6 +6,7 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.entermedia.elasticsearch.SearchHitData;
 import org.entermedia.locks.Lock;
 import org.openedit.Data;
 import org.openedit.data.DataArchive;
@@ -39,6 +40,7 @@ public class ElasticListSearcher extends BaseElasticSearcher
 			PropertyDetailsArchive newarchive = getSearcherManager().getPropertyDetailsArchive(getCatalogId());
 			fieldXmlSearcher.setPropertyDetailsArchive(newarchive);
 		}
+		fieldXmlSearcher.setCacheManager(null);//Important
 		return fieldXmlSearcher;
 	}
 
@@ -122,7 +124,10 @@ public class ElasticListSearcher extends BaseElasticSearcher
 
 	public void delete(Data inData, User inUser)
 	{
-		if( inData == null || inData.getSourcePath() == null || inData.getId() == null )
+		if(inData instanceof SearchHitData){
+			inData = (Data) searchById(inData.getId());
+		}
+		if( inData == null ||  inData.getId() == null )
 		{
 			throw new OpenEditException("Cannot delete null data.");
 		}
@@ -192,6 +197,14 @@ public class ElasticListSearcher extends BaseElasticSearcher
 			getLockManager().release(getCatalogId(), lock);
 		}
 	}
+	
+	
+	public Object searchById(String inId)
+	{
+		return getXmlSearcher().searchById(inId);
+	}
+	
+	
 	
 	
 	

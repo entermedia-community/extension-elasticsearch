@@ -197,6 +197,7 @@
 
 	</bean>
 
+	<!-- Why is this a LockSearcher? So I can delete the index on boot up -->
 	<bean id="elasticTransientSearcher" class="org.entermedia.elasticsearch.searchers.LockSearcher" singleton="false">
 		<property name="clientPool">
 			<ref bean="clientPool" />
@@ -264,6 +265,11 @@
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
+
+		<property name="categoryArchive">
+			<ref bean="searcherCategoryArchive" />
+		</property>
+
 		<property name="newDataName"><value>elasticCategory</value></property>
 		<property name="checkVersions"><value>false</value></property>
 	</bean>
@@ -271,5 +277,52 @@
 	<bean id="elasticCategory" class="org.entermedia.elasticsearch.categories.ElasticCategory" singleton="false" >
 	</bean>	
 	
+<bean id="searcherCategoryArchive" class="org.entermedia.elasticsearch.categories.SearcherCategoryArchive"
+		singleton="false">
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+				<property name="searcherManager"><ref bean="searcherManager" /></property>
+		
+		
+		
+	</bean>
+	
+	
+<bean id="elasticOrderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticOrderSearcher" singleton="false">
+		<property name="clientPool">
+			<ref bean="clientPool" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="pageManager">
+			<ref bean="pageManager" />
+		</property>
 
+		<property name="lockManager">
+			<ref bean="elasticLockManager" />
+		</property>		
+				<property name="orderManager"><ref bean="orderManager" /></property>
+				<property name="xmlArchive"><ref bean="xmlArchive" /></property>
+		
+		<property name="newDataName"><value>order</value></property>
+		
+	</bean>
+
+
+	<bean id="assetAutoCompleteElasticSearcher" class="org.entermedia.elasticsearch.searchers.ElasticAutoCompleteSearcher" singleton="false">
+		<property name="clientPool">
+			<ref bean="clientPool" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="pageManager">
+			<ref bean="pageManager" />
+		</property>
+		<property name="checkVersions"><value>false</value></property>
+	</bean>
+	
+	
 </beans>

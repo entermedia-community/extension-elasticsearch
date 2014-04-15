@@ -7,13 +7,14 @@
 	<classpathentry kind="lib" path="lib/jna-3.3.0.jar"/>
 	<classpathentry kind="lib" path="lib/jts-1.12.jar"/>
 	<classpathentry kind="lib" path="lib/spatial4j-0.3.jar"/>
-	<classpathentry kind="lib" path="lib/elasticsearch-0.90.9.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/lucene-codecs-4.6.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-highlighter-4.6.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-join-4.6.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-memory-4.6.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-queries-4.6.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-sandbox-4.6.0.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-spatial-4.6.0.jar"/>
+	<classpathentry kind="lib" path="lib/elasticsearch-1.0.0.jar" sourcepath="/elasticsearch/src/main/java"/>
+	<classpathentry kind="lib" path="lib/lucene-grouping-4.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-highlighter-4.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-memory-4.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-misc-4.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-queries-4.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-sandbox-4.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-spatial-4.6.1.jar"/>
+	<classpathentry kind="lib" path="lib/lucene-suggest-4.6.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

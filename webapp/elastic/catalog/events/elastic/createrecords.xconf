@@ -1,0 +1,5 @@
+<page>
+<path-action name="Script.run">
+<script>/${applicationid}/events/scripts/createrecords.groovy</script>
+</path-action>
+</page>

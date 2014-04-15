@@ -1,5 +1,7 @@
 package org.entermedia.elasticsearch;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -7,10 +9,11 @@ import java.util.Map;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHitField;
 import org.openedit.Data;
+import org.openedit.MultiValued;
 
 import com.openedit.OpenEditException;
 
-public class SearchHitData implements Data
+public class SearchHitData implements Data, MultiValued
 {
 	protected SearchHit fieldSearchHit;
 	
@@ -132,6 +135,38 @@ public class SearchHitData implements Data
 	public void setProperties(Map<String, String> inProperties) {
 		// TODO Auto-generated method stub
 		throw new OpenEditException("Search results are not editable");
+	}
+	
+	
+	//Is this correct?  Need to double check.  might be using the JSON array values.
+	
+	public Collection getValues(String inKey)
+	{
+		String val = get(inKey);
+		
+		if (val == null)
+			return null;
+		
+		String[] vals = null;
+		if( val.contains("|") )
+		{
+			vals = VALUEDELMITER.split(val);
+		}
+		else
+		{
+			vals = val.split("\\s+"); //legacy
+		}
+
+		Collection collection = Arrays.asList(vals);
+		//if null check parent
+		return collection;
+	}
+	
+	@Override
+	public void setValues(String inKey, Collection<String> inValues)
+	{
+		// TODO Auto-generated method stub
+		
 	}
 
 }

@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.openedit.entermedia.Category;
 
-public class ElasticCategory extends Category 
+public class ElasticCategory extends Category
 {
 	protected ElasticCategorySearcher fieldCategorySearcher;
 	
@@ -62,6 +62,9 @@ public class ElasticCategory extends Category
 			{
 				setId(inValue);
 			}
+			if("parentid".equals(inKey) && inValue.equals(getId())){
+				return;
+			}
 			else
 			{
 				getProperties().put(inKey, inValue);
@@ -82,4 +85,9 @@ public class ElasticCategory extends Category
 		}
 		return fieldParentCategory;
 	}
+	
+	
+	
+	
+	
 }

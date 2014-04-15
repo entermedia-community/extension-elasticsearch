@@ -11,16 +11,20 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.entermedia.elasticsearch.searchers.BaseElasticSearcher;
 import org.openedit.Data;
+import org.openedit.data.BaseData;
 import org.openedit.data.PropertyDetails;
 import org.openedit.entermedia.Category;
+import org.openedit.entermedia.CategoryArchive;
+import org.openedit.entermedia.xmldb.CategorySearcher;
 
 import com.openedit.OpenEditException;
 import com.openedit.users.User;
 
-public class ElasticCategorySearcher extends BaseElasticSearcher 
+public class ElasticCategorySearcher extends BaseElasticSearcher implements CategorySearcher
 {
 	private static final Log log = LogFactory.getLog(ElasticCategorySearcher.class);
-
+	protected CategoryArchive fieldCategoryArchive;
+	
 	public Data createNewData()
 	{
 		return new ElasticCategory(this);
@@ -70,6 +74,49 @@ public class ElasticCategorySearcher extends BaseElasticSearcher
 		}
 		super.updateIndex(inContent,inData,inDetails);
 	}
+	@Override
+	public Category getRootCategory()
+	{
+		return getCategoryArchive().getRootCategory();
+	}
+	public CategoryArchive getCategoryArchive()
+	{
+		if(fieldCategoryArchive != null){
+			fieldCategoryArchive.setCatalogId(getCatalogId());
+		}
+		return fieldCategoryArchive;
+	}
+	public void setCategoryArchive(CategoryArchive inCategoryArchive)
+	{
+		fieldCategoryArchive = inCategoryArchive;
+		inCategoryArchive.setCatalogId(getCatalogId());
+	}
+	
+	
+	public Object searchByField(String inField, String inValue)
+	{
+		if( inField.equals("id") || inField.equals("_id"))
+		{
+			GetResponse response = getClient().prepareGet(toId(getCatalogId()), getSearchType(), inValue).execute().actionGet();
+			if( response.isExists() )
+			{
+				ElasticCategory data = (ElasticCategory) createNewData();
+				data.setProperties(response.getSource());
+				//data.
+				data.setId(inValue);
+				if( response.getVersion() > -1)
+				{
+					data.setProperty(".version",String.valueOf(response.getVersion()) );
+				}
+				return data;
+			}
+			return null;
+		}
+		return super.searchByField(inField, inValue);
+	}
+	
 
+	
+	
 	
 }

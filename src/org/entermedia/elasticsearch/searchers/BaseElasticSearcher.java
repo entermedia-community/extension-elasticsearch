@@ -2,6 +2,7 @@ package org.entermedia.elasticsearch.searchers;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
@@ -39,11 +40,18 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
+import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.ExistsFilterBuilder;
+import org.elasticsearch.index.query.FilterBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermFilterBuilder;
+import org.elasticsearch.search.facet.FacetBuilder;
+import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -63,6 +71,7 @@ import org.openedit.util.DateStorageUtil;
 import com.openedit.OpenEditException;
 import com.openedit.Shutdownable;
 import com.openedit.WebPageRequest;
+import com.openedit.hittracker.FilterNode;
 import com.openedit.hittracker.HitTracker;
 import com.openedit.hittracker.SearchQuery;
 import com.openedit.hittracker.Term;
@@ -201,13 +210,25 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			search.setTypes(getSearchType());
 
 			QueryBuilder terms = buildTerms(inQuery);
-			
-			search.setQuery(terms);
-			addSorts(inQuery, search);
 
+
+			search.setQuery(terms);
+			//search.
+			addSorts(inQuery, search);
+			addFacets(inQuery, search);
+			
+			
 			json = search.toString();
 
-			ElasticHitTracker hits = new ElasticHitTracker(search);
+			ElasticHitTracker hits = new ElasticHitTracker(search, terms);
+			
+			if(inQuery.hasFilters()){
+				FilterBuilder filter = addFilters(inQuery, search);
+				hits.setFilterBuilder(filter);
+			}
+			
+			
+			
 			hits.setIndexId(getIndexId());
 			hits.setSearcher(this);
 			hits.setSearchQuery(inQuery);
@@ -231,6 +252,59 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			throw new OpenEditException(ex);
 		}
+	}
+
+	protected FilterBuilder addFilters(SearchQuery inQuery, SearchRequestBuilder inSearch)
+	{
+		
+		AndFilterBuilder andFilter = FilterBuilders.andFilter();
+		for (Iterator iterator = inQuery.getFilters().iterator(); iterator.hasNext();)
+		{
+			FilterNode node = (FilterNode) iterator.next();
+			
+			TermFilterBuilder filter = FilterBuilders.termFilter(node.getId(), node.get("value"));
+			andFilter.add(filter);
+		}
+		return andFilter;
+		
+		
+	}
+
+	
+	
+//	protected void addQueryFilters(SearchQuery inQuery, QueryBuilder inTerms)
+//	{
+//		
+//		BoolQueryBuilder andFilter = inTerms.bo
+//
+//		for (Iterator iterator = inQuery.getFilters().iterator(); iterator.hasNext();)
+//		{
+//			FilterNode node = (FilterNode) iterator.next();
+//			
+//			QueryBuilder filter = QueryBuilders.termQuery(node.getId(), node.get("value"));
+//			andFilter.must(filter);
+//		}
+//		.
+//		//return andFilter;
+//		
+//		
+//	}
+//	
+//	
+	protected void addFacets(SearchQuery inQuery, SearchRequestBuilder inSearch)
+	{
+		for (Iterator iterator = getPropertyDetails().iterator(); iterator.hasNext();)
+		{
+			PropertyDetail detail = (PropertyDetail) iterator.next();
+			if(detail.isFilter()){
+				FacetBuilder b= FacetBuilders.termsFacet(detail.getId())
+			    .field(detail.getId())
+			    .size(10);
+				inSearch.addFacet(b);
+			}
+			
+		}
+		
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -301,7 +375,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 						}
 					}
 
-					ClusterState cs = admin.cluster().prepareState().setFilterIndices(indexid).execute().actionGet().getState(); 
+					ClusterState cs = admin.cluster().prepareState().setIndices(indexid).execute().actionGet().getState(); 
 					IndexMetaData data = cs.getMetaData().index(indexid);
 					boolean runmapping = true;
 					if( data != null)
@@ -378,14 +452,14 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		index.analysis.analyzer.lowercase_keyword.tokenizer=keyword 
 		*/	
 		
-		//jsonproperties  = jsonproperties.startObject("_all");
-		//jsonproperties = jsonproperties.field("store", "false");
-		//jsonproperties = jsonproperties.field("analyzer", "lowersnowball");					
-		//jsonproperties = jsonproperties.field("index_analyzer", "lowersnowball");					
-		//jsonproperties = jsonproperties.field("search_analyzer", "lowersnowball");			//lower case does not seem to work		
-		//jsonproperties = jsonproperties.field("index", "analyzed");
-		//jsonproperties = jsonproperties.field("type", "string");					
-		//jsonproperties = jsonproperties.endObject();
+		jsonproperties  = jsonproperties.startObject("_all");
+		jsonproperties = jsonproperties.field("store", "false");
+		jsonproperties = jsonproperties.field("analyzer", "lowersnowball");					
+		jsonproperties = jsonproperties.field("index_analyzer", "lowersnowball");					
+		jsonproperties = jsonproperties.field("search_analyzer", "lowersnowball");			//lower case does not seem to work		
+		jsonproperties = jsonproperties.field("index", "analyzed");
+		jsonproperties = jsonproperties.field("type", "string");					
+		jsonproperties = jsonproperties.endObject();
 		
 		//Add in namesorted
 		if( getPropertyDetails().contains("name") && !getPropertyDetails().contains("namesorted"))
@@ -424,7 +498,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			if( detail.isDate())
 			{
 				jsonproperties = jsonproperties.field("type", "date");
-				jsonproperties = jsonproperties.field("format", "yyyy-MM-dd HH:mm:ss Z");
+				//jsonproperties = jsonproperties.field("format", "yyyy-MM-dd HH:mm:ss Z");
 			}
 			else if ( detail.isBoolean())
 			{
@@ -613,20 +687,28 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 //			}
 			if(fieldid.equals("id"))
 			{
-			//	valueof  = valueof.toLowerCase();				
-				find = QueryBuilders.termQuery("_id", valueof);
+			//	valueof  = valueof.toLowerCase();
+				if( valueof.equals("*"))
+				{
+					find = QueryBuilders.matchAllQuery();
+				} else{
+					find = QueryBuilders.termQuery("_id", valueof);
+				}
 				return find;
 			}
 			
 			if( valueof.equals("*"))
 			{
-				find = QueryBuilders.matchAllQuery();
+				QueryBuilder all = QueryBuilders.matchAllQuery();
+				ExistsFilterBuilder filter = FilterBuilders.existsFilter(fieldid);
+				 find = QueryBuilders.filteredQuery(all,filter);
+				
 			}
 			else if ( valueof.endsWith("*"))
 			{
 				valueof = valueof.substring(0,valueof.length()-1);
 								
-				MatchQueryBuilder text = QueryBuilders.textPhrasePrefixQuery(fieldid, valueof);
+				MatchQueryBuilder text = QueryBuilders.matchPhrasePrefixQuery(fieldid, valueof);
 				text.maxExpansions(10);
 				find = text;
 			}
@@ -636,7 +718,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			else if( "startswith".equals( inTerm.getOperation() ) )
 			{
-				MatchQueryBuilder text = QueryBuilders.textPhrasePrefixQuery(fieldid, valueof);
+				MatchQueryBuilder text = QueryBuilders.matchPhrasePrefixQuery(fieldid, valueof);
 				text.maxExpansions(10);
 				find = text;
 			}
@@ -648,21 +730,55 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				if( "beforedate".equals(inTerm.getOperation()))
 				{
-					String start = DateStorageUtil.getStorageUtil().formatForStorage(new Date(0));
-					find = QueryBuilders.rangeQuery(inDetail.getId())
-		                .from(start)
-		                .to(valueof);	
+					//Date after = new Date(0);
+					Date before = DateStorageUtil.getStorageUtil().parseFromStorage(valueof); 
+					find = QueryBuilders.rangeQuery(inDetail.getId()).to(before);	
 				}
 				else if( "afterdate".equals(inTerm.getOperation()))
 				{
-					String end = DateStorageUtil.getStorageUtil().formatForStorage(new Date(Long.MAX_VALUE));
-					find = QueryBuilders.rangeQuery(fieldid)
-			                .from(valueof);
-			            //    .to(end);
+					Date before = new Date(Long.MAX_VALUE);
+					Date after = DateStorageUtil.getStorageUtil().parseFromStorage(valueof); 
+					find = QueryBuilders.rangeQuery(fieldid).from(after);//.to(before);
 				}
+				else if( "betweendates".equals(inTerm.getOperation()))
+				{
+					//String end = DateStorageUtil.getStorageUtil().formatForStorage(new Date(Long.MAX_VALUE));
+					Date after = DateStorageUtil.getStorageUtil().parseFromStorage(inTerm.getParameter("afterDate"));
+					Date before =DateStorageUtil.getStorageUtil().parseFromStorage(inTerm.getParameter("beforeDate")); 
+							
+							//inTerm.getParameter("beforeDate");
+					
+					//	String before
+					find = QueryBuilders.rangeQuery(fieldid).from(after).to(before);
+				}
+				
+				
+				
+				
+				
 				else
 				{
-					find = QueryBuilders.termQuery(fieldid, valueof); //TODO make it a range query? from 0-24 hours
+					//Think this doesn't ever run.  I think we use betweendates.
+					Date target = DateStorageUtil.getStorageUtil().parseFromStorage(valueof);
+					Calendar calendar = Calendar.getInstance();
+					calendar.setTime(target);
+					int year = calendar.get(Calendar.YEAR);
+				    int month = calendar.get(Calendar.MONTH);
+				    int day = calendar.get(Calendar.DATE);
+				    calendar.set(Calendar.MILLISECOND, 0);
+					calendar.set(year, month, day, 0, 0, 0);
+
+					Date after =calendar.getTime();
+					calendar.set(year, month, day, 23, 59, 59);
+				    calendar.set(Calendar.MILLISECOND, 999);
+
+					
+					
+					Date before = calendar.getTime();
+					
+					find = QueryBuilders.rangeQuery(fieldid).from(after).to(before);
+					
+					//find = QueryBuilders.termQuery(fieldid, valueof); //TODO make it a range query? from 0-24 hours
 				}
 			}
 			else if( inDetail.isDataType("number") )
@@ -671,12 +787,26 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			else if( fieldid.equals("description"))
 			{
-				find = QueryBuilders.textQuery(fieldid, valueof);				
+//					valueof = valueof.substring(0,valueof.length()-1);
+				
+MatchQueryBuilder text = QueryBuilders.matchPhrasePrefixQuery("_all", valueof);
+text.maxExpansions(10);
+find = text;		
 			}
 			else
 			{
-				find = QueryBuilders.termQuery(fieldid, valueof);
+				
+				if("matches".equals(inTerm.getOperation())){
+					find = QueryBuilders.matchQuery(fieldid, valueof);
+				} 
+				else if("contains".equals(inTerm.getOperation())){
+					find = QueryBuilders.matchQuery(fieldid, valueof);
+				} 
+				else{
+					find = QueryBuilders.termQuery(fieldid, valueof);
+				}
 			}
+//			QueryBuilders.idsQuery(types)
 		return find;
 	}
 
@@ -701,6 +831,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				field = field.substring(0, field.length() - 2);
 			}
 			FieldSortBuilder sort = SortBuilders.fieldSort(field);
+			sort.ignoreUnmapped(true);
 			if (direction)
 			{
 				sort.order(SortOrder.DESC);
@@ -821,6 +952,12 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		everything.add("id");
 		everything.add("name");
 		everything.add("sourcepath");
+		for (Iterator iterator = inDetails.iterator(); iterator.hasNext();)
+		{
+			PropertyDetail detail = (PropertyDetail) iterator.next();
+			everything.add(detail.getId());//We need this to handle booleans and potentially other things.
+			
+		}
 		everything.remove(".version"); //is this correct?
 		for (Iterator iterator = everything.iterator(); iterator.hasNext();) 
 		{
@@ -828,7 +965,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			
 			
 			String value = inData.get(key);
-			if( value != null && value.length() == 0)
+			if( value != null && value.trim().length() == 0)
 			{
 				value = null;
 			}
@@ -855,8 +992,13 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				{
 					if( value != null)
 					{
+						
 						//ie date = DateStorageUtil.getStorageUtil().parseFromStorage(value);
-						inContent.field(key, value);
+						Date date = DateStorageUtil.getStorageUtil().parseFromStorage(value);
+						if(date != null){
+						inContent.field(key, date);
+						}
+						
 					}
 				}
 				else if(detail != null && detail.isBoolean())
@@ -1063,5 +1205,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 		}
 	}
+	
+	
 
 }
