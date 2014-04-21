@@ -400,7 +400,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 						{
 							log.info("mapping applied " + getSearchType());
 							reindex = true;
-							getClient().admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet(); 
+							getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet(); 
 						}
 
 					}
