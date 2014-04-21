@@ -1131,7 +1131,7 @@ find = text;
 	{
 		if( fieldClientPool != null)
 		{
-			getClient().close();
+			fieldClientPool.shutdown();
 			fieldConnected = false;
 		}
 	}
@@ -1205,6 +1205,8 @@ find = text;
 			}
 		}
 	}
+	
+	
 	
 	
 
