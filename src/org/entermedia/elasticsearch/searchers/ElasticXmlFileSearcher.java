@@ -208,27 +208,20 @@ protected SourcePathCreator fieldSourcePathCreator;
 	public void saveAllData(Collection<Data> inAll, User inUser)
 	{
 		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
-
 		for (Object object: inAll)
 		{
 			Data data = (Data)object;
-			Lock lock = null;
 			try
 			{
-				lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + data.getSourcePath(),"admin");
 				updateElasticIndex(details, data);
-				getDataArchive().saveData(data, inUser);
 			}
 			catch(Throwable ex)
 			{
 				log.error("problem saving " + data.getId() , ex);
 				throw new OpenEditException(ex);
 			}
-			finally
-			{
-				getLockManager().release(getCatalogId(), lock);
-			}
 		}
+		getDataArchive().saveAllData(inAll, getCatalogId(), getPathToData() + "/" ,inUser);
 	}
 
 	public void saveData(Data inData, User inUser)
@@ -240,8 +233,6 @@ protected SourcePathCreator fieldSourcePathCreator;
 		try
 		{
 			lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath(),"admin");
-			
-			
 			updateElasticIndex(details, inData);
 			//TODO - we might need the sourcepath saved in the below case.
 			if( inData.getSourcePath() == null)
@@ -249,9 +240,7 @@ protected SourcePathCreator fieldSourcePathCreator;
 				String sourcepath = getSourcePathCreator().createSourcePath(inData, inData.getId() );
 				inData.setSourcePath(sourcepath);
 			}
-			
-			
-			getDataArchive().saveData(inData, inUser);
+			getDataArchive().saveData(inData, inUser, lock);
 		}
 		catch(Throwable ex)
 		{
