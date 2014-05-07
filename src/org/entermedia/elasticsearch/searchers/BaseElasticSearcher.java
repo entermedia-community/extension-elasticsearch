@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -91,7 +92,8 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	protected boolean fieldAutoIncrementId;
 	protected boolean fieldReIndexing;
 	protected boolean fieldCheckVersions;
-	
+	public static final Pattern VALUEDELMITER = Pattern.compile("\\s*\\|\\s*");
+
 	public boolean isCheckVersions()
 	{
 		return fieldCheckVersions;
@@ -558,7 +560,8 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 
 			String value = term.getValue();
-			if( value.equals("*"))
+			
+			if(value != null &&  value.equals("*"))
 			{
 				return QueryBuilders.matchAllQuery();
 			}
@@ -1023,6 +1026,26 @@ find = text;
 						inContent.field(key, Long.valueOf(value));
 					}
 				}
+				
+				else if(detail != null &&  detail.isList())
+				{
+					
+						ArrayList values =new ArrayList();
+						if(value != null &&  value.contains("|")){
+							String[] vals = VALUEDELMITER.split(value);
+
+							inContent.field(key, vals);
+						}
+					else
+					{
+						inContent.field(key,value);
+					}
+				}
+				
+				
+				
+				
+				
 				else if( key.equals("description") )
 				{
 					StringBuffer desc = new StringBuffer();
