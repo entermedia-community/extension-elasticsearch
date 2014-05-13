@@ -510,6 +510,14 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			{
 				jsonproperties = jsonproperties.field("type", "long");					
 			}
+			else if ( detail.isList())
+			{
+				if(Boolean.parseBoolean(detail.get("nested"))){
+					jsonproperties = jsonproperties.field("type", "nested");
+				}
+			}
+			
+			
 			else
 			{
 				String indextype = detail.get("indextype");
