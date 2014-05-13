@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="." default="default" name="extension-elasticsearch">
 
-  	<target name="default" depends="clean, update-dependencies, compile, jar, zip, publish"/>
+  	<target name="default" depends="clean, update-dependencies, compile, jar, zip, publish, installer"/>
   	<target name="dependency" depends="default"/>
    
     <property name="appname" value="${ant.project.name}"/>
@@ -122,4 +122,15 @@
 		 		    </filterset>
 		 	</copy>	
 	</target>
+	
+	
+	<target name="installer" depends="zip" >
+			<mkdir dir="${deployDir}"/>
+			<zip destfile="${deployDir}/tomcatcluster.zip" >			
+				<zipfileset dir="${basedir}/etc/cluster" prefix="cluster" />
+				
+			</zip>
+	
+	</target>
+	
 </project>
