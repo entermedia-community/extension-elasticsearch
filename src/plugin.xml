@@ -325,4 +325,25 @@
 	</bean>
 	
 	
+	
+	<bean id="elasticLogSearcher"
+		class="org.entermedia.elasticsearch.searchers.ElasticLogSearcher"
+		singleton="false">
+		<property name="clientPool">
+			<ref bean="clientPool" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="pageManager">
+			<ref bean="pageManager" />
+		</property>
+		<property name="checkVersions"><value>false</value></property>
+						
+		
+	</bean>
+	
+	
+	
+	
 </beans>
