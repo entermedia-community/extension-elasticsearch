@@ -232,7 +232,7 @@ protected SourcePathCreator fieldSourcePathCreator;
 		Lock lock = null;
 		try
 		{
-			lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath(),"admin");
+			lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath() + "/" + getSearchType(),"admin"); //need to lock the entire file
 			updateElasticIndex(details, inData);
 			//TODO - we might need the sourcepath saved in the below case.
 			if( inData.getSourcePath() == null)
