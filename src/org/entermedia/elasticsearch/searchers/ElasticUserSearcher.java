@@ -104,15 +104,15 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 	public Object searchById(String inId)
 	{
 		
-		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/users/" + inId + ".xml","admin");
-		try
-		{
+//		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/users/" + inId + ".xml","admin");
+//		try
+//		{
 			return getUserManager().loadUser(inId);
-		}
-		finally
-		{
-			getLockManager().release(getCatalogId(), lock);
-		}
+//		}
+//		finally
+//		{
+//			getLockManager().release(getCatalogId(), lock);
+//		}
 
 	}
 
