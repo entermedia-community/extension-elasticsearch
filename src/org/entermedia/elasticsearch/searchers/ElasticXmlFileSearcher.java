@@ -130,7 +130,7 @@ protected SourcePathCreator fieldSourcePathCreator;
 			processor.setPageManager(getPageManager());
 			processor.setIncludeExtensions("xml");
 			processor.process();
-			updateIndex(buffer,null);
+			bulkUpdateIndex(buffer,null);
 			log.info("reindexed " + processor.getExecCount());
 			flushChanges();			
 		} catch(Exception e){

@@ -881,7 +881,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		saveAllData(list, inUser);
 	}
 
-	protected void updateIndex(Collection<Data> inBuffer, User inUser)
+	protected void bulkUpdateIndex(Collection<Data> inBuffer, User inUser)
 	{
 		try
 		{
@@ -933,28 +933,28 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		}
 	}
 
-	// protected void updateIndex(Collection<Data> inBuffer, User inUser) {
-	// String catid = toId(getCatalogId());
-	//
-	// // BulkRequestBuilder brb = getClient().prepareBulk();
-	// //
+	 protected void updateIndex(Collection<Data> inBuffer, User inUser) {
+	 String catid = toId(getCatalogId());
+	
+	 // BulkRequestBuilder brb = getClient().prepareBulk();
+	 //
 	// brb.add(Requests.indexRequest(indexName).type(getIndexType()).id(id).source(source));
-	// // }
-	// // if (brb.numberOfActions() > 0) brb.execute().actionGet();
-	// PropertyDetails details = getPropertyDetailsArchive()
-	// .getPropertyDetailsCached(getSearchType());
-	//
-	// for (Data data : inBuffer) {
-	// if(data == null){
-	// throw new OpenEditException("Data was null!");
-	// }
-	// updateElasticIndex(details, data);
-	// }
-	// log.info("Saved " + inBuffer.size() + " records into " + catid + "/"
-	// + getSearchType());
-	//
-	// inBuffer.clear();
-	// }
+	 // }
+	 // if (brb.numberOfActions() > 0) brb.execute().actionGet();
+	 PropertyDetails details = getPropertyDetailsArchive()
+	 .getPropertyDetailsCached(getSearchType());
+	
+	 for (Data data : inBuffer) {
+	 if(data == null){
+	 throw new OpenEditException("Data was null!");
+	 }
+	 updateElasticIndex(details, data);
+	 }
+	 log.info("Saved " + inBuffer.size() + " records into " + catid + "/"
+	 + getSearchType());
+	
+	 inBuffer.clear();
+	 }
 
 	protected void updateElasticIndex(PropertyDetails details, Data data)
 	{
