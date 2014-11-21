@@ -12,7 +12,7 @@
 
 	<bean id="elasticDataSearcher"
 		class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher"
-		singleton="false">
+		scope="prototype">
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
@@ -38,7 +38,7 @@
 
 	<!-- Use beans.xml to enable this one -->
 	<bean id="elasticAssetSearcher" class="org.openedit.entermedia.search.BaseAssetSearcher"
-		singleton="false">
+		scope="prototype">
 		<property name="dataConnector">
 			<ref bean="elasticAssetDataConnector" />
 		</property>
@@ -52,7 +52,7 @@
 
 	<bean id="elasticAssetDataConnector"
 		class="org.entermedia.elasticsearch.searchers.ElasticAssetDataConnector"
-		singleton="false">
+		scope="prototype">
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
@@ -109,7 +109,7 @@
 		
 	</bean>
 
-	<bean id="elasticLockSearcher" class="org.entermedia.elasticsearch.searchers.LockSearcher" singleton="false">
+	<bean id="elasticLockSearcher" class="org.entermedia.elasticsearch.searchers.LockSearcher" scope="prototype">
 		<property name="clientPool">
 			<ref bean="clientPool" />
 		</property>
@@ -146,7 +146,7 @@
 		</property>
 	</bean>
 
-    <bean id="elasticUserProfileSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" singleton="false">
+    <bean id="elasticUserProfileSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" scope="prototype">
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
@@ -172,7 +172,7 @@
 	</bean>
 
 	
-	<bean id="elasticOrderItemSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" singleton="false">
+	<bean id="elasticOrderItemSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" scope="prototype">
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
@@ -198,7 +198,7 @@
 	</bean>
 
 	<!-- Why is this a LockSearcher? So I can delete the index on boot up -->
-	<bean id="elasticTransientSearcher" class="org.entermedia.elasticsearch.searchers.LockSearcher" singleton="false">
+	<bean id="elasticTransientSearcher" class="org.entermedia.elasticsearch.searchers.LockSearcher" scope="prototype">
 		<property name="clientPool">
 			<ref bean="clientPool" />
 		</property>
@@ -212,7 +212,7 @@
 		<property name="clearIndexOnStart"><value>false</value></property>
 	</bean>
 	
-	<bean id="elasticListSearcher" class="org.entermedia.elasticsearch.searchers.ElasticListSearcher" singleton="false">
+	<bean id="elasticListSearcher" class="org.entermedia.elasticsearch.searchers.ElasticListSearcher" scope="prototype">
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
@@ -233,7 +233,7 @@
 		</property>
 	</bean>
 
-	<bean id="elasticFolderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticListSearcher" singleton="false">
+	<bean id="elasticFolderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticListSearcher" scope="prototype">
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
@@ -255,7 +255,7 @@
 	</bean>
 
 
-<bean id="elasticCategorySearcher" class="org.entermedia.elasticsearch.categories.ElasticCategorySearcher" singleton="false">
+<bean id="elasticCategorySearcher" class="org.entermedia.elasticsearch.categories.ElasticCategorySearcher" scope="prototype">
 		<property name="clientPool">
 			<ref bean="clientPool" />
 		</property>
@@ -274,11 +274,11 @@
 		<property name="checkVersions"><value>false</value></property>
 	</bean>
 
-	<bean id="elasticCategory" class="org.entermedia.elasticsearch.categories.ElasticCategory" singleton="false" >
+	<bean id="elasticCategory" class="org.entermedia.elasticsearch.categories.ElasticCategory" scope="prototype" >
 	</bean>	
 	
 <bean id="searcherCategoryArchive" class="org.entermedia.elasticsearch.categories.SearcherCategoryArchive"
-		singleton="false">
+		scope="prototype">
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
@@ -289,7 +289,7 @@
 	</bean>
 	
 	
-<bean id="elasticOrderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticOrderSearcher" singleton="false">
+<bean id="elasticOrderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticOrderSearcher" scope="prototype">
 		<property name="clientPool">
 			<ref bean="clientPool" />
 		</property>
@@ -311,7 +311,7 @@
 	</bean>
 
 
-	<bean id="assetAutoCompleteElasticSearcher" class="org.entermedia.elasticsearch.searchers.ElasticAutoCompleteSearcher" singleton="false">
+	<bean id="assetAutoCompleteElasticSearcher" class="org.entermedia.elasticsearch.searchers.ElasticAutoCompleteSearcher" scope="prototype">
 		<property name="clientPool">
 			<ref bean="clientPool" />
 		</property>
@@ -328,7 +328,7 @@
 	
 	<bean id="elasticLogSearcher"
 		class="org.entermedia.elasticsearch.searchers.ElasticLogSearcher"
-		singleton="false">
+		scope="prototype">
 		<property name="clientPool">
 			<ref bean="clientPool" />
 		</property>
