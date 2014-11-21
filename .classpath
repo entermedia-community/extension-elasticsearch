@@ -15,6 +15,5 @@
 	<classpathentry kind="lib" path="lib/lucene-queries-4.6.1.jar"/>
 	<classpathentry kind="lib" path="lib/lucene-sandbox-4.6.1.jar"/>
 	<classpathentry kind="lib" path="lib/lucene-spatial-4.6.1.jar"/>
-	<classpathentry kind="lib" path="lib/lucene-suggest-4.6.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
