@@ -104,7 +104,7 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 
 	public void delete(Data inData, User inUser)
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/users/" + inData.getId() + ".xml","admin");
+		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/groups/" + inData.getId() + ".xml","admin");
 		try
 		{
 			getUserManager().deleteGroup((Group) inData);

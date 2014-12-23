@@ -8,13 +8,17 @@ import org.elasticsearch.node.NodeBuilder;
 import org.openedit.entermedia.cluster.NodeManager;
 
 import com.openedit.OpenEditException;
+import com.openedit.Shutdownable;
 import com.openedit.page.Page;
 import com.openedit.util.PathUtilities;
 
-public class ClientPool
+public class ClientPool implements Shutdownable
 {
 	protected Client fieldClient;
 	protected NodeManager fieldNodeManager;
+	protected boolean fieldShutdown = false;
+
+	
 	
 	public NodeManager getNodeManager()
 	{
@@ -28,6 +32,10 @@ public class ClientPool
 
 	public Client getClient()
 	{
+		if(fieldShutdown == true){
+			//throw new OpenEditException("Cluster is shutting down.");
+			return null;
+		}
 		if( fieldClient == null)
 		{
 			//Get this info from the NodeManager
@@ -79,5 +87,15 @@ public class ClientPool
 		}
 		return fieldClient;
 	}
+	
+	public void shutdown()
+	{
+		if(!fieldShutdown){
+		getClient().close();
+		}
+		fieldShutdown = true;
+		
+	}
+
 
 }
