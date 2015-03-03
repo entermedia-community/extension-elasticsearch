@@ -144,6 +144,8 @@
 		<property name="xmlUtil">
 			<ref bean="xmlUtil" />
 		</property>
+		<property name="webServer"><ref bean="WebServer" /></property>
+		
 	</bean>
 
     <bean id="elasticUserProfileSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" scope="prototype">
