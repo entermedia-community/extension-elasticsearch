@@ -69,7 +69,7 @@ public class ClientPool implements Shutdownable
 			String abs = config.getContentItem().getAbsolutePath();
 			File parent = new File(abs);
 			Map params = new HashMap();
-			params.put("webroot", parent.getParentFile().getAbsolutePath());
+			params.put("webroot", parent.getParentFile().getParentFile().getAbsolutePath());
 			params.put("nodeid", getNodeManager().getLocalNodeId());
 			Replacer replace = new Replacer();
 			
