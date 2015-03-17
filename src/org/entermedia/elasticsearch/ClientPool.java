@@ -1,6 +1,9 @@
 package org.entermedia.elasticsearch;
 
+import java.io.File;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.dom4j.Element;
 import org.elasticsearch.client.Client;
@@ -11,6 +14,7 @@ import com.openedit.OpenEditException;
 import com.openedit.Shutdownable;
 import com.openedit.page.Page;
 import com.openedit.util.PathUtilities;
+import com.openedit.util.Replacer;
 
 public class ClientPool implements Shutdownable
 {
@@ -63,15 +67,24 @@ public class ClientPool implements Shutdownable
 				throw new OpenEditException("Missing " + config.getPath());
 			}
 			String abs = config.getContentItem().getAbsolutePath();
+			File parent = new File(abs);
+			Map params = new HashMap();
+			params.put("webroot", parent.getParentFile().getAbsolutePath());
+			params.put("nodeid", getNodeManager().getLocalNodeId());
+			Replacer replace = new Replacer();
+			
 			for (Iterator iterator = getNodeManager().getLocalNode().getElement().elementIterator("property"); iterator.hasNext();)
 			{
 				Element	prop = (Element) iterator.next();
 				String key = prop.attributeValue("id");
 				String val = prop.getTextTrim();
+				
 				if( val.startsWith("."))
 				{
 					val = PathUtilities.resolveRelativePath(val, abs );
 				}
+				val = replace.replace(val, params);
+				
 				nb.settings().put(key, val);
 			}
 			//extras
