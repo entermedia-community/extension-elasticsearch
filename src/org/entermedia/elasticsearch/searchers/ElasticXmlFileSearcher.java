@@ -33,8 +33,16 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	protected DataArchive fieldDataArchive; //lazy loaded
 	protected String fieldPrefix;
 	protected String fieldDataFileName;
-protected SourcePathCreator fieldSourcePathCreator;
+	protected SourcePathCreator fieldSourcePathCreator;
+	protected boolean fieldTransient = false;
 	
+	
+	public boolean isTransient() {
+		return fieldTransient;
+	}
+	public void setTransient(boolean fieldTransient) {
+		this.fieldTransient = fieldTransient;
+	}
 	public SourcePathCreator getSourcePathCreator()
 	{
 		return fieldSourcePathCreator;
@@ -221,7 +229,9 @@ protected SourcePathCreator fieldSourcePathCreator;
 				throw new OpenEditException(ex);
 			}
 		}
+		if(!isTransient()){
 		getDataArchive().saveAllData(inAll, getCatalogId(), getPathToData() + "/" ,inUser);
+		}
 	}
 
 	public void saveData(Data inData, User inUser)
@@ -240,7 +250,10 @@ protected SourcePathCreator fieldSourcePathCreator;
 				String sourcepath = getSourcePathCreator().createSourcePath(inData, inData.getId() );
 				inData.setSourcePath(sourcepath);
 			}
+			if(!isTransient()){
+			
 			getDataArchive().saveData(inData, inUser, lock);
+			}
 		}
 		catch(Throwable ex)
 		{

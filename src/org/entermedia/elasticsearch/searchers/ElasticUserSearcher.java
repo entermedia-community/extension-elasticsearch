@@ -39,34 +39,17 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		BaseUser user = new BaseUser();
 		return user;
 	}
-//	public HitTracker getAllHits(WebPageRequest inReq)
-//	{
-//		SearchQuery query = createSearchQuery();
-//		query.addMatches("enabled", "true");
-//		query.addMatches("enabled", "false");
-//		query.addSortBy("name");
-//		query.setAndTogether(false);
-//		if( inReq == null)
-//		{
-//			return search(query);
-//		}
-//		else
-//		{
-//			return cachedSearch(inReq,query);
-//		}
-//		//return new ListHitTracker().setList(getCustomerArchive().)
-//	}
 
-	public UserManager getUserManager()
-	{
+	
+	public UserManager getUserManager() {
+		if (fieldUserManager == null) {
+			fieldUserManager = (UserManager) getModuleManager().getBean(
+					getCatalogId(), "userManager");
+
+		}
+
 		return fieldUserManager;
 	}
-
-	public void setUserManager(UserManager inUserManager)
-	{
-		fieldUserManager = inUserManager;
-	}
-
 	
 	public void reIndexAll() throws OpenEditException
 	{
@@ -74,7 +57,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		try
 		{
 			PropertyDetails details = getPropertyDetailsArchive().getPropertyDetails(getSearchType());
-			Collection usernames = getUserManager().listUserNames();
+			Collection usernames = getUserManager().listUserNames(getCatalogId());
 			if( usernames != null)
 			{
 				deleteAll(null);
@@ -161,7 +144,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 
 	public void saveData(Data inData, User inUser)
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/users/" + inData.getId() + ".xml","admin");
+		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/" + getCatalogId() + "/users/" + inData.getId() + ".xml","admin");
 		try
 		{
 			getUserManager().saveUser((User)inData);
@@ -176,7 +159,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 	
 	public void delete(Data inData, User inUser)
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/users/" + inData.getId() + ".xml","admin");
+		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/" + getCatalogId() + "/users/" + inData.getId() + ".xml","admin");
 		try
 		{
 			getUserManager().deleteUser((User)inData);
@@ -214,31 +197,6 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 	}
 
 	
-	public void setCatalogId(String inCatalogId)
-	{
-		//This can be removed in the future once we track down a singleton bug
-		if( inCatalogId != null && !inCatalogId.equals("system"))
-		{
-			OpenEditException ex = new OpenEditException("Invalid catalogid catalogid=" + inCatalogId );
-			ex.printStackTrace();
-			log.error( ex);
-			
-			//throw ex;
-		}
-		
-		super.setCatalogId("system");
-		if(fieldPropertyDetailsArchive != null){
-		   fieldPropertyDetailsArchive.setCatalogId("system");
-		   
-		}
-	}
-	public PropertyDetailsArchive getPropertyDetailsArchive()
-	{
-		if (fieldPropertyDetailsArchive == null)
-		{
-			fieldPropertyDetailsArchive = (PropertyDetailsArchive) getSearcherManager().getModuleManager().getBean("system", "propertyDetailsArchive");
-		}
-		fieldPropertyDetailsArchive.setCatalogId("system");
-		return fieldPropertyDetailsArchive;
-	}
+	
+
 }

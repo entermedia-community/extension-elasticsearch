@@ -74,6 +74,9 @@
 		<property name="dataFileName">
 			<value>data.xml</value>
 		</property>
+		<property name="transient">
+			<value>true</value>
+		</property>
 	</bean>
 
 	<bean id="elasticUserSearcher"
@@ -81,9 +84,7 @@
 		<property name="clientPool">
 			<ref bean="clientPool" />
 		</property>
-		<property name="userManager">
-			<ref bean="userManager" />
-		</property>
+	
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
@@ -97,9 +98,7 @@
 		<property name="clientPool">
 			<ref bean="clientPool" />
 		</property>
-		<property name="userManager">
-			<ref bean="userManager" />
-		</property>
+		
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>

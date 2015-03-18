@@ -30,15 +30,17 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 	private static final Log log = LogFactory.getLog(ElasticGroupSearcher.class);
 	protected UserManager fieldUserManager;
 	
-	public UserManager getUserManager()
-	{
+	public UserManager getUserManager() {
+		if (fieldUserManager == null) {
+			fieldUserManager = (UserManager) getModuleManager().getBean(
+					getCatalogId(), "userManager");
+
+		}
+
 		return fieldUserManager;
 	}
-
-	public void setUserManager(UserManager inUserManager)
-	{
-		fieldUserManager = inUserManager;
-	}
+	
+	
 	public Object searchById(String inId) 
 	{
 		return getGroup(inId);
@@ -90,7 +92,7 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 
 	public void saveData(Data inData, User inUser)
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/groups/" + inData.getId() + ".xml","admin");
+		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/" + getCatalogId() + "/users/" + inData.getId() + ".xml","admin");
 		try
 		{
 			getUserManager().saveGroup((Group) inData);
@@ -104,7 +106,7 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 
 	public void delete(Data inData, User inUser)
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/groups/" + inData.getId() + ".xml","admin");
+		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/" + getCatalogId() + "/users/" + inData.getId() + ".xml","admin");
 		try
 		{
 			getUserManager().deleteGroup((Group) inData);
