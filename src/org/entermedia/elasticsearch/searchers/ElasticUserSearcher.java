@@ -57,7 +57,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		try
 		{
 			PropertyDetails details = getPropertyDetailsArchive().getPropertyDetails(getSearchType());
-			Collection usernames = getUserManager().listUserNames(getCatalogId());
+			Collection usernames = getUserManager().listUserNames();
 			if( usernames != null)
 			{
 				deleteAll(null);
