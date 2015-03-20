@@ -14,8 +14,6 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.entermedia.locks.Lock;
 import org.openedit.Data;
 import org.openedit.data.PropertyDetails;
-import org.openedit.data.PropertyDetailsArchive;
-import org.openedit.users.UserSearcher;
 
 import com.openedit.OpenEditException;
 import com.openedit.hittracker.HitTracker;
@@ -23,7 +21,8 @@ import com.openedit.hittracker.SearchQuery;
 import com.openedit.users.BaseUser;
 import com.openedit.users.Group;
 import com.openedit.users.User;
-import com.openedit.users.UserManager;
+import com.openedit.users.UserSearcher;
+import com.openedit.users.filesystem.XmlUserArchive;
 
 /**
  *
@@ -31,7 +30,7 @@ import com.openedit.users.UserManager;
 public class ElasticUserSearcher extends BaseElasticSearcher implements UserSearcher
 {
 	private static final Log log = LogFactory.getLog(ElasticUserSearcher.class);
-	protected UserManager fieldUserManager;
+	protected XmlUserArchive fieldXmlUserArchive;
 
 	@Override
 	public Data createNewData()
@@ -41,14 +40,14 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 	}
 
 	
-	public UserManager getUserManager() {
-		if (fieldUserManager == null) {
-			fieldUserManager = (UserManager) getModuleManager().getBean(
-					getCatalogId(), "userManager");
+	public XmlUserArchive getXmlUserArchive() {
+		if (fieldXmlUserArchive == null) {
+			fieldXmlUserArchive = (XmlUserArchive) getModuleManager().getBean(
+					getCatalogId(), "XmlUserArchive");
 
 		}
 
-		return fieldUserManager;
+		return fieldXmlUserArchive;
 	}
 	
 	public void reIndexAll() throws OpenEditException
@@ -57,7 +56,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		try
 		{
 			PropertyDetails details = getPropertyDetailsArchive().getPropertyDetails(getSearchType());
-			Collection usernames = getUserManager().listUserNames();
+			Collection usernames = getXmlUserArchive().listUserNames();
 			if( usernames != null)
 			{
 				deleteAll(null);
@@ -65,7 +64,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 				for (Iterator iterator = usernames.iterator(); iterator.hasNext();)
 				{
 					String userid = (String) iterator.next();
-					User data = getUserManager().getUser(userid);
+					User data = getXmlUserArchive().getUser(userid);
 					users.add(data);
 					if( users.size() > 50)
 					{
@@ -90,7 +89,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 //		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/users/" + inId + ".xml","admin");
 //		try
 //		{
-			return getUserManager().loadUser(inId);
+			return getXmlUserArchive().loadUser(inId);
 //		}
 //		finally
 //		{
@@ -113,7 +112,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 	 */
 	public User getUserByEmail(String inEmail)
 	{
-		User user =  getUserManager().getUserByEmail(inEmail);
+		User user =  getXmlUserArchive().getUserByEmail(inEmail);
 		if( user != null)
 		{
 			return getUser(user.getId());
@@ -147,7 +146,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/" + getCatalogId() + "/users/" + inData.getId() + ".xml","admin");
 		try
 		{
-			getUserManager().saveUser((User)inData);
+			getXmlUserArchive().saveUser((User)inData);
 			super.saveData(inData, inUser); //update the index
 		}
 		finally
@@ -162,7 +161,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/" + getCatalogId() + "/users/" + inData.getId() + ".xml","admin");
 		try
 		{
-			getUserManager().deleteUser((User)inData);
+			getXmlUserArchive().deleteUser((User)inData);
 			super.delete(inData, inUser); //delete the index
 		}
 		finally
