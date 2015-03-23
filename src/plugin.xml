@@ -74,7 +74,7 @@
 			<value>data.xml</value>
 		</property>
 		<property name="transient">
-			<value>true</value>
+			<value>false</value>
 		</property>
 	</bean>
 

@@ -138,9 +138,12 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			processor.setPageManager(getPageManager());
 			processor.setIncludeExtensions("xml");
 			processor.process();
-			bulkUpdateIndex(buffer,null);
-			log.info("reindexed " + processor.getExecCount());
-			flushChanges();			
+			if( processor.getExecCount() > 0)
+			{
+				bulkUpdateIndex(buffer,null);
+				log.info("reindexed " + processor.getExecCount());
+				flushChanges();			
+			}
 		} catch(Exception e){
 			throw new OpenEditRuntimeException(e);
 		}
