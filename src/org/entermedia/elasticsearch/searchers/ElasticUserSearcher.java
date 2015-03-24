@@ -14,6 +14,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.entermedia.locks.Lock;
 import org.openedit.Data;
 import org.openedit.data.PropertyDetails;
+import org.openedit.users.UserSearcher;
 
 import com.openedit.OpenEditException;
 import com.openedit.hittracker.HitTracker;
@@ -21,7 +22,6 @@ import com.openedit.hittracker.SearchQuery;
 import com.openedit.users.BaseUser;
 import com.openedit.users.Group;
 import com.openedit.users.User;
-import com.openedit.users.UserSearcher;
 import com.openedit.users.filesystem.XmlUserArchive;
 
 /**
