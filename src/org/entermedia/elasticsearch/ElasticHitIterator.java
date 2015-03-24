@@ -12,12 +12,7 @@ See the GNU Lesser General Public License for more details.
 
 package org.entermedia.elasticsearch;
 
-import java.io.IOException;
 import java.util.Iterator;
-
-import org.elasticsearch.search.SearchHit;
-
-import com.openedit.OpenEditRuntimeException;
 
 
 /**

@@ -1,6 +1,5 @@
 package org.entermedia.elasticsearch.searchers;
 
-import org.apache.lucene.document.Document;
 import org.openedit.Data;
 import org.openedit.data.PropertyDetails;
 import org.openedit.entermedia.orders.Order;

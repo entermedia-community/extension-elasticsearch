@@ -7,10 +7,7 @@ import org.openedit.entermedia.autocomplete.AutoCompleteSearcher;
 import org.openedit.util.DateStorageUtil;
 
 import com.openedit.OpenEditException;
-import com.openedit.WebPageRequest;
 import com.openedit.hittracker.HitTracker;
-import com.openedit.hittracker.SearchQuery;
-import com.openedit.hittracker.Term;
 
 public class ElasticAutoCompleteSearcher extends BaseElasticSearcher implements AutoCompleteSearcher
 {
