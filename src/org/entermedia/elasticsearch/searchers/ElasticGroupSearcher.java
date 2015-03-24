@@ -18,7 +18,7 @@ import org.openedit.users.GroupSearcher;
 import com.openedit.OpenEditException;
 import com.openedit.users.Group;
 import com.openedit.users.User;
-import com.openedit.users.UserManager;
+import com.openedit.users.filesystem.XmlUserArchive;
 
 /**
  * @author cburkey
@@ -28,16 +28,16 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 		GroupSearcher
 {
 	private static final Log log = LogFactory.getLog(ElasticGroupSearcher.class);
-	protected UserManager fieldUserManager;
+	protected XmlUserArchive fieldXmlUserArchive;
 	
-	public UserManager getUserManager() {
-		if (fieldUserManager == null) {
-			fieldUserManager = (UserManager) getModuleManager().getBean(
-					getCatalogId(), "userManager");
+	public XmlUserArchive getXmlUserArchive() {
+		if (fieldXmlUserArchive == null) {
+			fieldXmlUserArchive = (XmlUserArchive) getModuleManager().getBean(
+					getCatalogId(), "xmlUserArchive");
 
 		}
 
-		return fieldUserManager;
+		return fieldXmlUserArchive;
 	}
 	
 	
@@ -50,7 +50,7 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 		log.info("Reindex of customer groups directory");
 		try
 		{
-			Collection ids = getUserManager().listGroupIds();
+			Collection ids = getXmlUserArchive().listGroupIds();
 			if( ids != null)
 			{
 				List groups = new ArrayList();
@@ -58,7 +58,7 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 				for (Iterator iterator = ids.iterator(); iterator.hasNext();)
 				{
 					String id = (String) iterator.next();
-					Group group = getUserManager().getGroup(id);
+					Group group = getXmlUserArchive().getGroup(id);
 					groups.add(group);
 					if( groups.size() > 50)
 					{
@@ -76,7 +76,7 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 
 	public Group getGroup(String inGroupId)
 	{
-		Group group = getUserManager().getGroup(inGroupId);
+		Group group = getXmlUserArchive().getGroup(inGroupId);
 		if (group == null)
 		{
 			log.error("Index is out of date, group " + inGroupId
@@ -87,7 +87,7 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 
 	public Data createNewData()
 	{
-		return getUserManager().createGroup();
+		return getXmlUserArchive().createGroup();
 	}
 
 	public void saveData(Data inData, User inUser)
@@ -95,7 +95,7 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/" + getCatalogId() + "/users/" + inData.getId() + ".xml","admin");
 		try
 		{
-			getUserManager().saveGroup((Group) inData);
+			getXmlUserArchive().saveGroup((Group) inData);
 			super.saveData(inData, inUser); //update the index
 		}
 		finally
@@ -109,7 +109,7 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/" + getCatalogId() + "/users/" + inData.getId() + ".xml","admin");
 		try
 		{
-			getUserManager().deleteGroup((Group) inData);
+			getXmlUserArchive().deleteGroup((Group) inData);
 			super.delete(inData, inUser); //update the index
 		}
 		finally

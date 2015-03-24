@@ -43,7 +43,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 	public XmlUserArchive getXmlUserArchive() {
 		if (fieldXmlUserArchive == null) {
 			fieldXmlUserArchive = (XmlUserArchive) getModuleManager().getBean(
-					getCatalogId(), "XmlUserArchive");
+					getCatalogId(), "xmlUserArchive");
 
 		}
 

@@ -84,12 +84,12 @@
 			<ref bean="clientPool" />
 		</property>
 	
-		<property name="pageManager">
-			<ref bean="pageManager" />
+		<property name="pageManager">			<ref bean="pageManager" />		</property>
+		<property name="lockManager">			<ref bean="elasticLockManager" />		</property>		
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
 		</property>
-		<property name="lockManager">
-			<ref bean="elasticLockManager" />
-		</property>		
+			
 	
 	</bean>
 	<bean id="elasticGroupSearcher"
@@ -104,6 +104,9 @@
 		<property name="lockManager">
 			<ref bean="elasticLockManager" />
 		</property>		
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
 		
 	</bean>
 
