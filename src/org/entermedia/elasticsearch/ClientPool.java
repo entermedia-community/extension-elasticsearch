@@ -36,11 +36,7 @@ public class ClientPool implements Shutdownable
 
 	public Client getClient()
 	{
-		if(fieldShutdown == true){
-			//throw new OpenEditException("Cluster is shutting down.");
-			return null;
-		}
-		if( fieldClient == null)
+		if( fieldShutdown == false && fieldClient == null)
 		{
 			//Get this info from the NodeManager
 			
@@ -103,8 +99,9 @@ public class ClientPool implements Shutdownable
 	
 	public void shutdown()
 	{
-		if(!fieldShutdown){
-		getClient().close();
+		if(!fieldShutdown)
+		{
+			getClient().close();
 		}
 		fieldShutdown = true;
 		

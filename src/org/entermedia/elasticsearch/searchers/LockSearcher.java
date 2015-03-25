@@ -6,7 +6,9 @@ import org.elasticsearch.action.deletebyquery.DeleteByQueryRequestBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 
-public class LockSearcher extends ElasticTransientSearcher 
+import com.openedit.Shutdownable;
+
+public class LockSearcher extends ElasticTransientSearcher implements Shutdownable
 {
 	private static final Log log = LogFactory.getLog(LockSearcher.class);
 
@@ -56,6 +58,10 @@ public class LockSearcher extends ElasticTransientSearcher
 		{
 			clearStaleLocks();
 		}
-		super.shutdown();
+		if (fieldClientPool != null)
+		{
+			fieldClientPool.shutdown();
+			fieldConnected = false;
+		}
 	}
 }

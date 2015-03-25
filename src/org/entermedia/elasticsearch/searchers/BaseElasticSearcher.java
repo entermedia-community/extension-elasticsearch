@@ -83,7 +83,7 @@ import com.openedit.page.manage.PageManager;
 import com.openedit.users.User;
 import com.openedit.util.IntCounter;
 
-public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdownable
+public abstract class BaseElasticSearcher extends BaseSearcher
 {
 	private static final Log log = LogFactory.getLog(BaseElasticSearcher.class);
 	protected ClientPool fieldClientPool;
@@ -1234,15 +1234,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	public void setLockManager(LockManager inLockManager)
 	{
 		fieldLockManager = inLockManager;
-	}
-
-	public void shutdown()
-	{
-		if (fieldClientPool != null)
-		{
-			fieldClientPool.shutdown();
-			fieldConnected = false;
-		}
 	}
 
 	public boolean hasChanged(HitTracker inTracker)
