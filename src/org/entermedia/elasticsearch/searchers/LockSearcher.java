@@ -41,6 +41,7 @@ public class LockSearcher extends ElasticTransientSearcher implements Shutdownab
 		
 	}
 
+	//TODO: move this to the ClientPool shutdown ruitine
 	public void clearStaleLocks()
 	{
 		String id = getClientPool().getNodeManager().getLocalNodeId();

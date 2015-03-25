@@ -327,14 +327,8 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 					String indexid = toId(getCatalogId());
 					String cluster = indexid;
 
-					ClusterHealthResponse health = admin.cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet(); // yellow
-																																	// works
-																																	// when
-																																	// you
-																																	// only
-																																	// have
-																																	// one
-																																	// node
+					ClusterHealthResponse health = admin.cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet(); 
+					
 					if (health.isTimedOut())
 					{
 						throw new OpenEditException("Could not get yellow status");
