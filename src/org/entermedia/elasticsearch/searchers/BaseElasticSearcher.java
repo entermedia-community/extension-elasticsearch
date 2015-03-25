@@ -566,7 +566,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		{
 			Term term = (Term) inQuery.getTerms().iterator().next();
 
-			if ("orsGroup".equals(term.getOperation()))
+			if ("orgroup".equals(term.getOperation()) || "orsGroup".equals(term.getOperation()) ) //orsGroup? 
 			{
 				return addOrsGroup(term);
 			}
@@ -589,7 +589,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			for (Iterator iterator = inQuery.getTerms().iterator(); iterator.hasNext();)
 			{
 				Term term = (Term) iterator.next();
-				if ("orsGroup".equals(term.getOperation()))
+				if ("orgroup".equals(term.getOperation()) || "orsGroup".equals(term.getOperation()) )
 				{
 					BoolQueryBuilder or = addOrsGroup(term);
 					bool.must(or);
@@ -610,7 +610,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			for (Iterator iterator = inQuery.getTerms().iterator(); iterator.hasNext();)
 			{
 				Term term = (Term) iterator.next();
-				if ("orsGroup".equals(term.getOperation()))
+				if ("orgroup".equals(term.getOperation()) || "orsGroup".equals(term.getOperation()) ) //orsGroup?
 				{
 					BoolQueryBuilder or = addOrsGroup(term);
 					bool.should(or);

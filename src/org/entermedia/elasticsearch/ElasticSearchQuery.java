@@ -3,6 +3,7 @@
  */
 package org.entermedia.elasticsearch;
 
+import java.util.Collection;
 import java.util.Date;
 
 import org.apache.lucene.document.DateTools;
@@ -114,7 +115,19 @@ public class ElasticSearchQuery extends SearchQuery
 		getTerms().add(term);
 		return term;
 	}
-
+	
+	@Override
+	public Term addOrsGroup(String inString, Collection<String> inValues)
+	{
+		return super.addOrsGroup(inString, inValues); //this calls the Array one
+	}
+	
+	@Override
+	public Term addOrsGroup(PropertyDetail inDetail, String[] inValues)
+	{
+		return super.addOrsGroup(inDetail, inValues);
+	}
+	
 	public Term addOrsGroup(PropertyDetail inField, String inValue)
 	{
 		Term term = new Term()
