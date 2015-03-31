@@ -1,5 +1,6 @@
 package org.entermedia.elasticsearch.searchers;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -22,9 +23,22 @@ import org.openedit.xml.XmlFile;
 
 import com.openedit.OpenEditException;
 import com.openedit.OpenEditRuntimeException;
+import com.openedit.page.Page;
 import com.openedit.page.manage.PageManager;
 import com.openedit.users.User;
+import com.openedit.util.IntCounter;
 import com.openedit.util.PathProcessor;
+
+/**
+ * This is not going to be used much longer
+ * All other classes can just use base
+ * 
+ * Base and Transient are the same
+ * 
+ * @author shanti
+ *
+ */
+
 
 public class ElasticXmlFileSearcher extends BaseElasticSearcher
 {
@@ -34,23 +48,45 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	protected String fieldPrefix;
 	protected String fieldDataFileName;
 	protected SourcePathCreator fieldSourcePathCreator;
-	protected boolean fieldTransient = false;
-	
-	
-	public boolean isTransient() {
-		return fieldTransient;
+	protected PageManager fieldPageManager;
+	protected IntCounter fieldIntCounter;
+
+	public synchronized String nextId()
+	{
+		Lock lock = getLockManager().lock(getCatalogId(), loadCounterPath(), "admin");
+		try
+		{
+			return String.valueOf(getIntCounter().incrementCount());
+		}
+		finally
+		{
+			getLockManager().release(getCatalogId(), lock);
+		}
 	}
-	public void setTransient(boolean fieldTransient) {
-		this.fieldTransient = fieldTransient;
+
+	protected IntCounter getIntCounter()
+	{
+		if (fieldIntCounter == null)
+		{
+			fieldIntCounter = new IntCounter();
+			// fieldIntCounter.setLabelName(getSearchType() + "IdCount");
+			Page prop = getPageManager().getPage(loadCounterPath());
+			File file = new File(prop.getContentItem().getAbsolutePath());
+			file.getParentFile().mkdirs();
+			fieldIntCounter.setCounterFile(file);
+		}
+		return fieldIntCounter;
 	}
 	public SourcePathCreator getSourcePathCreator()
 	{
 		return fieldSourcePathCreator;
 	}
+
 	public void setSourcePathCreator(SourcePathCreator inSourcePathCreator)
 	{
 		fieldSourcePathCreator = inSourcePathCreator;
 	}
+
 	public PageManager getPageManager()
 	{
 		return fieldPageManager;
@@ -65,7 +101,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	{
 		return "/WEB-INF/data/" + getCatalogId() + "/" + getPrefix();
 	}
-	
+
 	public String getDataFileName()
 	{
 		if (fieldDataFileName == null)
@@ -74,10 +110,12 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		}
 		return fieldDataFileName;
 	}
+
 	public void setDataFileName(String inName)
 	{
 		fieldDataFileName = inName;
 	}
+
 	public XmlArchive getXmlArchive()
 	{
 		return fieldXmlArchive;
@@ -87,27 +125,23 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	{
 		fieldXmlArchive = inXmlArchive;
 	}
-	
+
 	public Data createNewData()
 	{
-		if( getNewDataName() == null)
+		if (getNewDataName() == null)
 		{
-			
-		
 
-		
 			ElementData data = new ElementData();
-			
+
 			return data;
 		}
-		return (Data)getModuleManager().getBean( getNewDataName());
+		return (Data) getModuleManager().getBean(getNewDataName());
 	}
 
-
 	public void reIndexAll() throws OpenEditException
-	{		
-		
-		if( isReIndexing())
+	{
+
+		if (isReIndexing())
 		{
 			return;
 		}
@@ -127,9 +161,8 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 						return;
 					}
 					String sourcepath = inContent.getPath();
-					sourcepath = sourcepath.substring(getPathToData().length() + 1,
-							sourcepath.length() - getDataFileName().length() - 1);
-					hydrateData( inContent, sourcepath, buffer);
+					sourcepath = sourcepath.substring(getPathToData().length() + 1, sourcepath.length() - getDataFileName().length() - 1);
+					hydrateData(inContent, sourcepath, buffer);
 					incrementCount();
 				}
 			};
@@ -138,13 +171,15 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			processor.setPageManager(getPageManager());
 			processor.setIncludeExtensions("xml");
 			processor.process();
-			if( processor.getExecCount() > 0)
+			if (processor.getExecCount() > 0)
 			{
-				bulkUpdateIndex(buffer,null);
+				bulkUpdateIndex(buffer, null);
 				log.info("reindexed " + processor.getExecCount());
-				flushChanges();			
+				flushChanges();
 			}
-		} catch(Exception e){
+		}
+		catch (Exception e)
+		{
 			throw new OpenEditRuntimeException(e);
 		}
 		finally
@@ -167,19 +202,20 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			data.setElement(element);
 			data.setSourcePath(sourcepath);
 			buffer.add(data);
-			if( buffer.size() > 99)
+			if (buffer.size() > 99)
 			{
-				updateIndex(buffer,null);
+				updateIndex(buffer, null);
 			}
 		}
 
 	}
+
 	public String getPrefix()
 	{
-		if(fieldPrefix == null)
+		if (fieldPrefix == null)
 		{
 			fieldPrefix = getPageManager().getPage("/" + getCatalogId()).get("defaultdatafolder");
-			if( fieldPrefix == null)
+			if (fieldPrefix == null)
 			{
 				fieldPrefix = getSearchType();
 			}
@@ -194,18 +230,19 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 
 	public void delete(Data inData, User inUser)
 	{
-		if(inData instanceof SearchHitData){
+		if (inData instanceof SearchHitData)
+		{
 			inData = (Data) searchById(inData.getId());
 		}
-		if( inData == null || inData.getSourcePath() == null || inData.getId() == null )
+		if (inData == null || inData.getSourcePath() == null || inData.getId() == null)
 		{
 			throw new OpenEditException("Cannot delete null data.");
 			//return;
 		}
-		Lock lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath(),"admin");
+		Lock lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath(), "admin");
 		try
 		{
-			getDataArchive().delete(inData,inUser);
+			getDataArchive().delete(inData, inUser);
 		}
 		finally
 		{
@@ -219,22 +256,20 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	public void saveAllData(Collection<Data> inAll, User inUser)
 	{
 		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
-		for (Object object: inAll)
+		for (Object object : inAll)
 		{
-			Data data = (Data)object;
+			Data data = (Data) object;
 			try
 			{
 				updateElasticIndex(details, data);
 			}
-			catch(Throwable ex)
+			catch (Throwable ex)
 			{
-				log.error("problem saving " + data.getId() , ex);
+				log.error("problem saving " + data.getId(), ex);
 				throw new OpenEditException(ex);
 			}
 		}
-		if(!isTransient()){
-		getDataArchive().saveAllData(inAll, getCatalogId(), getPathToData() + "/" ,inUser);
-		}
+		getDataArchive().saveAllData(inAll, getCatalogId(), getPathToData() + "/", inUser);
 	}
 
 	public void saveData(Data inData, User inUser)
@@ -245,22 +280,19 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		Lock lock = null;
 		try
 		{
-			lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath() + "/" + getSearchType(),"admin"); //need to lock the entire file
+			lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath() + "/" + getSearchType(), "admin"); //need to lock the entire file
 			updateElasticIndex(details, inData);
 			//TODO - we might need the sourcepath saved in the below case.
-			if( inData.getSourcePath() == null)
+			if (inData.getSourcePath() == null)
 			{
-				String sourcepath = getSourcePathCreator().createSourcePath(inData, inData.getId() );
+				String sourcepath = getSourcePathCreator().createSourcePath(inData, inData.getId());
 				inData.setSourcePath(sourcepath);
 			}
-			if(!isTransient()){
-			
 			getDataArchive().saveData(inData, inUser, lock);
-			}
 		}
-		catch(Throwable ex)
+		catch (Throwable ex)
 		{
-			log.error("problem saving " + inData.getId() , ex);
+			log.error("problem saving " + inData.getId(), ex);
 			throw new OpenEditException(ex);
 		}
 		finally
@@ -268,6 +300,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			getLockManager().release(getCatalogId(), lock);
 		}
 	}
+
 	protected DataArchive getDataArchive()
 	{
 		if (fieldDataArchive == null)
@@ -282,44 +315,47 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 
 		return fieldDataArchive;
 	}
+
 	public Object searchByField(String inField, String inValue)
 	{
-		if( inValue == null)
+		if (inValue == null)
 		{
 			throw new OpenEditException("Can't search for null value on field " + inField);
 		}
-		Data newdata =  (Data) super.searchByField(inField, inValue);
+		Data newdata = (Data) super.searchByField(inField, inValue);
 		//load up a real object?
+
 		String sourcepath = null;
 		String id = null;
-		
-		if( newdata == null)
+
+		if (newdata == null)
 		{
-			return null;	
+			return null;
 		}
-			
-		
-		if( newdata.getSourcePath() == null)
+
+		if (newdata.getSourcePath() == null)
 		{
-				sourcepath = getSourcePathCreator().createSourcePath(newdata, newdata.getId() );
-				
-		}	else{		
-		sourcepath = newdata.getSourcePath();
+			//sourcepath = getSourcePathCreator().createSourcePath(newdata, newdata.getId() );
+			throw new OpenEditException("Sourcepath required for " + getSearchType());
+		}
+		else
+		{
+			sourcepath = newdata.getSourcePath();
 		}
 		id = newdata.getId();
-		
+
 		String path = getPathToData() + "/" + sourcepath + "/" + getSearchType() + ".xml";
 		XmlArchive archive = getDataArchive().getXmlArchive();
 		XmlFile content = archive.getXml(path, getSearchType());
 		//log.info( newdata.getProperties() );
-		if( !content.isExist() )
+		if (!content.isExist())
 		{
 			//throw new OpenEditException("Missing data file " + path);
 			return null;
 		}
 		Element element = content.getElementById(id);
-		
-		ElementData realdata = (ElementData)createNewData();
+
+		ElementData realdata = (ElementData) createNewData();
 		realdata.setElement(element);
 		realdata.setSourcePath(sourcepath);
 

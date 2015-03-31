@@ -134,7 +134,7 @@ public class ElasticUserSearcherTest extends BaseEnterMediaTest
 		User admin = userSearcher.getUser("admin");
 		userSearcher.saveData(user, admin);
 		
-		PageManager pManager = userSearcher.getPageManager();
+		PageManager pManager = getMediaArchive().getPageManager();
 		Page page = pManager.getPage("WEB-INF/data/system/users/1.xml");
 		assertTrue("user file not found!", page.exists());
 		

@@ -48,9 +48,9 @@ public class ElasticGroupSearcherTest extends BaseElasticTest
 	public void testGetUserManager()
 	{
 		ElasticGroupSearcher groupSearcher = (ElasticGroupSearcher) getMediaArchive().getSearcherManager().getSearcher("system", "group");
-		UserManager mgr = null;
-		mgr = groupSearcher.getUserManager();
-		assertNotNull("UserManager is NULL", mgr);
+//		UserManager mgr = null;
+//		mgr = groupSearcher.getXmlUserArchive();
+//		assertNotNull("UserManager is NULL", mgr);
 	}
 
 	@Test

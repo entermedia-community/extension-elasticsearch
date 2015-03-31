@@ -48,15 +48,7 @@ public class ElasticListSearcher extends BaseElasticSearcher
 		fieldXmlSearcher = inXmlSearcher;
 	}
 
-	public PageManager getPageManager()
-	{
-		return fieldPageManager;
-	}
-
-	public void setPageManager(PageManager pageManager)
-	{
-		fieldPageManager = pageManager;
-	}
+	
 
 	
 	

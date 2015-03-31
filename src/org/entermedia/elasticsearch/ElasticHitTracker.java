@@ -75,7 +75,6 @@ public class ElasticHitTracker extends HitTracker
 	public ElasticHitTracker(SearchRequestBuilder builder, QueryBuilder inTerms)
 	{
 		setTerms(inTerms);
-		;
 		setSearcheRequestBuilder(builder);
 	}
 

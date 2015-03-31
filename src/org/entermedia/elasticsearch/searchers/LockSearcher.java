@@ -2,13 +2,14 @@ package org.entermedia.elasticsearch.searchers;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.dom4j.tree.BaseElement;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryRequestBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 
 import com.openedit.Shutdownable;
 
-public class LockSearcher extends ElasticTransientSearcher implements Shutdownable
+public class LockSearcher extends BaseElasticSearcher implements Shutdownable
 {
 	private static final Log log = LogFactory.getLog(LockSearcher.class);
 
@@ -44,7 +45,7 @@ public class LockSearcher extends ElasticTransientSearcher implements Shutdownab
 	//TODO: move this to the ClientPool shutdown ruitine
 	public void clearStaleLocks()
 	{
-		String id = getClientPool().getNodeManager().getLocalNodeId();
+		String id = getElasticNodeManager().getLocalNodeId();
 		log.info("Deleted nodeid=" + id + " records database " + getSearchType() );
 		DeleteByQueryRequestBuilder delete = getClient().prepareDeleteByQuery(toId(getCatalogId()));
 		delete.setTypes(getSearchType());
@@ -59,9 +60,9 @@ public class LockSearcher extends ElasticTransientSearcher implements Shutdownab
 		{
 			clearStaleLocks();
 		}
-		if (fieldClientPool != null)
+		if (fieldElasticNodeManager != null)
 		{
-			fieldClientPool.shutdown();
+			fieldElasticNodeManager.shutdown();
 			fieldConnected = false;
 		}
 	}

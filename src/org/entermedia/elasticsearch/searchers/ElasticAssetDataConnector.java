@@ -20,6 +20,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.entermedia.locks.Lock;
 import org.openedit.Data;
 import org.openedit.data.DataArchive;
 import org.openedit.data.PropertyDetails;
@@ -41,7 +42,8 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 {
 	protected AssetSecurityArchive fieldAssetSecurityArchive;
 	protected MediaArchive fieldMediaArchive;
-
+	protected IntCounter fieldIntCounter;
+	
 	public Data createNewData()
 	{
 		return new Asset();
@@ -354,6 +356,18 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			fieldIntCounter.setLabelName(getSearchType() + "IdCount");
 		}
 		return fieldIntCounter;
+	}
+	public synchronized String nextId()
+	{
+		Lock lock = getLockManager().lock(getCatalogId(), loadCounterPath(), "admin");
+		try
+		{
+			return String.valueOf(getIntCounter().incrementCount());
+		}
+		finally
+		{
+			getLockManager().release(getCatalogId(), lock);
+		}
 	}
 
 	public Object searchByField(String inField, String inValue)

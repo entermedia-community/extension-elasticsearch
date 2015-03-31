@@ -1,6 +1,5 @@
 package org.entermedia.elasticsearch.searchers;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -59,11 +58,9 @@ import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.transport.RemoteTransportException;
-import org.entermedia.elasticsearch.ClientPool;
 import org.entermedia.elasticsearch.ElasticHitTracker;
+import org.entermedia.elasticsearch.ElasticNodeManager;
 import org.entermedia.elasticsearch.ElasticSearchQuery;
-import org.entermedia.locks.Lock;
-import org.entermedia.locks.LockManager;
 import org.openedit.Data;
 import org.openedit.data.BaseData;
 import org.openedit.data.BaseSearcher;
@@ -72,30 +69,40 @@ import org.openedit.data.PropertyDetails;
 import org.openedit.util.DateStorageUtil;
 
 import com.openedit.OpenEditException;
-import com.openedit.Shutdownable;
 import com.openedit.WebPageRequest;
 import com.openedit.hittracker.FilterNode;
 import com.openedit.hittracker.HitTracker;
 import com.openedit.hittracker.SearchQuery;
 import com.openedit.hittracker.Term;
-import com.openedit.page.Page;
-import com.openedit.page.manage.PageManager;
 import com.openedit.users.User;
 import com.openedit.util.IntCounter;
 
-public abstract class BaseElasticSearcher extends BaseSearcher
+public class BaseElasticSearcher extends BaseSearcher
 {
+	
 	private static final Log log = LogFactory.getLog(BaseElasticSearcher.class);
-	protected ClientPool fieldClientPool;
+	protected ElasticNodeManager fieldElasticNodeManager;
+	
+	public ElasticNodeManager getElasticNodeManager()
+	{
+		return fieldElasticNodeManager;
+	}
+
+	public void setElasticNodeManager(ElasticNodeManager inElasticNodeManager)
+	{
+		fieldElasticNodeManager = inElasticNodeManager;
+	}
+
 	protected boolean fieldConnected = false;
-	protected IntCounter fieldIntCounter;
-	protected PageManager fieldPageManager;
-	protected LockManager fieldLockManager;
+	//protected IntCounter fieldIntCounter;
+	//protected PageManager fieldPageManager;
+	//protected LockManager fieldLockManager;
 	protected boolean fieldAutoIncrementId;
 	protected boolean fieldReIndexing;
 	protected boolean fieldCheckVersions;
 	public static final Pattern VALUEDELMITER = Pattern.compile("\\s*\\|\\s*");
 
+	
 	public boolean isCheckVersions()
 	{
 		return fieldCheckVersions;
@@ -126,16 +133,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		fieldAutoIncrementId = inAutoIncrementId;
 	}
 
-	public PageManager getPageManager()
-	{
-		return fieldPageManager;
-	}
-
-	public void setPageManager(PageManager inPageManager)
-	{
-		fieldPageManager = inPageManager;
-	}
-
 	public boolean isConnected()
 	{
 		return fieldConnected;
@@ -146,15 +143,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		fieldConnected = inConnected;
 	}
 
-	public ClientPool getClientPool()
-	{
-		return fieldClientPool;
-	}
-
-	public void setClientPool(ClientPool inClientPool)
-	{
-		fieldClientPool = inClientPool;
-	}
 
 	public SearchQuery createSearchQuery()
 	{
@@ -170,7 +158,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 	{
 		connect();
 
-		return getClientPool().getClient();
+		return getElasticNodeManager().getClient();
 	}
 
 	protected String toId(String inId)
@@ -320,7 +308,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 				{
 					return;
 				}
-				AdminClient admin = getClientPool().getClient().admin();
+				AdminClient admin = getElasticNodeManager().getClient().admin();
 				boolean reindex = false;
 				try
 				{
@@ -423,133 +411,140 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		}
 	}
 
-	protected XContentBuilder buildMapping() throws Exception
+	protected XContentBuilder buildMapping() 
 	{
-		XContentBuilder jsonBuilder = XContentFactory.jsonBuilder();
-		XContentBuilder jsonproperties = jsonBuilder.startObject().startObject(getSearchType());
-		jsonproperties = jsonproperties.startObject("properties");
-		List props = getPropertyDetails().findIndexProperties();
-		if (props.size() == 0)
+		try
 		{
-			throw new OpenEditException("No fields defined for " + getSearchType());
-		}
-		// https://github.com/elasticsearch/elasticsearch/pull/606
-		// https://gist.github.com/870714
-		/*
-		 * index.analysis.analyzer.lowercase_keyword.type=custom
-		 * index.analysis.analyzer.lowercase_keyword.filter.0=lowercase
-		 * index.analysis.analyzer.lowercase_keyword.tokenizer=keyword
-		 */
-
-		jsonproperties = jsonproperties.startObject("_all");
-		jsonproperties = jsonproperties.field("store", "false");
-		jsonproperties = jsonproperties.field("analyzer", "lowersnowball");
-		jsonproperties = jsonproperties.field("index_analyzer", "lowersnowball");
-		jsonproperties = jsonproperties.field("search_analyzer", "lowersnowball"); // lower
-																					// case
-																					// does
-																					// not
-																					// seem
-																					// to
-																					// work
-		jsonproperties = jsonproperties.field("index", "analyzed");
-		jsonproperties = jsonproperties.field("type", "string");
-		jsonproperties = jsonproperties.endObject();
-
-		// Add in namesorted
-		if (getPropertyDetails().contains("name") && !getPropertyDetails().contains("namesorted"))
-		{
-			props = new ArrayList(props);
-			PropertyDetail detail = new PropertyDetail();
-			detail.setId("namesorted");
-			props.add(detail);
-		}
-
-		for (Iterator i = props.iterator(); i.hasNext();)
-		{
-			PropertyDetail detail = (PropertyDetail) i.next();
-
-			if ("_id".equals(detail.getId()) || "id".equals(detail.getId()))
+			XContentBuilder jsonBuilder = XContentFactory.jsonBuilder();
+			XContentBuilder jsonproperties = jsonBuilder.startObject().startObject(getSearchType());
+			jsonproperties = jsonproperties.startObject("properties");
+			List props = getPropertyDetails().findIndexProperties();
+			if (props.size() == 0)
 			{
-				jsonproperties = jsonproperties.startObject("_id");
-				jsonproperties = jsonproperties.field("index", "not_analyzed");
-				jsonproperties = jsonproperties.field("type", "string");
-				jsonproperties = jsonproperties.endObject();
-				continue;
+				throw new OpenEditException("No fields defined for " + getSearchType());
 			}
-			jsonproperties = jsonproperties.startObject(detail.getId());
-			if ("description".equals(detail.getId()))
+			// https://github.com/elasticsearch/elasticsearch/pull/606
+			// https://gist.github.com/870714
+			/*
+			 * index.analysis.analyzer.lowercase_keyword.type=custom
+			 * index.analysis.analyzer.lowercase_keyword.filter.0=lowercase
+			 * index.analysis.analyzer.lowercase_keyword.tokenizer=keyword
+			 */
+	
+			jsonproperties = jsonproperties.startObject("_all");
+			jsonproperties = jsonproperties.field("store", "false");
+			jsonproperties = jsonproperties.field("analyzer", "lowersnowball");
+			jsonproperties = jsonproperties.field("index_analyzer", "lowersnowball");
+			jsonproperties = jsonproperties.field("search_analyzer", "lowersnowball"); // lower
+																						// case
+																						// does
+																						// not
+																						// seem
+																						// to
+																						// work
+			jsonproperties = jsonproperties.field("index", "analyzed");
+			jsonproperties = jsonproperties.field("type", "string");
+			jsonproperties = jsonproperties.endObject();
+	
+			// Add in namesorted
+			if (getPropertyDetails().contains("name") && !getPropertyDetails().contains("namesorted"))
 			{
-				String analyzer = "lowersnowball";
-				jsonproperties = jsonproperties.field("analyzer", analyzer);
-				jsonproperties = jsonproperties.field("type", "string");
-				jsonproperties = jsonproperties.field("index", "analyzed");
-				jsonproperties = jsonproperties.field("store", "no");
-				jsonproperties = jsonproperties.field("include_in_all", "false");
-				jsonproperties = jsonproperties.endObject();
-
-				continue;
+				props = new ArrayList(props);
+				PropertyDetail detail = new PropertyDetail();
+				detail.setId("namesorted");
+				props.add(detail);
 			}
-			if (detail.isDate())
+	
+			for (Iterator i = props.iterator(); i.hasNext();)
 			{
-				jsonproperties = jsonproperties.field("type", "date");
-				// jsonproperties = jsonproperties.field("format",
-				// "yyyy-MM-dd HH:mm:ss Z");
-			}
-			else if (detail.isBoolean())
-			{
-				jsonproperties = jsonproperties.field("type", "boolean");
-			}
-			else if (detail.isDataType("number"))
-			{
-				jsonproperties = jsonproperties.field("type", "long");
-			}
-			else if (detail.isList())
-			{
-				if (Boolean.parseBoolean(detail.get("nested")))
+				PropertyDetail detail = (PropertyDetail) i.next();
+	
+				if ("_id".equals(detail.getId()) || "id".equals(detail.getId()))
 				{
-					jsonproperties = jsonproperties.field("type", "nested");
+					jsonproperties = jsonproperties.startObject("_id");
+					jsonproperties = jsonproperties.field("index", "not_analyzed");
+					jsonproperties = jsonproperties.field("type", "string");
+					jsonproperties = jsonproperties.endObject();
+					continue;
+				}
+				jsonproperties = jsonproperties.startObject(detail.getId());
+				if ("description".equals(detail.getId()))
+				{
+					String analyzer = "lowersnowball";
+					jsonproperties = jsonproperties.field("analyzer", analyzer);
+					jsonproperties = jsonproperties.field("type", "string");
+					jsonproperties = jsonproperties.field("index", "analyzed");
+					jsonproperties = jsonproperties.field("store", "no");
+					jsonproperties = jsonproperties.field("include_in_all", "false");
+					jsonproperties = jsonproperties.endObject();
+	
+					continue;
+				}
+				if (detail.isDate())
+				{
+					jsonproperties = jsonproperties.field("type", "date");
+					// jsonproperties = jsonproperties.field("format",
+					// "yyyy-MM-dd HH:mm:ss Z");
+				}
+				else if (detail.isBoolean())
+				{
+					jsonproperties = jsonproperties.field("type", "boolean");
+				}
+				else if (detail.isDataType("number"))
+				{
+					jsonproperties = jsonproperties.field("type", "long");
+				}
+				else if (detail.isList())
+				{
+					if (Boolean.parseBoolean(detail.get("nested")))
+					{
+						jsonproperties = jsonproperties.field("type", "nested");
+					}
+					else
+					{
+						jsonproperties = jsonproperties.field("type", "string");
+					}
+				}
+	
+				else
+				{
+					String indextype = detail.get("indextype");
+					if (indextype == null)
+					{
+						indextype = "not_analyzed";
+					}
+					jsonproperties = jsonproperties.field("index", indextype);
+					jsonproperties = jsonproperties.field("type", "string");
+				}
+	
+				if (detail.isStored())
+				{
+					jsonproperties = jsonproperties.field("store", "yes");
 				}
 				else
 				{
-					jsonproperties = jsonproperties.field("type", "string");
+					jsonproperties = jsonproperties.field("store", "no");
 				}
+				// this does not work yet
+				// if( detail.isKeyword())
+				// {
+				// jsonproperties = jsonproperties.field("include_in_all", "true");
+				// }
+				// else
+				// {
+				jsonproperties = jsonproperties.field("include_in_all", "false");
+				// }
+	
+				jsonproperties = jsonproperties.endObject();
 			}
-
-			else
-			{
-				String indextype = detail.get("indextype");
-				if (indextype == null)
-				{
-					indextype = "not_analyzed";
-				}
-				jsonproperties = jsonproperties.field("index", indextype);
-				jsonproperties = jsonproperties.field("type", "string");
-			}
-
-			if (detail.isStored())
-			{
-				jsonproperties = jsonproperties.field("store", "yes");
-			}
-			else
-			{
-				jsonproperties = jsonproperties.field("store", "no");
-			}
-			// this does not work yet
-			// if( detail.isKeyword())
-			// {
-			// jsonproperties = jsonproperties.field("include_in_all", "true");
-			// }
-			// else
-			// {
-			jsonproperties = jsonproperties.field("include_in_all", "false");
-			// }
-
 			jsonproperties = jsonproperties.endObject();
+			jsonBuilder = jsonproperties.endObject();
+			return jsonproperties;
 		}
-		jsonproperties = jsonproperties.endObject();
-		jsonBuilder = jsonproperties.endObject();
-		return jsonproperties;
+		catch( Throwable ex)
+		{
+			throw new OpenEditException(ex);
+		}
 
 	}
 
@@ -1188,46 +1183,37 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 
 	public synchronized String nextId()
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), loadCounterPath(), "admin");
-		try
-		{
-			return String.valueOf(getIntCounter().incrementCount());
-		}
-		finally
-		{
-			getLockManager().release(getCatalogId(), lock);
-		}
-		// throw new OpenEditException("Should not call next ID");
+//		Lock lock = getLockManager().lock(getCatalogId(), loadCounterPath(), "admin");
+//		try
+//		{
+//			return String.valueOf(getIntCounter().incrementCount());
+//		}
+//		finally
+//		{
+//			getLockManager().release(getCatalogId(), lock);
+//		}
+		throw new OpenEditException("Should not call next ID");
 	}
 
 	protected IntCounter getIntCounter()
 	{
-		if (fieldIntCounter == null)
-		{
-			fieldIntCounter = new IntCounter();
-			// fieldIntCounter.setLabelName(getSearchType() + "IdCount");
-			Page prop = getPageManager().getPage(loadCounterPath());
-			File file = new File(prop.getContentItem().getAbsolutePath());
-			file.getParentFile().mkdirs();
-			fieldIntCounter.setCounterFile(file);
-		}
-		return fieldIntCounter;
+//		if (fieldIntCounter == null)
+//		{
+//			fieldIntCounter = new IntCounter();
+//			// fieldIntCounter.setLabelName(getSearchType() + "IdCount");
+//			Page prop = getPageManager().getPage(loadCounterPath());
+//			File file = new File(prop.getContentItem().getAbsolutePath());
+//			file.getParentFile().mkdirs();
+//			fieldIntCounter.setCounterFile(file);
+//		}
+//		return fieldIntCounter;
+		throw new OpenEditException("Cant load int counters from elasticsearch");
 	}
 
 	/** TODO: Update this location to match the new standard location */
 	protected String loadCounterPath()
 	{
 		return "/WEB-INF/data/" + getCatalogId() + "/" + getSearchType() + "s/idcounter.properties";
-	}
-
-	public LockManager getLockManager()
-	{
-		return fieldLockManager;
-	}
-
-	public void setLockManager(LockManager inLockManager)
-	{
-		fieldLockManager = inLockManager;
 	}
 
 	public boolean hasChanged(HitTracker inTracker)
@@ -1301,4 +1287,24 @@ public abstract class BaseElasticSearcher extends BaseSearcher
 		}
 	}
 
+	public void reIndexAll() throws OpenEditException
+	{
+		//there is not reindex step since it is only in memory
+		if( isReIndexing())
+		{
+			return;
+		}
+		try
+		{
+			setReIndexing(true);
+			buildMapping();
+			//deleteAll(null); //This only deleted the index
+		}
+		finally
+		{
+			setReIndexing(false);
+		}
+			
+		
+	}
 }
