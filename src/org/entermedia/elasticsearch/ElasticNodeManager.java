@@ -2,6 +2,7 @@ package org.entermedia.elasticsearch;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -24,16 +25,13 @@ import org.openedit.entermedia.cluster.NodeManager;
 
 import com.openedit.OpenEditException;
 import com.openedit.page.Page;
-import com.openedit.page.manage.PageManager;
 import com.openedit.util.PathUtilities;
 import com.openedit.util.Replacer;
 
 public class ElasticNodeManager extends NodeManager
 {
 	protected Client fieldClient;
-	protected NodeManager fieldNodeManager;
 	protected boolean fieldShutdown = false;
-	protected PageManager fieldPageManager;
 	
 	public Client getClient()
 	{
@@ -52,24 +50,15 @@ public class ElasticNodeManager extends NodeManager
 				{
 					throw new OpenEditException("Missing " + config.getPath());
 				}
-				String abs = config.getContentItem().getAbsolutePath();
-				File parent = new File(abs);
-				Map params = new HashMap();
-				params.put("webroot", parent.getParentFile().getParentFile().getAbsolutePath());
-				params.put("nodeid", getLocalNodeId());
-				Replacer replace = new Replacer();
+
 				
 				for (Iterator iterator = getLocalNode().getElement().elementIterator("property"); iterator.hasNext();)
 				{
 					Element	prop = (Element) iterator.next();
 					String key = prop.attributeValue("id");
 					String val = prop.getTextTrim();
-					
-					if( val.startsWith("."))
-					{
-						val = PathUtilities.resolveRelativePath(val, abs );
-					}
-					val = replace.replace(val, params);
+
+					val = getSetting(val);
 					
 					nb.settings().put(key, val);
 				}
@@ -86,6 +75,23 @@ public class ElasticNodeManager extends NodeManager
 		return fieldClient;
 	}
 	
+	private String getSetting(String val) {
+		Page config = getPageManager().getPage("/WEB-INF/node.xml");		
+		String abs = config.getContentItem().getAbsolutePath();
+		
+		if( val.startsWith("."))
+		{
+			val = PathUtilities.resolveRelativePath(val, abs );
+		}
+		
+		File parent = new File(abs);
+		Map params = new HashMap();
+		params.put("webroot", parent.getParentFile().getParentFile().getAbsolutePath());
+		params.put("nodeid", getLocalNodeId());
+		Replacer replace = new Replacer();
+		return replace.replace(val, params);
+	}
+
 	public void shutdown()
 	{
 		if(!fieldShutdown)
@@ -107,7 +113,7 @@ public class ElasticNodeManager extends NodeManager
 	{
 		
 		String indexid = toId(inCatalogId);
-		String path = getLocalNode().get("repo.root.location") + "/" + indexid;
+		String path = getSetting("repo.root.location") + "/" + indexid;
 		
 		//log.info("Deleted nodeid=" + id + " records database " + getSearchType() );
 		
@@ -140,7 +146,13 @@ public class ElasticNodeManager extends NodeManager
 	{
 		String indexid = toId(inCatalogId);
 	    String reponame = indexid + "_repo";
-
+	    String path = getLocalNode().get("repo.root.location") + "/" + indexid;
+	    List snapshots = getPageManager().getChildrenPaths(path);
+	    
+	    if (snapshots.isEmpty()) {
+	    	return Collections.emptyList();
+	    }
+	    
 		GetSnapshotsRequestBuilder builder = 
 		            new GetSnapshotsRequestBuilder(getClient().admin().cluster());
 	    builder.setRepository(reponame);
