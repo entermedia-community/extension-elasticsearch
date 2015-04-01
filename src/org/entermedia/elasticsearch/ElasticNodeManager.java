@@ -2,7 +2,9 @@ package org.entermedia.elasticsearch;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -21,6 +23,7 @@ import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.NodeBuilder;
+import org.elasticsearch.snapshots.SnapshotInfo;
 import org.openedit.entermedia.cluster.NodeManager;
 
 import com.openedit.OpenEditException;
@@ -58,7 +61,7 @@ public class ElasticNodeManager extends NodeManager
 					String key = prop.attributeValue("id");
 					String val = prop.getTextTrim();
 
-					val = getSetting(val);
+					val = getSetting(key);
 					
 					nb.settings().put(key, val);
 				}
@@ -75,21 +78,27 @@ public class ElasticNodeManager extends NodeManager
 		return fieldClient;
 	}
 	
-	private String getSetting(String val) {
+	protected String getSetting(String inId) 
+	{
 		Page config = getPageManager().getPage("/WEB-INF/node.xml");		
 		String abs = config.getContentItem().getAbsolutePath();
-		
-		if( val.startsWith("."))
-		{
-			val = PathUtilities.resolveRelativePath(val, abs );
-		}
-		
 		File parent = new File(abs);
 		Map params = new HashMap();
 		params.put("webroot", parent.getParentFile().getParentFile().getAbsolutePath());
 		params.put("nodeid", getLocalNodeId());
 		Replacer replace = new Replacer();
-		return replace.replace(val, params);
+		
+		String value = getLocalNode().get(inId);
+		if( value == null)
+		{
+			return null;
+		}
+		if( value.startsWith("."))
+		{
+			value = PathUtilities.resolveRelativePath(value, abs );
+		}
+		
+		return replace.replace(value, params);
 	}
 
 	public void shutdown()
@@ -130,12 +139,13 @@ public class ElasticNodeManager extends NodeManager
 		            .setSettings(settings)
 		            .execute().actionGet();
 
-		    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm");
+		    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 		    
 		    CreateSnapshotRequestBuilder builder = new CreateSnapshotRequestBuilder(getClient().admin().cluster());
 		    String snapshotid =  format.format(new Date());
 		    builder.setRepository(reponame)
 		            .setIndices(indexid)
+		            .setWaitForCompletion(true)
 		            .setSnapshot(snapshotid);
 		    builder.execute().actionGet();
 		
@@ -146,10 +156,10 @@ public class ElasticNodeManager extends NodeManager
 	{
 		String indexid = toId(inCatalogId);
 	    String reponame = indexid + "_repo";
-	    String path = getLocalNode().get("repo.root.location") + "/" + indexid;
-	    List snapshots = getPageManager().getChildrenPaths(path);
 	    
-	    if (snapshots.isEmpty()) {
+	    String path = getSetting("repo.root.location");
+	    
+	    if (!new File(path).exists()) {
 	    	return Collections.emptyList();
 	    }
 	    
@@ -157,8 +167,17 @@ public class ElasticNodeManager extends NodeManager
 		            new GetSnapshotsRequestBuilder(getClient().admin().cluster());
 	    builder.setRepository(reponame);
 	    GetSnapshotsResponse getSnapshotsResponse = builder.execute().actionGet();
-	    List results =  getSnapshotsResponse.getSnapshots();
+	    List results =  new ArrayList(getSnapshotsResponse.getSnapshots());
 	
+	    Collections.sort(results, new Comparator<SnapshotInfo>()
+		{
+	    	@Override
+	    	public int compare(SnapshotInfo inO1, SnapshotInfo inO2)
+	    	{
+	    		return inO1.name().toLowerCase().compareTo(inO2.name().toLowerCase());
+	    	}
+		});
+	    Collections.reverse(results);
 	    return results;
 	}
 	public void restoreSnapShot(String inCatalogId, String inSnapShotId)
@@ -172,6 +191,9 @@ public class ElasticNodeManager extends NodeManager
 	    builder.setSnapshots(inSnapShotId);
 	    GetSnapshotsResponse getSnapshotsResponse = builder.execute().actionGet();
 	
+	    
+	    //TODO: Close index!!
+	    
 	    // Check if the index exists and if so, close it before we can restore it.
 	    ImmutableList indices = getSnapshotsResponse.getSnapshots().get(0).indices();
 	    CloseIndexRequestBuilder closeIndexRequestBuilder =

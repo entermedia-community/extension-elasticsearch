@@ -67,9 +67,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 
 	}
 
-	
-	
-	
+
 	public void reIndexAll() throws OpenEditException
 	{		
 		if( isReIndexing())
@@ -79,11 +77,9 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		setReIndexing(true);
 		try
 		{
-			buildMapping();
-
 			getMediaArchive().getAssetArchive().clearAssets();
 			//For now just add things to the index. It never deletes
-			deleteAll(null); //This only deleted the index
+
 			final List buffer = new ArrayList(100);
 			PathProcessor processor = new PathProcessor()
 			{
@@ -211,7 +207,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			throw new OpenEditException(ex);
 		}
 	}
-
+	/*
 	protected void hydrateData(ContentItem inContent, String sourcepath, List buffer)
 	{
 		Asset data = getMediaArchive().getAssetBySourcePath(sourcepath);
@@ -225,7 +221,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			updateIndex(buffer, null);
 		}
 	}
-
+	*/
 	protected void populatePermission(XContentBuilder inContent, Asset inAsset, String inPermission) throws IOException
 	{
 		List add = getAssetSecurityArchive().getAccessList(getMediaArchive(), inAsset);
@@ -473,7 +469,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			}
 			
 		}
-		
+		//TODO: get this from the index
 		ContentItem originalPage = getPageManager().getRepository().getStub("/WEB-INF/data/" + getCatalogId() + "/originals/" + asset.getSourcePath());
 		asset.setFolder(originalPage.isFolder());
 		return asset;

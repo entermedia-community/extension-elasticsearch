@@ -148,7 +148,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		setReIndexing(true);
 		try
 		{
-			buildMapping();
+			rebuildMapping();
 			//For now just add things to the index. It never deletes
 			deleteAll(null); //This only deleted the index
 			final List buffer = new ArrayList(100);

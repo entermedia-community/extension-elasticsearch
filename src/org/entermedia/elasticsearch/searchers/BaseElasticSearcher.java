@@ -1,5 +1,6 @@
 package org.entermedia.elasticsearch.searchers;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -368,17 +369,7 @@ public class BaseElasticSearcher extends BaseSearcher
 					}
 					if (runmapping)
 					{
-						XContentBuilder source = buildMapping();
-						log.info(cluster + "/" + getSearchType() + "/_mapping' -d '" + source.string() + "'");
-						PutMappingRequest req = Requests.putMappingRequest(cluster).type(getSearchType());
-						req.source(source);
-						PutMappingResponse pres = admin.indices().putMapping(req).actionGet();
-						if (pres.isAcknowledged())
-						{
-							log.info("mapping applied " + getSearchType());
-							reindex = true;
-							getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
-						}
+						reindex = rebuildMapping();
 
 					}
 					RefreshRequest req = Requests.refreshRequest(indexid);
@@ -409,6 +400,33 @@ public class BaseElasticSearcher extends BaseSearcher
 				fieldConnected = true;
 			}
 		}
+	}
+
+	protected boolean rebuildMapping()
+	{
+		AdminClient admin = getElasticNodeManager().getClient().admin();
+		boolean reindex = false;
+		String indexid = toId(getCatalogId());
+
+		XContentBuilder source = buildMapping();
+		try
+		{
+			log.info(indexid + "/" + getSearchType() + "/_mapping' -d '" + source.string() + "'");
+		}
+		catch( IOException ex)
+		{
+			log.error(ex);
+		}
+		PutMappingRequest req = Requests.putMappingRequest(indexid).type(getSearchType());
+		req.source(source);
+		PutMappingResponse pres = admin.indices().putMapping(req).actionGet();
+		if (pres.isAcknowledged())
+		{
+			log.info("mapping applied " + getSearchType());
+			reindex = true;
+			getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+		}
+		return reindex;
 	}
 
 	protected XContentBuilder buildMapping() 
@@ -1297,7 +1315,7 @@ public class BaseElasticSearcher extends BaseSearcher
 		try
 		{
 			setReIndexing(true);
-			buildMapping();
+			rebuildMapping();
 			//deleteAll(null); //This only deleted the index
 		}
 		finally
