@@ -56,6 +56,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		log.info("Reindex of customer users directory");
 		try
 		{
+			deleteAll(null);
 			PropertyDetails details = getPropertyDetailsArchive().getPropertyDetails(getSearchType());
 			Collection usernames = getXmlUserArchive().listUserNames();
 			if( usernames != null)

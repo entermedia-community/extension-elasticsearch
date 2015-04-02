@@ -50,6 +50,7 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 		log.info("Reindex of customer groups directory");
 		try
 		{
+			deleteAll(null);
 			Collection ids = getXmlUserArchive().listGroupIds();
 			if( ids != null)
 			{
@@ -92,32 +93,15 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 
 	public void saveData(Data inData, User inUser)
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/" + getCatalogId() + "/users/" + inData.getId() + ".xml","admin");
-		try
-		{
-			getXmlUserArchive().saveGroup((Group) inData);
-			//super.saveData(inData, inUser); //update the index
-			PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
-			updateElasticIndex(details, inData);
-		}
-		finally
-		{
-			getLockManager().release(getCatalogId(), lock);
-		}
-	}
+		getXmlUserArchive().saveGroup((Group) inData);
+		//super.saveData(inData, inUser); //update the index
+		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
+		updateElasticIndex(details, inData);	}
 
 	public void delete(Data inData, User inUser)
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/" + getCatalogId() + "/users/" + inData.getId() + ".xml","admin");
-		try
-		{
-			getXmlUserArchive().deleteGroup((Group) inData);
-			super.delete(inData, inUser); //update the index
-		}
-		finally
-		{
-			getLockManager().release(getCatalogId(), lock);
-		}
+		getXmlUserArchive().deleteGroup((Group) inData);
+		super.delete(inData, inUser); //update the index
 	}
 
 }
