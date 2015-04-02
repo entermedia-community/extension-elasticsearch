@@ -85,18 +85,8 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 
 	//TODO: Replace with in-memory copy for performance reasons?
 	public Object searchById(String inId)
-	{
-		
-//		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/users/" + inId + ".xml","admin");
-//		try
-//		{
-			return getXmlUserArchive().loadUser(inId);
-//		}
-//		finally
-//		{
-//			getLockManager().release(getCatalogId(), lock);
-//		}
-
+	{		
+		return getXmlUserArchive().loadUser(inId);
 	}
 
 	/* (non-Javadoc)
@@ -144,31 +134,14 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 
 	public void saveData(Data inData, User inUser)
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/" + getCatalogId() + "/users/" + inData.getId() + ".xml","admin");
-		try
-		{
-			getXmlUserArchive().saveUser((User)inData);
-			super.saveData(inData, inUser); //update the index
-		}
-		finally
-		{
-			getLockManager().release(getCatalogId(), lock);
-		}
-
+		getXmlUserArchive().saveUser((User)inData);
+		super.saveData(inData, inUser); //update the index
 	}
 	
 	public void delete(Data inData, User inUser)
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/" + getCatalogId() + "/users/" + inData.getId() + ".xml","admin");
-		try
-		{
-			getXmlUserArchive().deleteUser((User)inData);
-			super.delete(inData, inUser); //delete the index
-		}
-		finally
-		{
-			getLockManager().release(getCatalogId(), lock);
-		}
+		getXmlUserArchive().deleteUser((User)inData);
+		super.delete(inData, inUser); //delete the index
 	}
 	
 	protected void updateIndex(XContentBuilder inContent, Data inData, PropertyDetails inDetails)
