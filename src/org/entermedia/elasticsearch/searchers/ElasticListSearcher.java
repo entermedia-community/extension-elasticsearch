@@ -193,6 +193,7 @@ public class ElasticListSearcher extends BaseElasticSearcher
 	
 	public Object searchById(String inId)
 	{
+		//This will use a cache
 		return getXmlSearcher().searchById(inId);
 	}
 	
