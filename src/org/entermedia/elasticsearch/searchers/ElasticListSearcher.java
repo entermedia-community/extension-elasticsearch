@@ -40,7 +40,7 @@ public class ElasticListSearcher extends BaseElasticSearcher
 			PropertyDetailsArchive newarchive = getSearcherManager().getPropertyDetailsArchive(getCatalogId());
 			fieldXmlSearcher.setPropertyDetailsArchive(newarchive);
 		}
-		fieldXmlSearcher.setCacheManager(null);//Important
+		//fieldXmlSearcher.setCacheManager(null);//Important cb: Why in the world would you want always create new caches? 
 		return fieldXmlSearcher;
 	}
 
@@ -91,7 +91,7 @@ public class ElasticListSearcher extends BaseElasticSearcher
 			deleteAll(null); //This only deleted the index
 			
 			 
-			
+			getXmlSearcher().clearIndex();
 			HitTracker settings = getXmlSearcher().getAllHits();
 			
 				for (Iterator iterator = settings.iterator(); iterator.hasNext();) 
@@ -193,8 +193,8 @@ public class ElasticListSearcher extends BaseElasticSearcher
 	
 	public Object searchById(String inId)
 	{
-		//This will use a cache
-		return getXmlSearcher().searchById(inId);
+		//return getXmlSearcher().searchById(inId);
+		return super.searchById(inId); //Dont ever read from XML, just write
 	}
 	
 	
