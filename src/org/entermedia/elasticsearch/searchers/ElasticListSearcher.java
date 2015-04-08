@@ -12,6 +12,7 @@ import org.openedit.Data;
 import org.openedit.data.DataArchive;
 import org.openedit.data.PropertyDetails;
 import org.openedit.data.PropertyDetailsArchive;
+import org.openedit.data.Reloadable;
 import org.openedit.xml.ElementData;
 import org.openedit.xml.XmlFile;
 import org.openedit.xml.XmlSearcher;
@@ -21,7 +22,7 @@ import com.openedit.hittracker.HitTracker;
 import com.openedit.page.manage.PageManager;
 import com.openedit.users.User;
 
-public class ElasticListSearcher extends BaseElasticSearcher
+public class ElasticListSearcher extends BaseElasticSearcher implements Reloadable
 {
 	protected Log log = LogFactory.getLog(ElasticListSearcher.class);
 	protected DataArchive fieldDataArchive; //lazy loaded
@@ -88,7 +89,7 @@ public class ElasticListSearcher extends BaseElasticSearcher
 		try
 		{
 			//For now just add things to the index. It never deletes
-			deleteAll(null); //This only deleted the index
+			super.deleteAll(null); //This only deleted the index
 			rebuildMapping();
 			 
 			getXmlSearcher().clearIndex();
