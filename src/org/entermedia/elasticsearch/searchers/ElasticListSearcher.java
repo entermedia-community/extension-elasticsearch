@@ -89,7 +89,7 @@ public class ElasticListSearcher extends BaseElasticSearcher
 		{
 			//For now just add things to the index. It never deletes
 			deleteAll(null); //This only deleted the index
-			
+			rebuildMapping();
 			 
 			getXmlSearcher().clearIndex();
 			HitTracker settings = getXmlSearcher().getAllHits();
