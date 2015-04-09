@@ -11,7 +11,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.dom4j.Element;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.repositories.put.PutRepositoryRequestBuilder;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequestBuilder;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsRequestBuilder;
@@ -27,6 +30,7 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.snapshots.SnapshotInfo;
+import org.entermedia.elasticsearch.searchers.ElasticListSearcher;
 import org.openedit.entermedia.cluster.NodeManager;
 
 import com.openedit.OpenEditException;
@@ -36,6 +40,8 @@ import com.openedit.util.Replacer;
 
 public class ElasticNodeManager extends NodeManager
 {
+	protected Log log = LogFactory.getLog(ElasticNodeManager.class);
+
 	protected Client fieldClient;
 	protected boolean fieldShutdown = false;
 	
@@ -163,6 +169,16 @@ public class ElasticNodeManager extends NodeManager
 	    	return Collections.emptyList();
 	    }
 	    
+	    Settings settings = ImmutableSettings.builder()
+	            .put("location", path)
+	            .build();
+	    PutRepositoryRequestBuilder putRepo = 
+	    		new PutRepositoryRequestBuilder(getClient().admin().cluster());
+	    putRepo.setName(indexid)
+	            .setType("fs")
+	            .setSettings(settings) //With Unique location saved for each catalog
+	            .execute().actionGet();
+	    
 		GetSnapshotsRequestBuilder builder = 
 		            new GetSnapshotsRequestBuilder(getClient().admin().cluster());
 	    builder.setRepository(indexid);
@@ -197,27 +213,50 @@ public class ElasticNodeManager extends NodeManager
 	    // Check if the index exists and if so, close it before we can restore it.
 	    //ImmutableList indices = getSnapshotsResponse.getSnapshots().get(0).indices();
 	    
-//	    CloseIndexRequestBuilder closeIndexRequestBuilder =
-//	            new CloseIndexRequestBuilder(admin.indices());
-//	    closeIndexRequestBuilder.setIndices(indexid);
-//	    closeIndexRequestBuilder.execute().actionGet();
+	    try
+	    {
+		    CloseIndexRequestBuilder closeIndexRequestBuilder =
+		            new CloseIndexRequestBuilder(admin.indices());
+		    closeIndexRequestBuilder.setIndices(indexid);
+		    closeIndexRequestBuilder.execute().actionGet();
+	
+			//admin.indices().close(new CloseIndexRequest(indexid));
+	
+		    try
+		    {
+				ClusterHealthResponse health = admin.cluster().prepareHealth(indexid).setWaitForYellowStatus().execute().actionGet(); 
+		    }
+		    catch( Exception ex)
+		    {
+		    	log.error(ex);
+		    }
+		    
+		    // Now execute the actual restore action
+		    RestoreSnapshotRequestBuilder restoreBuilder = new RestoreSnapshotRequestBuilder(admin.cluster());
+		    restoreBuilder.setRepository(indexid).setSnapshot(inSnapShotId);
+		    restoreBuilder.execute().actionGet();
 
-		admin.indices().close(new CloseIndexRequest(indexid));
-
-//	    try
-//	    {
-//	    	Thread.currentThread().sleep(10000);
-//	    }
-//	    catch( Exception ex)
-//	    {
-//	    	//log.info(ex);
-//	    }
-	    
-	    // Now execute the actual restore action
-	    RestoreSnapshotRequestBuilder restoreBuilder = new RestoreSnapshotRequestBuilder(admin.cluster());
-	    restoreBuilder.setRepository(indexid).setSnapshot(inSnapShotId);
-	    restoreBuilder.execute().actionGet();
-	    
+		    try
+		    {
+				ClusterHealthResponse health = admin.cluster().prepareHealth(indexid).setWaitForYellowStatus().execute().actionGet(); 
+		    }
+		    catch( Exception ex)
+		    {
+		    	log.error(ex);
+		    }
+}
+	    catch( Throwable ex)
+	    {
+	    	log.error(ex);
+	    }
 	    admin.indices().open(new OpenIndexRequest(indexid));
+	    try
+	    {
+			ClusterHealthResponse health = admin.cluster().prepareHealth(indexid).setWaitForYellowStatus().execute().actionGet(); 
+	    }
+	    catch( Exception ex)
+	    {
+	    	log.info(ex);
+	    }
 	}
 }
