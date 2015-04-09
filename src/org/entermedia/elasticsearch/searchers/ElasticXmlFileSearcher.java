@@ -50,6 +50,9 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	protected SourcePathCreator fieldSourcePathCreator;
 	protected PageManager fieldPageManager;
 	protected IntCounter fieldIntCounter;
+//	GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+//	GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+//	if( !found.isContextEmpty())
 
 	public synchronized String nextId()
 	{
@@ -59,7 +62,10 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			return String.valueOf(getIntCounter().incrementCount());
 		}
 		finally
-		{
+		{//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+//			GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+//			if( !found.isContextEmpty())
+
 			getLockManager().release(getCatalogId(), lock);
 		}
 	}
@@ -72,7 +78,10 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			// fieldIntCounter.setLabelName(getSearchType() + "IdCount");
 			Page prop = getPageManager().getPage(loadCounterPath());
 			File file = new File(prop.getContentItem().getAbsolutePath());
-			file.getParentFile().mkdirs();
+			file.getParentFile().mkdirs();//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+//			GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+//			if( !found.isContextEmpty())
+
 			fieldIntCounter.setCounterFile(file);
 		}
 		return fieldIntCounter;
@@ -85,7 +94,10 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	public void setSourcePathCreator(SourcePathCreator inSourcePathCreator)
 	{
 		fieldSourcePathCreator = inSourcePathCreator;
-	}
+	}//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+//	GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+//	if( !found.isContextEmpty())
+
 
 	public PageManager getPageManager()
 	{
@@ -98,7 +110,10 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	}
 
 	public String getPathToData()
-	{
+	{//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+//		GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+//		if( !found.isContextEmpty())
+
 		return "/WEB-INF/data/" + getCatalogId() + "/" + getPrefix();
 	}
 
@@ -111,7 +126,10 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		return fieldDataFileName;
 	}
 
-	public void setDataFileName(String inName)
+	public void setDataFileName(String inName)//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+//	GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+//	if( !found.isContextEmpty())
+
 	{
 		fieldDataFileName = inName;
 	}
@@ -148,7 +166,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		setReIndexing(true);
 		try
 		{
-			rebuildMapping();
+			rebuildMapping(true);
 			//For now just add things to the index. It never deletes
 			deleteAll(null); //This only deleted the index
 			final List buffer = new ArrayList(100);

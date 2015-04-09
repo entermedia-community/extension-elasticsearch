@@ -22,6 +22,8 @@ import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
 import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingResponse;
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
+import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
@@ -371,7 +373,7 @@ public class BaseElasticSearcher extends BaseSearcher
 					}
 					if (runmapping)
 					{
-						reindex = rebuildMapping();
+						reindex = rebuildMapping(false);
 
 					}
 					RefreshRequest req = Requests.refreshRequest(indexid);
@@ -404,7 +406,7 @@ public class BaseElasticSearcher extends BaseSearcher
 		}
 	}
 
-	protected boolean rebuildMapping()
+	protected boolean rebuildMapping(boolean clearold)
 	{
 		AdminClient admin = getElasticNodeManager().getClient().admin();
 		boolean reindex = false;
@@ -419,14 +421,18 @@ public class BaseElasticSearcher extends BaseSearcher
 		{
 			log.error(ex);
 		}
-		
-		DeleteMappingRequest dreq = Requests.deleteMappingRequest(indexid).types(getSearchType());
-		DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
-		if( dpres.isAcknowledged() )
+//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+//		GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+//		if( !found.isContextEmpty())
+		if( clearold )
 		{
-			log.info("Cleared out the mapping");
+			DeleteMappingRequest dreq = Requests.deleteMappingRequest(indexid).types(getSearchType());
+			DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
+			if( dpres.isAcknowledged() )
+			{
+				log.info("Cleared out the mapping");
+			}
 		}
-		
 		PutMappingRequest req = Requests.putMappingRequest(indexid).type(getSearchType());
 		req.source(source);
 		PutMappingResponse pres = admin.indices().putMapping(req).actionGet();
@@ -1326,7 +1332,7 @@ public class BaseElasticSearcher extends BaseSearcher
 		try
 		{
 			setReIndexing(true);
-			rebuildMapping();
+			rebuildMapping(true);
 			//deleteAll(null); //This only deleted the index
 		}
 		finally

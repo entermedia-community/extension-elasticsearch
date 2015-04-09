@@ -90,7 +90,7 @@ public class ElasticListSearcher extends BaseElasticSearcher implements Reloadab
 		{
 			//For now just add things to the index. It never deletes
 			super.deleteAll(null); //This only deleted the index
-			rebuildMapping();
+			rebuildMapping(true);
 			 
 			getXmlSearcher().clearIndex();
 			HitTracker settings = getXmlSearcher().getAllHits();
