@@ -501,6 +501,7 @@ public class BaseElasticSearcher extends BaseSearcher
 				if (detail.isDate())
 				{
 					jsonproperties = jsonproperties.field("type", "date");
+					//"date_detection" : 0
 					// jsonproperties = jsonproperties.field("format",
 					// "yyyy-MM-dd HH:mm:ss Z");
 				}
@@ -1088,7 +1089,6 @@ public class BaseElasticSearcher extends BaseSearcher
 				{
 					if (value != null)
 					{
-
 						// ie date =
 						// DateStorageUtil.getStorageUtil().parseFromStorage(value);
 						Date date = DateStorageUtil.getStorageUtil().parseFromStorage(value);
