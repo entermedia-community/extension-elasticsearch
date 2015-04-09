@@ -20,6 +20,8 @@ import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsReques
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
+import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
+import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
@@ -417,6 +419,14 @@ public class BaseElasticSearcher extends BaseSearcher
 		{
 			log.error(ex);
 		}
+		
+		DeleteMappingRequest dreq = Requests.deleteMappingRequest(indexid).types(getSearchType());
+		DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
+		if( dpres.isAcknowledged() )
+		{
+			log.info("Cleared out the mapping");
+		}
+		
 		PutMappingRequest req = Requests.putMappingRequest(indexid).type(getSearchType());
 		req.source(source);
 		PutMappingResponse pres = admin.indices().putMapping(req).actionGet();
@@ -435,6 +445,7 @@ public class BaseElasticSearcher extends BaseSearcher
 		{
 			XContentBuilder jsonBuilder = XContentFactory.jsonBuilder();
 			XContentBuilder jsonproperties = jsonBuilder.startObject().startObject(getSearchType());
+			jsonproperties.field("date_detection" , "false");
 			jsonproperties = jsonproperties.startObject("properties");
 			List props = getPropertyDetails().findIndexProperties();
 			if (props.size() == 0)
