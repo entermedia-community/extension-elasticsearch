@@ -11,7 +11,7 @@ import org.openedit.MultiValued;
 import org.openedit.data.BaseData;
 import org.openedit.data.SaveableData;
 
-public class SearchHitData extends BaseData implements Data, MultiValued, SaveableData
+public class SearchHitData extends BaseData implements Data, MultiValued
 {
 	protected SearchHit fieldSearchHit;
 

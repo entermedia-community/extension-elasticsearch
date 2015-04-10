@@ -20,6 +20,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.entermedia.elasticsearch.SearchHitData;
 import org.entermedia.locks.Lock;
 import org.openedit.Data;
 import org.openedit.data.DataArchive;
@@ -398,11 +399,6 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 				
 			}
 			return null;
-
-	        	
-			
-		
-			
 		}
 		return super.searchByField(inField, inValue);
 	}
@@ -483,6 +479,12 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		{
 			return inHit;
 		}
+		//Stuff might get out of date?
+//		if( inHit instanceof SearchHitData)
+//		{
+//			SearchHitData db = (SearchHitData)inHit;
+//			return createAssetFromResponse(inHit.getId(), db.getSearchHit().getSource() );
+//		}
 		return (Data)searchById(inHit.getId());
 	}
 	protected AssetArchive getAssetArchive()
