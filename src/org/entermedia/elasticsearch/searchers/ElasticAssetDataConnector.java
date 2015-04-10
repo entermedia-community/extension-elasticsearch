@@ -413,8 +413,6 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		if(inSource == null){
 			return null;
 		}
-		
-		
 		asset.setId(inId);
 		
 		for (Iterator iterator = inSource.keySet().iterator(); iterator.hasNext();)
@@ -467,15 +465,26 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			if(category != null){
 				asset.addCategory(category);
 			}
-			
 		}
-		//TODO: get this from the index
-		ContentItem originalPage = getPageManager().getRepository().getStub("/WEB-INF/data/" + getCatalogId() + "/originals/" + asset.getSourcePath());
-		asset.setFolder(originalPage.isFolder());
+		String isfolder = asset.get("isfolder");
+		if( isfolder == null)
+		{
+			ContentItem originalPage = getPageManager().getRepository().getStub("/WEB-INF/data/" + getCatalogId() + "/originals/" + asset.getSourcePath());
+			asset.setFolder(originalPage.isFolder());
+		}	
 		return asset;
 	}
 	
-
+	//TODO: Make an ElasticAsset bean type that can be searched and saved
+	@Override
+	public Data loadData(Data inHit)
+	{
+		if( inHit instanceof Asset)
+		{
+			return inHit;
+		}
+		return (Data)searchById(inHit.getId());
+	}
 	protected AssetArchive getAssetArchive()
 	{
 		return getMediaArchive().getAssetArchive();

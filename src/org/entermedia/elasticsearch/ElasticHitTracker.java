@@ -211,7 +211,8 @@ public class ElasticHitTracker extends HitTracker
 		int indexlocation = inCount - (chunk * fieldHitsPerChunk);
 
 		// get the chunk 1
-		SearchHit[] hits = getSearchResponse(chunk).getHits().getHits();
+		SearchResponse searchResponse = getSearchResponse(chunk);
+		SearchHit[] hits = searchResponse.getHits().getHits();
 		if (indexlocation >= hits.length)
 		{
 			// we dont support getting results beyond what we have loaded.
@@ -220,6 +221,11 @@ public class ElasticHitTracker extends HitTracker
 		}
 		SearchHit hit = hits[indexlocation];
 		SearchHitData data = new SearchHitData(hit);
+//		if (searchResponse.getVersion() > -1)
+//		{
+//			data.setProperty(".version", String.valueOf(searchResponse.getVersion()));
+//		}
+
 		return data;
 	}
 
