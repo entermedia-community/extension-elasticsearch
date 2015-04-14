@@ -11,7 +11,7 @@ import org.openedit.MultiValued;
 import org.openedit.data.BaseData;
 import org.openedit.data.SaveableData;
 
-public class SearchHitData extends BaseData implements Data, MultiValued
+public class SearchHitData extends BaseData implements Data, MultiValued, SaveableData
 {
 	protected SearchHit fieldSearchHit;
 
@@ -90,7 +90,10 @@ public class SearchHitData extends BaseData implements Data, MultiValued
 		{
 			all.put(".version", version);
 		}
-		all.putAll(super.getProperties());
+		if( fieldMap != null)
+		{
+			all.putAll(super.getProperties());
+		}
 
 		return all;
 	}

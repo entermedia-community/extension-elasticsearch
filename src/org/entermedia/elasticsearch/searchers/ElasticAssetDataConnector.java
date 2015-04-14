@@ -372,11 +372,11 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		if (inField.equals("id") || inField.equals("_id"))
 		{
 			GetResponse response = getClient().prepareGet(toId(getCatalogId()), getSearchType(), inValue).execute().actionGet();
+			if(!response.isExists())
+			{
+				return null;
+			}
 			return createAssetFromResponse(response.getId(),response.getSource());
-			// if(!response.isExists())
-			// {
-			// return null;
-			// }
 			// String path = (String)response.getSource().get("sourcepath");
 
 			// return getAssetArchive().getAssetBySourcePath(path);
@@ -480,11 +480,11 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			return inHit;
 		}
 		//Stuff might get out of date?
-//		if( inHit instanceof SearchHitData)
-//		{
-//			SearchHitData db = (SearchHitData)inHit;
-//			return createAssetFromResponse(inHit.getId(), db.getSearchHit().getSource() );
-//		}
+		if( inHit instanceof SearchHitData)
+		{
+			SearchHitData db = (SearchHitData)inHit;
+			return createAssetFromResponse(inHit.getId(), db.getSearchHit().getSource() );
+		}
 		return (Data)searchById(inHit.getId());
 	}
 	protected AssetArchive getAssetArchive()

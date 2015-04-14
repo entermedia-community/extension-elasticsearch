@@ -15,12 +15,14 @@ public class ConvertTest extends BaseEnterMediaTest
 	public void testCreateAndSearch() throws Exception
 	{
 		
-		ElasticXmlFileSearcher convertSearcher = (ElasticXmlFileSearcher) getMediaArchive().getSearcherManager().getSearcher("entermedia/catalogs/testcatalog", "conversiontask");
+		BaseElasticSearcher convertSearcher = (BaseElasticSearcher) getMediaArchive().getSearcherManager().getSearcher("entermedia/catalogs/testcatalog", "conversiontask");
 
 		Data newone = convertSearcher.createNewData();
 		newone.setProperty("submitted", DateStorageUtil.getStorageUtil().formatForStorage(new Date()));
 		newone.setProperty("status","new");
 		newone.setSourcePath("testing/new");
+		newone.setProperty("assetid","101");
+
 		convertSearcher.saveData(newone,null);
 		
 				

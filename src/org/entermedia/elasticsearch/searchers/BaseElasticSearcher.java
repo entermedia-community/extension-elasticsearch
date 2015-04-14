@@ -216,8 +216,6 @@ public class BaseElasticSearcher extends BaseSearcher
 			addSorts(inQuery, search);
 			addFacets(inQuery, search);
 
-			json = search.toString();
-
 			ElasticHitTracker hits = new ElasticHitTracker(search, terms);
 
 			if (inQuery.hasFilters())
@@ -232,7 +230,15 @@ public class BaseElasticSearcher extends BaseSearcher
 
 			long end = System.currentTimeMillis() - start;
 
-			log.info(hits.size() + " hits query: " + toId(getCatalogId()) + "/" + getSearchType() + "/_search' -d '" + json + "' sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds]");
+			if( log.isDebugEnabled())
+			{
+				json = search.toString();
+				log.info(hits.size() + " hits query: " + toId(getCatalogId()) + "/" + getSearchType() + "/_search' -d '" + json + "' sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds]");
+			}
+			else
+			{
+				log.info(hits.size() + " hits query: " + toId(getCatalogId()) + "/" + getSearchType() + " " + inQuery.toQuery() + " sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds]");
+			}
 
 			return hits;
 		}
