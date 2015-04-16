@@ -84,10 +84,10 @@ import com.openedit.util.IntCounter;
 
 public class BaseElasticSearcher extends BaseSearcher
 {
-	
+
 	private static final Log log = LogFactory.getLog(BaseElasticSearcher.class);
 	protected ElasticNodeManager fieldElasticNodeManager;
-	
+
 	public ElasticNodeManager getElasticNodeManager()
 	{
 		return fieldElasticNodeManager;
@@ -107,7 +107,6 @@ public class BaseElasticSearcher extends BaseSearcher
 	protected boolean fieldCheckVersions;
 	public static final Pattern VALUEDELMITER = Pattern.compile("\\s*\\|\\s*");
 
-	
 	public boolean isCheckVersions()
 	{
 		return fieldCheckVersions;
@@ -147,7 +146,6 @@ public class BaseElasticSearcher extends BaseSearcher
 	{
 		fieldConnected = inConnected;
 	}
-
 
 	public SearchQuery createSearchQuery()
 	{
@@ -230,7 +228,7 @@ public class BaseElasticSearcher extends BaseSearcher
 
 			long end = System.currentTimeMillis() - start;
 
-			if( log.isDebugEnabled())
+			if (log.isDebugEnabled())
 			{
 				json = search.toString();
 				log.info(hits.size() + " hits query: " + toId(getCatalogId()) + "/" + getSearchType() + "/_search' -d '" + json + "' sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds]");
@@ -326,8 +324,8 @@ public class BaseElasticSearcher extends BaseSearcher
 					String indexid = toId(getCatalogId());
 					String cluster = indexid;
 
-					ClusterHealthResponse health = admin.cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet(); 
-					
+					ClusterHealthResponse health = admin.cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+
 					if (health.isTimedOut())
 					{
 						throw new OpenEditException("Could not get yellow status");
@@ -342,7 +340,12 @@ public class BaseElasticSearcher extends BaseSearcher
 						{
 							XContentBuilder jsonBuilder = XContentFactory.jsonBuilder();
 
-							CreateIndexResponse newindexres = admin.indices().prepareCreate(cluster).setSettings(ImmutableSettings.settingsBuilder().loadFromSource(jsonBuilder.startObject().startObject("analysis").startObject("filter").startObject("snowball").field("type", "snowball").field("language", "English").endObject().endObject().startObject("analyzer").startObject("lowersnowball").field("type", "custom").field("tokenizer", "standard")
+							CreateIndexResponse newindexres = admin.indices().prepareCreate(cluster).setSettings(ImmutableSettings.settingsBuilder().loadFromSource(
+									jsonBuilder.startObject().startObject("analysis").
+																startObject("filter").
+																startObject("snowball").field("type", "snowball").field("language", "English").endObject().endObject().
+																startObject("analyzer").
+																	startObject("lowersnowball").field("type", "custom").field("tokenizer", "standard")
 							// .field("tokenizer",
 							// "keyword")
 							.field("filter", new String[] { "lowercase", "snowball" })
@@ -423,18 +426,18 @@ public class BaseElasticSearcher extends BaseSearcher
 		{
 			log.info(indexid + "/" + getSearchType() + "/_mapping' -d '" + source.string() + "'");
 		}
-		catch( IOException ex)
+		catch (IOException ex)
 		{
 			log.error(ex);
 		}
-//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
-//		GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
-//		if( !found.isContextEmpty())
-		if( clearold )
+		//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+		//		GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+		//		if( !found.isContextEmpty())
+		if (clearold)
 		{
 			DeleteMappingRequest dreq = Requests.deleteMappingRequest(indexid).types(getSearchType());
 			DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
-			if( dpres.isAcknowledged() )
+			if (dpres.isAcknowledged())
 			{
 				log.info("Cleared out the mapping");
 			}
@@ -451,13 +454,13 @@ public class BaseElasticSearcher extends BaseSearcher
 		return reindex;
 	}
 
-	protected XContentBuilder buildMapping() 
+	protected XContentBuilder buildMapping()
 	{
 		try
 		{
 			XContentBuilder jsonBuilder = XContentFactory.jsonBuilder();
 			XContentBuilder jsonproperties = jsonBuilder.startObject().startObject(getSearchType());
-			jsonproperties.field("date_detection" , "false");
+			jsonproperties.field("date_detection", "false");
 			jsonproperties = jsonproperties.startObject("properties");
 			List props = getPropertyDetails().findIndexProperties();
 			if (props.size() == 0)
@@ -471,7 +474,7 @@ public class BaseElasticSearcher extends BaseSearcher
 			 * index.analysis.analyzer.lowercase_keyword.filter.0=lowercase
 			 * index.analysis.analyzer.lowercase_keyword.tokenizer=keyword
 			 */
-	
+
 			jsonproperties = jsonproperties.startObject("_all");
 			jsonproperties = jsonproperties.field("store", "false");
 			jsonproperties = jsonproperties.field("analyzer", "lowersnowball");
@@ -486,7 +489,7 @@ public class BaseElasticSearcher extends BaseSearcher
 			jsonproperties = jsonproperties.field("index", "analyzed");
 			jsonproperties = jsonproperties.field("type", "string");
 			jsonproperties = jsonproperties.endObject();
-	
+
 			// Add in namesorted
 			if (getPropertyDetails().contains("name") && !getPropertyDetails().contains("namesorted"))
 			{
@@ -495,11 +498,11 @@ public class BaseElasticSearcher extends BaseSearcher
 				detail.setId("namesorted");
 				props.add(detail);
 			}
-	
+
 			for (Iterator i = props.iterator(); i.hasNext();)
 			{
 				PropertyDetail detail = (PropertyDetail) i.next();
-	
+
 				if ("_id".equals(detail.getId()) || "id".equals(detail.getId()))
 				{
 					jsonproperties = jsonproperties.startObject("_id");
@@ -518,7 +521,7 @@ public class BaseElasticSearcher extends BaseSearcher
 					jsonproperties = jsonproperties.field("store", "no");
 					jsonproperties = jsonproperties.field("include_in_all", "false");
 					jsonproperties = jsonproperties.endObject();
-	
+
 					continue;
 				}
 				if (detail.isDate())
@@ -547,7 +550,7 @@ public class BaseElasticSearcher extends BaseSearcher
 						jsonproperties = jsonproperties.field("type", "string");
 					}
 				}
-	
+
 				else
 				{
 					String indextype = detail.get("indextype");
@@ -558,7 +561,7 @@ public class BaseElasticSearcher extends BaseSearcher
 					jsonproperties = jsonproperties.field("index", indextype);
 					jsonproperties = jsonproperties.field("type", "string");
 				}
-	
+
 				if (detail.isStored())
 				{
 					jsonproperties = jsonproperties.field("store", "yes");
@@ -576,14 +579,14 @@ public class BaseElasticSearcher extends BaseSearcher
 				// {
 				jsonproperties = jsonproperties.field("include_in_all", "false");
 				// }
-	
+
 				jsonproperties = jsonproperties.endObject();
 			}
 			jsonproperties = jsonproperties.endObject();
 			jsonBuilder = jsonproperties.endObject();
 			return jsonproperties;
 		}
-		catch( Throwable ex)
+		catch (Throwable ex)
 		{
 			throw new OpenEditException(ex);
 		}
@@ -597,7 +600,7 @@ public class BaseElasticSearcher extends BaseSearcher
 		{
 			Term term = (Term) inQuery.getTerms().iterator().next();
 
-			if ("orgroup".equals(term.getOperation()) || "orsGroup".equals(term.getOperation()) ) //orsGroup? 
+			if ("orgroup".equals(term.getOperation()) || "orsGroup".equals(term.getOperation())) //orsGroup? 
 			{
 				return addOrsGroup(term);
 			}
@@ -620,7 +623,7 @@ public class BaseElasticSearcher extends BaseSearcher
 			for (Iterator iterator = inQuery.getTerms().iterator(); iterator.hasNext();)
 			{
 				Term term = (Term) iterator.next();
-				if ("orgroup".equals(term.getOperation()) || "orsGroup".equals(term.getOperation()) )
+				if ("orgroup".equals(term.getOperation()) || "orsGroup".equals(term.getOperation()))
 				{
 					BoolQueryBuilder or = addOrsGroup(term);
 					bool.must(or);
@@ -641,7 +644,7 @@ public class BaseElasticSearcher extends BaseSearcher
 			for (Iterator iterator = inQuery.getTerms().iterator(); iterator.hasNext();)
 			{
 				Term term = (Term) iterator.next();
-				if ("orgroup".equals(term.getOperation()) || "orsGroup".equals(term.getOperation()) ) //orsGroup?
+				if ("orgroup".equals(term.getOperation()) || "orsGroup".equals(term.getOperation())) //orsGroup?
 				{
 					BoolQueryBuilder or = addOrsGroup(term);
 					bool.should(or);
@@ -1224,30 +1227,30 @@ public class BaseElasticSearcher extends BaseSearcher
 
 	public synchronized String nextId()
 	{
-//		Lock lock = getLockManager().lock(getCatalogId(), loadCounterPath(), "admin");
-//		try
-//		{
-//			return String.valueOf(getIntCounter().incrementCount());
-//		}
-//		finally
-//		{
-//			getLockManager().release(getCatalogId(), lock);
-//		}
+		//		Lock lock = getLockManager().lock(getCatalogId(), loadCounterPath(), "admin");
+		//		try
+		//		{
+		//			return String.valueOf(getIntCounter().incrementCount());
+		//		}
+		//		finally
+		//		{
+		//			getLockManager().release(getCatalogId(), lock);
+		//		}
 		throw new OpenEditException("Should not call next ID");
 	}
 
 	protected IntCounter getIntCounter()
 	{
-//		if (fieldIntCounter == null)
-//		{
-//			fieldIntCounter = new IntCounter();
-//			// fieldIntCounter.setLabelName(getSearchType() + "IdCount");
-//			Page prop = getPageManager().getPage(loadCounterPath());
-//			File file = new File(prop.getContentItem().getAbsolutePath());
-//			file.getParentFile().mkdirs();
-//			fieldIntCounter.setCounterFile(file);
-//		}
-//		return fieldIntCounter;
+		//		if (fieldIntCounter == null)
+		//		{
+		//			fieldIntCounter = new IntCounter();
+		//			// fieldIntCounter.setLabelName(getSearchType() + "IdCount");
+		//			Page prop = getPageManager().getPage(loadCounterPath());
+		//			File file = new File(prop.getContentItem().getAbsolutePath());
+		//			file.getParentFile().mkdirs();
+		//			fieldIntCounter.setCounterFile(file);
+		//		}
+		//		return fieldIntCounter;
 		throw new OpenEditException("Cant load int counters from elasticsearch");
 	}
 
@@ -1331,7 +1334,7 @@ public class BaseElasticSearcher extends BaseSearcher
 	public void reIndexAll() throws OpenEditException
 	{
 		//there is not reindex step since it is only in memory
-		if( isReIndexing())
+		if (isReIndexing())
 		{
 			return;
 		}
@@ -1345,7 +1348,6 @@ public class BaseElasticSearcher extends BaseSearcher
 		{
 			setReIndexing(false);
 		}
-			
-		
+
 	}
 }
