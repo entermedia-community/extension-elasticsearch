@@ -253,6 +253,10 @@
 	
 	
 <bean id="elasticOrderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticOrderSearcher" scope="prototype">
+		<property name="pageManager">
+			<ref bean="pageManager" />
+		</property>
+
 		<property name="elasticNodeManager">
 			<ref bean="nodeManager" />
 		</property>
