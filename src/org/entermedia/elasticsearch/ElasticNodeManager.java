@@ -172,7 +172,7 @@ public class ElasticNodeManager extends NodeManager
 	    
 	    CreateSnapshotRequestBuilder builder = new CreateSnapshotRequestBuilder(getClient().admin().cluster());
 	    String snapshotid =  format.format(new Date());
-	    builder.setRepository(indexid)()
+	    builder.setRepository(indexid)
 	            .setIndices(indexid)
 	            .setWaitForCompletion(true)
 	            .setSnapshot(snapshotid);
