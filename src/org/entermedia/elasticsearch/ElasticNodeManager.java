@@ -3,9 +3,11 @@ package org.entermedia.elasticsearch;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -20,17 +22,16 @@ import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotReq
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsRequestBuilder;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotRequestBuilder;
-import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
 import org.elasticsearch.action.admin.indices.close.CloseIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.snapshots.SnapshotInfo;
-import org.entermedia.elasticsearch.searchers.ElasticListSearcher;
+import org.entermedia.locks.Lock;
+import org.entermedia.locks.LockManager;
 import org.openedit.entermedia.cluster.NodeManager;
 
 import com.openedit.OpenEditException;
@@ -44,6 +45,16 @@ public class ElasticNodeManager extends NodeManager
 
 	protected Client fieldClient;
 	protected boolean fieldShutdown = false;
+	protected LockManager fieldLockManager;
+	public LockManager getLockManager()
+	{
+		return fieldLockManager;
+	}
+
+	public void setLockManager(LockManager inLockManager)
+	{
+		fieldLockManager = inLockManager;
+	}
 	
 	public Client getClient()
 	{
@@ -126,39 +137,82 @@ public class ElasticNodeManager extends NodeManager
 		String id = inId.replace('/', '_');
 		return id;
 	}
-	
 	public String createSnapShot(String inCatalogId)
 	{
-		
+		Lock lock  = null;
+		try
+		{
+			lock = getLockManager().lock(inCatalogId, "snapshot", "elasticNodeManager");
+			return createSnapShot(inCatalogId,lock);
+		}
+		finally
+		{
+			getLockManager().release(inCatalogId, lock);
+		}
+	}
+	public String createSnapShot(String inCatalogId, Lock inLock)
+	{
 		String indexid = toId(inCatalogId);
 		String path = getSetting("repo.root.location") + "/" + indexid; //Store it someplace unique so we can be isolated?
-		
-		//log.info("Deleted nodeid=" + id + " records database " + getSearchType() );
-		
-		    Settings settings = ImmutableSettings.builder()
-		            .put("location", path)
-		            .build();
-
-		    PutRepositoryRequestBuilder putRepo = 
-		    		new PutRepositoryRequestBuilder(getClient().admin().cluster());
-		    putRepo.setName(indexid)
-		            .setType("fs")
-		            .setSettings(settings) //With Unique location saved for each catalog
-		            .execute().actionGet();
-
-		    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
-		    
-		    CreateSnapshotRequestBuilder builder = new CreateSnapshotRequestBuilder(getClient().admin().cluster());
-		    String snapshotid =  format.format(new Date());
-		    builder.setRepository(indexid)
-		            .setIndices(indexid)
-		            .setWaitForCompletion(true)
-		            .setSnapshot(snapshotid);
-		    builder.execute().actionGet();
-		
-		    return snapshotid;
-	}
 	
+	//log.info("Deleted nodeid=" + id + " records database " + getSearchType() );
+	
+	    Settings settings = ImmutableSettings.builder()
+	            .put("location", path)
+	            .build();
+
+	    PutRepositoryRequestBuilder putRepo = 
+	    		new PutRepositoryRequestBuilder(getClient().admin().cluster());
+	    putRepo.setName(indexid)
+	            .setType("fs")
+	            .setSettings(settings) //With Unique location saved for each catalog
+	            .execute().actionGet();
+
+	    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+	    
+	    CreateSnapshotRequestBuilder builder = new CreateSnapshotRequestBuilder(getClient().admin().cluster());
+	    String snapshotid =  format.format(new Date());
+	    builder.setRepository(indexid)()
+	            .setIndices(indexid)
+	            .setWaitForCompletion(true)
+	            .setSnapshot(snapshotid);
+	    builder.execute().actionGet();
+	
+	    return snapshotid;
+	}	
+	public String createDailySnapShot(String inCatalogId)
+	{		
+		Lock lock  = null;
+		
+		try
+		{
+			lock = getLockManager().lock(inCatalogId, "snapshot", "elasticNodeManager");
+	
+			List list = listSnapShots(inCatalogId);
+			if( list.size() > 0)
+			{
+				SnapshotInfo recent = (SnapshotInfo)list.iterator().next();
+				SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+				Date date = format.parse(recent.name());
+				Calendar yesterday = new GregorianCalendar();
+				yesterday.add(Calendar.DAY_OF_YEAR, -1);
+				if( date.after(yesterday.getTime()))
+				{
+					return recent.name();
+				}
+			}
+			return createSnapShot(inCatalogId, lock);
+		}
+		catch( Throwable ex)
+		{
+			throw new OpenEditException(ex);
+		}
+		finally
+		{
+			getLockManager().release(inCatalogId, lock);
+		}
+	}
+		
 	public List listSnapShots(String inCatalogId)
 	{
 		String indexid = toId(inCatalogId);
@@ -196,6 +250,7 @@ public class ElasticNodeManager extends NodeManager
 	    Collections.reverse(results);
 	    return results;
 	}
+	
 	public void restoreSnapShot(String inCatalogId, String inSnapShotId)
 	{
 		String indexid = toId(inCatalogId);

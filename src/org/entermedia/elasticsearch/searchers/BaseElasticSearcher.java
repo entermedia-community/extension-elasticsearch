@@ -22,12 +22,12 @@ import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
 import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingResponse;
-import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsRequest;
-import org.elasticsearch.action.admin.indices.mapping.get.GetMappingsResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
+import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
@@ -44,6 +44,9 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.unit.ByteSizeUnit;
+import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
@@ -971,11 +974,50 @@ public class BaseElasticSearcher extends BaseSearcher
 	{
 		String catid = toId(getCatalogId());
 
+		/* 
+		 * TODO: Write a thread safe bulk saver that calls setRefresh(true) and pulls out version information after a save
+		 * 
+		BulkProcessor bulkProcessor = BulkProcessor.builder(
+				getClient(),  
+		        new BulkProcessor.Listener() {
+		            @Override
+		            public void beforeBulk(long executionId,
+		                                   BulkRequest request) { } 
+
+		            @Override
+		            public void afterBulk(long executionId,
+		                                  BulkRequest request,
+		                                  BulkResponse response) { 
+		            	//response.
+		            } 
+
+		            @Override
+		            public void afterBulk(long executionId,
+		                                  BulkRequest request,
+		                                  Throwable failure) { log.error(failure); } 
+		        })
+		        .setBulkActions(10000) 
+		        .setBulkSize(new ByteSizeValue(1, ByteSizeUnit.GB)) 
+		        .setFlushInterval(TimeValue.timeValueSeconds(5)) 
+		        .setConcurrentRequests(1) 
+		        .build();
+		
+		XContentBuilder content = XContentFactory.jsonBuilder().startObject();
+		updateIndex(content, data, details);
+		content.endObject();
+		if( log.isDebugEnabled() )
+		{
+			log.debug("Saving " + getSearchType() + " " + data.getId() + " = " + content.string());
+		}
+
+		// ConcurrentModificationException
+		builder = builder.setSource(content).setRefresh(true);
 		// BulkRequestBuilder brb = getClient().prepareBulk();
 		//
 		// brb.add(Requests.indexRequest(indexName).type(getIndexType()).id(id).source(source));
 		// }
 		// if (brb.numberOfActions() > 0) brb.execute().actionGet();
+		 */
 		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
 
 		for (Data data : inBuffer)
@@ -1008,7 +1050,10 @@ public class BaseElasticSearcher extends BaseSearcher
 			XContentBuilder content = XContentFactory.jsonBuilder().startObject();
 			updateIndex(content, data, details);
 			content.endObject();
-			log.info("Saving " + getSearchType() + " " + data.getId() + " = " + content.string());
+			if( log.isDebugEnabled() )
+			{
+				log.debug("Saving " + getSearchType() + " " + data.getId() + " = " + content.string());
+			}
 
 			// ConcurrentModificationException
 			builder = builder.setSource(content).setRefresh(true);

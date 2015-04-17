@@ -262,6 +262,10 @@ public class ElasticSearchQuery extends SearchQuery
 
 	public Term addExact(PropertyDetail inField, String inValue)
 	{
+		if( inValue == null)
+		{
+			return null;
+		}
 		Term term = new Term()
 		{
 			public String toQuery()

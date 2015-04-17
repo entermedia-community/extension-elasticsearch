@@ -12,7 +12,10 @@
 		<property name="xmlUtil">
 			<ref bean="xmlUtil" />
 		</property>
-		<property name="webServer"><ref bean="WebServer" /></property>
+		<property name="lockManager">
+			<ref bean="lockManager" />
+		</property>
+		<property name="webServer"><ref bean="WebServer" /></property>		
 	</bean>
 
 <!-- Remove this one day -->
