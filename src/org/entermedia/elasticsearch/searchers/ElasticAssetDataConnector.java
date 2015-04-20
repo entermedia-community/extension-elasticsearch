@@ -2,6 +2,9 @@ package org.entermedia.elasticsearch.searchers;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -37,6 +40,7 @@ import com.openedit.OpenEditException;
 import com.openedit.hittracker.HitTracker;
 import com.openedit.users.User;
 import com.openedit.util.IntCounter;
+import com.openedit.util.OutputFiller;
 import com.openedit.util.PathProcessor;
 
 public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements DataConnector
@@ -44,7 +48,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 	protected AssetSecurityArchive fieldAssetSecurityArchive;
 	protected MediaArchive fieldMediaArchive;
 	protected IntCounter fieldIntCounter;
-	
+	protected OutputFiller filler = new OutputFiller();
 	public Data createNewData()
 	{
 		return new Asset();
@@ -73,14 +77,14 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 	{		
 		if( isReIndexing())
 		{
-			return;
+			return;  //TODO: Make a lock so that two servers startin up dont conflict?
 		}
 		setReIndexing(true);
 		try
 		{
 			getMediaArchive().getAssetArchive().clearAssets();
 			//For now just add things to the index. It never deletes
-
+			rebuildMapping(true);
 			final List buffer = new ArrayList(100);
 			PathProcessor processor = new PathProcessor()
 			{
@@ -246,6 +250,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 
 		// fullDesc.append(asset.getId());
 		// fullDesc.append(' ');
+		
 		String keywords = asTokens(asset.getKeywords());
 		fullDesc.append(keywords);
 		fullDesc.append(' ');
@@ -266,7 +271,37 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			fullDesc.append(dirs[i]);
 			fullDesc.append(' ');
 		}
-
+		if( Boolean.parseBoolean(asset.get("hasfulltext")))
+		{
+			ContentItem item = getPageManager().getRepository().getStub("/WEB-INF/data/" + getCatalogId() +"/assets/" + asset.getSourcePath() + "/fulltext.txt");
+			if( item.exists() )
+			{
+				Reader input = null;
+				try
+				{
+					input= new InputStreamReader( item.getInputStream(), "UTF-8");
+					StringWriter output = new StringWriter(); 
+					filler.fill(input, output);
+					fullDesc.append(output.toString());
+				}
+				catch( IOException ex)
+				{
+					log.error(ex);
+				}
+				finally
+				{
+					filler.close(input);
+				}
+			}
+		}
+//		fullDesc.append(asset.get("fulltext")); //TODO: Is this set? Should we store this another way?
+//
+//		//TODO: Limit the size? Trim words?
+		if( fullDesc.length() > 500000)
+		{
+			return fullDesc.substring(0,500000);
+		}
+		
 		String result = fullDesc.toString();// fixInvalidCharacters(fullDesc.toString());
 		return result;
 	}
