@@ -1341,6 +1341,14 @@ public class BaseElasticSearcher extends BaseSearcher
 			if (response.isExists())
 			{
 				Data data = new BaseData(response.getSource());
+				if( getNewDataName() != null )
+				{
+					Data typed = createNewData();		
+					typed.setName(data.getName());
+					typed.setProperties(data.getProperties());
+					data = typed;
+				}	
+				
 				data.setId(inValue);
 				if (response.getVersion() > -1)
 				{
