@@ -147,7 +147,7 @@
 		</property>
 	</bean>
  -->
-    <bean id="elasticUserProfileSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" scope="prototype">
+    <bean id="elasticXmlUserProfileSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" scope="prototype">
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
@@ -167,8 +167,20 @@
 		<property name="prefix"><value>users</value></property>
 		<property name="newDataName"><value>userProfile</value></property>
 	</bean>
+	<bean id="elasticUserProfileSearcher" class="org.entermedia.elasticsearch.searchers.BaseElasticSearcher" scope="prototype">
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>
+		<property name="newDataName"><value>userProfile</value></property>		
+	</bean>
 	
-	<bean id="elasticOrderItemSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" scope="prototype">
+	<bean id="elasticXmlOrderItemSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" scope="prototype">
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
@@ -186,8 +198,20 @@
 		</property>
 		<property name="sourcePathCreator"><ref bean="chunkySourcePathCreator"/></property>		
 		<property name="prefix"><value>assets</value></property>
-
 	</bean>
+
+	<bean id="elasticOrderItemSearcher" class="org.entermedia.elasticsearch.searchers.BaseElasticSearcher" scope="prototype">
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>
+	</bean>
+
 
 	<bean id="elasticListSearcher" class="org.entermedia.elasticsearch.searchers.ElasticListSearcher" scope="prototype">
 		<property name="xmlSearcher">
@@ -251,8 +275,22 @@
 		
 	</bean>
 	
+	<bean id="elasticOrderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticOrderSearcher" scope="prototype">
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>		
+		<property name="orderManager"><ref bean="orderManager" /></property>
+		<property name="newDataName"><value>order</value></property>
+    </bean>
 	
-<bean id="elasticOrderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticOrderSearcher" scope="prototype">
+	
+<bean id="elasticXmlOrderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlOrderSearcher" scope="prototype">
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>

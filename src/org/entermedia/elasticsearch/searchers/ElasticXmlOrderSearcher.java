@@ -5,7 +5,7 @@ import org.openedit.data.PropertyDetails;
 import org.openedit.entermedia.orders.Order;
 import org.openedit.entermedia.orders.OrderManager;
 
-public class ElasticOrderSearcher extends BaseElasticSearcher
+public class ElasticXmlOrderSearcher extends ElasticXmlFileSearcher
 {
 	
 	protected OrderManager fieldOrderManager;

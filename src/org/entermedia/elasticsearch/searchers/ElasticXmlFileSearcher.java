@@ -248,10 +248,10 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 
 	public void delete(Data inData, User inUser)
 	{
-		if (inData instanceof SearchHitData)
-		{
-			inData = (Data) searchById(inData.getId());
-		}
+//		if (inData instanceof SearchHitData)
+//		{
+//			inData = (Data) searchById(inData.getId());
+//		}
 		if (inData == null || inData.getSourcePath() == null || inData.getId() == null)
 		{
 			throw new OpenEditException("Cannot delete null data.");
@@ -290,6 +290,9 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		getDataArchive().saveAllData(inAll, getCatalogId(), getPathToData() + "/", inUser);
 	}
 
+	//TODO: Deal with non XML saves
+	
+	
 	public void saveData(Data inData, User inUser)
 	{
 		//update the index
@@ -298,6 +301,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		Lock lock = null;
 		try
 		{
+			//Why did I want to lock it here? Guess so that the xml file wont feel the need to do it?
 			lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath() + "/" + getSearchType(), "admin"); //need to lock the entire file
 			updateElasticIndex(details, inData);
 			//TODO - we might need the sourcepath saved in the below case.
@@ -305,6 +309,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			{
 				String sourcepath = getSourcePathCreator().createSourcePath(inData, inData.getId());
 				inData.setSourcePath(sourcepath);
+				updateElasticIndex(details, inData);
 			}
 			getDataArchive().saveData(inData, inUser, lock);
 		}
@@ -341,42 +346,63 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			throw new OpenEditException("Can't search for null value on field " + inField);
 		}
 		Data newdata = (Data) super.searchByField(inField, inValue);
-		//load up a real object?
-
-		String sourcepath = null;
-		String id = null;
-
-		if (newdata == null)
+		if( inField.equals("id"))
 		{
-			return null;
-		}
-
-		if (newdata.getSourcePath() == null)
+			if( getNewDataName() != null )
+			{
+				Data typed = createNewData();		
+				typed.setId(newdata.getId());
+				typed.setName(newdata.getName());
+				typed.setSourcePath(newdata.getSourcePath());
+				typed.setProperties(newdata.getProperties());
+				return typed;
+			}	
+		}	
+		return newdata;
+/*		
+		if( inField.equals("id"))
 		{
-			//sourcepath = getSourcePathCreator().createSourcePath(newdata, newdata.getId() );
-			throw new OpenEditException("Sourcepath required for " + getSearchType());
-		}
+			String sourcepath = null;
+			String id = null;
+	
+			if (newdata == null)
+			{
+				return null;
+			}
+	
+			if (newdata.getSourcePath() == null)
+			{
+				//sourcepath = getSourcePathCreator().createSourcePath(newdata, newdata.getId() );
+				throw new OpenEditException("Sourcepath required for " + getSearchType());
+			}
+			else
+			{
+				sourcepath = newdata.getSourcePath();
+			}
+			id = newdata.getId();
+	
+			String path = getPathToData() + "/" + sourcepath + "/" + getSearchType() + ".xml";
+			XmlArchive archive = getDataArchive().getXmlArchive();
+			XmlFile content = archive.getXml(path, getSearchType());
+			//log.info( newdata.getProperties() );
+			if (!content.isExist())
+			{
+				//throw new OpenEditException("Missing data file " + path);
+				return null;
+			}
+			Element element = content.getElementById(id);
+	
+			ElementData realdata = (ElementData) createNewData();
+			realdata.setElement(element);
+			realdata.setSourcePath(sourcepath);
+	
+			return realdata;
+		}	
 		else
 		{
-			sourcepath = newdata.getSourcePath();
+			return newdata;
 		}
-		id = newdata.getId();
-
-		String path = getPathToData() + "/" + sourcepath + "/" + getSearchType() + ".xml";
-		XmlArchive archive = getDataArchive().getXmlArchive();
-		XmlFile content = archive.getXml(path, getSearchType());
-		//log.info( newdata.getProperties() );
-		if (!content.isExist())
-		{
-			//throw new OpenEditException("Missing data file " + path);
-			return null;
-		}
-		Element element = content.getElementById(id);
-
-		ElementData realdata = (ElementData) createNewData();
-		realdata.setElement(element);
-		realdata.setSourcePath(sourcepath);
-
-		return realdata;
+	}
+*/	
 	}
 }

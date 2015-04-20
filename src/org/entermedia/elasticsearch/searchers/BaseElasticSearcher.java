@@ -438,11 +438,18 @@ public class BaseElasticSearcher extends BaseSearcher
 		//		if( !found.isContextEmpty())
 		if (clearold)
 		{
-			DeleteMappingRequest dreq = Requests.deleteMappingRequest(indexid).types(getSearchType());
-			DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
-			if (dpres.isAcknowledged())
+			try
 			{
-				log.info("Cleared out the mapping");
+				DeleteMappingRequest dreq = Requests.deleteMappingRequest(indexid).types(getSearchType());
+				DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
+				if (dpres.isAcknowledged())
+				{
+					log.info("Cleared out the mapping");
+				}
+			}
+			catch( Throwable ex)
+			{
+				log.info("failed to clear mapping before reloading ",ex);
 			}
 		}
 		PutMappingRequest req = Requests.putMappingRequest(indexid).type(getSearchType());
