@@ -123,9 +123,39 @@ public class ElasticSearchQuery extends SearchQuery
 	}
 	
 	@Override
-	public Term addOrsGroup(PropertyDetail inDetail, String[] inValues)
+	public Term addOrsGroup(PropertyDetail inField, String[] inValues)
 	{
-		return super.addOrsGroup(inDetail, inValues);
+		Term term = new Term()
+		{
+			public String toQuery()
+			{
+				StringBuffer orString = new StringBuffer();
+				Object[] values = getValues();
+				if (values.length > 0)
+				{
+					orString.append("(");
+					for (int i = 0; i < values.length - 1; i++)
+					{
+						if(values[i].toString().length() > 0)
+						{
+							orString.append(values[i]);
+							orString.append(" OR ");
+						}
+					}
+					orString.append(values[values.length - 1]);
+					orString.append(")");
+				}
+				return getDetail().getId() + ":" + orString.toString();
+			}
+		};
+		term.setDetail(inField);
+		term.setId(inField.getId());
+		//term.setValue(inValue);
+		//String[] orwords = inValue.split("\\s+");
+		term.setValues(inValues);
+		term.setOperation("orsGroup");
+		getTerms().add(term);
+		return term;
 	}
 	
 	public Term addOrsGroup(PropertyDetail inField, String inValue)

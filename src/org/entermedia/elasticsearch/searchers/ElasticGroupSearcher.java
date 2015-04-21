@@ -50,7 +50,11 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 		log.info("Reindex of customer groups directory");
 		try
 		{
-			deleteAll(null);
+			if( fieldConnected )
+			{
+				deleteOldMapping();
+				putMappings();
+			}
 			Collection ids = getXmlUserArchive().listGroupIds();
 			if( ids != null)
 			{
@@ -73,6 +77,11 @@ public class ElasticGroupSearcher extends BaseElasticSearcher implements
 		{
 			throw new OpenEditException(e);
 		}
+	}
+	public void restoreSettings()
+	{
+		getPropertyDetailsArchive().clearCustomSettings(getSearchType());
+		reIndexAll();
 	}
 
 	public Group getGroup(String inGroupId)

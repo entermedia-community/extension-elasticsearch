@@ -120,6 +120,7 @@ public class ElasticHitTracker extends HitTracker
 			if (response.getFacets() != null && fieldFilterOptions == null)
 			{
 				Map facets = response.getFacets().facetsAsMap();
+				//log.info(facets);
 				if (facets != null)
 				{
 					loadFacets(facets);
@@ -186,7 +187,7 @@ public class ElasticHitTracker extends HitTracker
 			}
 		}
 		setFilterOptions(facets);
-		log.info("found some facets");
+		//log.info("found some facets");
 
 	}
 

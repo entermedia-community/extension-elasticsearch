@@ -56,12 +56,16 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		log.info("Reindex of customer users directory");
 		try
 		{
-			deleteAll(null);
+			if( fieldConnected )
+			{
+				deleteOldMapping();
+				putMappings();
+
+			}
 			PropertyDetails details = getPropertyDetailsArchive().getPropertyDetails(getSearchType());
 			Collection usernames = getXmlUserArchive().listUserNames();
 			if( usernames != null)
 			{
-				deleteAll(null);
 				List users = new ArrayList();
 				for (Iterator iterator = usernames.iterator(); iterator.hasNext();)
 				{
@@ -83,7 +87,13 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		}
 
 	}
+	public void restoreSettings()
+	{
+		getPropertyDetailsArchive().clearCustomSettings(getSearchType());
+		reIndexAll();
+	}
 
+	
 	//TODO: Replace with in-memory copy for performance reasons?
 	public Object searchById(String inId)
 	{		

@@ -166,9 +166,13 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		setReIndexing(true);
 		try
 		{
-			rebuildMapping(true);
-			//For now just add things to the index. It never deletes
-			deleteAll(null); //This only deleted the index
+			if( fieldConnected )
+			{
+				//Someone is forcing a reindex
+				deleteOldMapping();
+				putMappings();
+
+			}
 			final List buffer = new ArrayList(100);
 			PathProcessor processor = new PathProcessor()
 			{
@@ -205,7 +209,13 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			setReIndexing(false);
 		}
 	}
+	public void restoreSettings()
+	{
+		getPropertyDetailsArchive().clearCustomSettings(getSearchType());
+		reIndexAll();
+	}
 
+	
 	protected void hydrateData(ContentItem inContent, String sourcepath, List buffer)
 	{
 		String path = inContent.getPath();

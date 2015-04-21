@@ -84,7 +84,12 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		{
 			getMediaArchive().getAssetArchive().clearAssets();
 			//For now just add things to the index. It never deletes
-			rebuildMapping(true);
+			if( fieldConnected )
+			{
+				//Someone is forcing a reindex
+				deleteOldMapping();
+				putMappings();
+			}
 			final List buffer = new ArrayList(100);
 			PathProcessor processor = new PathProcessor()
 			{
@@ -263,34 +268,36 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			fullDesc.append(cat.getName());
 			fullDesc.append(' ');
 		}
-
-		String[] dirs = asset.getSourcePath().split("/");
-
-		for (int i = 0; i < dirs.length; i++)
+		if( asset.getSourcePath() != null)
 		{
-			fullDesc.append(dirs[i]);
-			fullDesc.append(' ');
-		}
-		if( Boolean.parseBoolean(asset.get("hasfulltext")))
-		{
-			ContentItem item = getPageManager().getRepository().getStub("/WEB-INF/data/" + getCatalogId() +"/assets/" + asset.getSourcePath() + "/fulltext.txt");
-			if( item.exists() )
+			String[] dirs = asset.getSourcePath().split("/");
+	
+			for (int i = 0; i < dirs.length; i++)
 			{
-				Reader input = null;
-				try
+				fullDesc.append(dirs[i]);
+				fullDesc.append(' ');
+			}
+			if( Boolean.parseBoolean(asset.get("hasfulltext")))
+			{
+				ContentItem item = getPageManager().getRepository().getStub("/WEB-INF/data/" + getCatalogId() +"/assets/" + asset.getSourcePath() + "/fulltext.txt");
+				if( item.exists() )
 				{
-					input= new InputStreamReader( item.getInputStream(), "UTF-8");
-					StringWriter output = new StringWriter(); 
-					filler.fill(input, output);
-					fullDesc.append(output.toString());
-				}
-				catch( IOException ex)
-				{
-					log.error(ex);
-				}
-				finally
-				{
-					filler.close(input);
+					Reader input = null;
+					try
+					{
+						input= new InputStreamReader( item.getInputStream(), "UTF-8");
+						StringWriter output = new StringWriter(); 
+						filler.fill(input, output);
+						fullDesc.append(output.toString());
+					}
+					catch( IOException ex)
+					{
+						log.error(ex);
+					}
+					finally
+					{
+						filler.close(input);
+					}
 				}
 			}
 		}

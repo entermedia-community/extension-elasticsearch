@@ -89,8 +89,13 @@ public class ElasticListSearcher extends BaseElasticSearcher implements Reloadab
 		try
 		{
 			//For now just add things to the index. It never deletes
-			super.deleteAll(null); //This only deleted the index
-			rebuildMapping(true);
+			if( fieldConnected )
+			{
+				//Someone is forcing a reindex
+				deleteOldMapping();
+				putMappings();
+
+			}
 			 
 			getXmlSearcher().clearIndex();
 			HitTracker settings = getXmlSearcher().getAllHits();
@@ -115,7 +120,12 @@ public class ElasticListSearcher extends BaseElasticSearcher implements Reloadab
 		}
 	}
 
-	
+	public void restoreSettings()
+	{
+		getPropertyDetailsArchive().clearCustomSettings(getSearchType());
+		reIndexAll();
+	}
+
 	
 
 	public void delete(Data inData, User inUser)

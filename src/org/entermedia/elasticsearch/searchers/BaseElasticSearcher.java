@@ -90,6 +90,14 @@ public class BaseElasticSearcher extends BaseSearcher
 
 	private static final Log log = LogFactory.getLog(BaseElasticSearcher.class);
 	protected ElasticNodeManager fieldElasticNodeManager;
+	protected boolean fieldConnected = false;
+	//protected IntCounter fieldIntCounter;
+	//protected PageManager fieldPageManager;
+	//protected LockManager fieldLockManager;
+	protected boolean fieldAutoIncrementId;
+	protected boolean fieldReIndexing;
+	protected boolean fieldCheckVersions;
+	public static final Pattern VALUEDELMITER = Pattern.compile("\\s*\\|\\s*");
 
 	public ElasticNodeManager getElasticNodeManager()
 	{
@@ -100,15 +108,6 @@ public class BaseElasticSearcher extends BaseSearcher
 	{
 		fieldElasticNodeManager = inElasticNodeManager;
 	}
-
-	protected boolean fieldConnected = false;
-	//protected IntCounter fieldIntCounter;
-	//protected PageManager fieldPageManager;
-	//protected LockManager fieldLockManager;
-	protected boolean fieldAutoIncrementId;
-	protected boolean fieldReIndexing;
-	protected boolean fieldCheckVersions;
-	public static final Pattern VALUEDELMITER = Pattern.compile("\\s*\\|\\s*");
 
 	public boolean isCheckVersions()
 	{
@@ -238,7 +237,7 @@ public class BaseElasticSearcher extends BaseSearcher
 			}
 			else
 			{
-				log.info(hits.size() + " hits query: " + toId(getCatalogId()) + "/" + getSearchType() + " " + inQuery.toQuery() + " sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds]");
+				log.info("query: " + toId(getCatalogId()) + "/" + getSearchType() + " " + inQuery.toQuery() + " sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds]");
 			}
 
 			return hits;
@@ -320,8 +319,9 @@ public class BaseElasticSearcher extends BaseSearcher
 				{
 					return;
 				}
+				boolean runmapping = true;
+
 				AdminClient admin = getElasticNodeManager().getClient().admin();
-				boolean reindex = false;
 				try
 				{
 					String indexid = toId(getCatalogId());
@@ -371,7 +371,6 @@ public class BaseElasticSearcher extends BaseSearcher
 
 					ClusterState cs = admin.cluster().prepareState().setIndices(indexid).execute().actionGet().getState();
 					IndexMetaData data = cs.getMetaData().index(indexid);
-					boolean runmapping = true;
 					if (data != null)
 					{
 						if (data.getMappings() != null)
@@ -385,8 +384,7 @@ public class BaseElasticSearcher extends BaseSearcher
 					}
 					if (runmapping)
 					{
-						reindex = rebuildMapping(false);
-
+						putMappings();
 					}
 					RefreshRequest req = Requests.refreshRequest(indexid);
 					RefreshResponse rres = admin.indices().refresh(req).actionGet();
@@ -401,7 +399,7 @@ public class BaseElasticSearcher extends BaseSearcher
 				{
 					log.error("index could not be created ", ex);
 				}
-				if (reindex)
+				if (runmapping)
 				{
 					try
 					{
@@ -417,11 +415,23 @@ public class BaseElasticSearcher extends BaseSearcher
 			}
 		}
 	}
-
-	protected boolean rebuildMapping(boolean clearold)
+	protected void deleteOldMapping()
 	{
 		AdminClient admin = getElasticNodeManager().getClient().admin();
-		boolean reindex = false;
+		String indexid = toId(getCatalogId());
+		//XContentBuilder source = buildMapping();
+
+		DeleteMappingRequest dreq = Requests.deleteMappingRequest(indexid).types(getSearchType());
+		DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
+		if (dpres.isAcknowledged())
+		{
+			log.info("Cleared out the mapping " + getSearchType() );
+			getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+		}
+	}
+	protected void putMappings()
+	{
+		AdminClient admin = getElasticNodeManager().getClient().admin();
 		String indexid = toId(getCatalogId());
 
 		XContentBuilder source = buildMapping();
@@ -436,32 +446,48 @@ public class BaseElasticSearcher extends BaseSearcher
 		//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
 		//		GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
 		//		if( !found.isContextEmpty())
-		if (clearold)
+		try
 		{
-			try
-			{
-				DeleteMappingRequest dreq = Requests.deleteMappingRequest(indexid).types(getSearchType());
-				DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
-				if (dpres.isAcknowledged())
-				{
-					log.info("Cleared out the mapping");
-				}
-			}
-			catch( Throwable ex)
-			{
-				log.info("failed to clear mapping before reloading ",ex);
-			}
+			putMapping(admin, indexid, source);
+			getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+			return;
 		}
+		catch( Exception ex)
+		{
+			log.error("Could not put mapping over existing mapping. Please use restoreDefaults");
+		}
+//		try
+//		{
+//			//Save existing index values
+//			HitTracker all = getAllHits();
+//			//Export to csv file?
+//			
+//			DeleteMappingRequest dreq = Requests.deleteMappingRequest(indexid).types(getSearchType());
+//			DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
+//			if (dpres.isAcknowledged())
+//			{
+//				log.info("Cleared out the mapping " + getSearchType() );
+//				getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+//				putMapping(admin, indexid, source);
+//			}
+//			//save it all back
+//		}
+//		catch( Throwable ex)
+//		{
+//			log.info("failed to clear mapping before reloading ",ex);
+//		}
+	}
+
+	protected void putMapping(AdminClient admin, String indexid, XContentBuilder source)
+	{
 		PutMappingRequest req = Requests.putMappingRequest(indexid).type(getSearchType());
 		req.source(source);
 		PutMappingResponse pres = admin.indices().putMapping(req).actionGet();
 		if (pres.isAcknowledged())
 		{
 			log.info("mapping applied " + getSearchType());
-			reindex = true;
 			getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
 		}
-		return reindex;
 	}
 
 	protected XContentBuilder buildMapping()
@@ -549,8 +575,10 @@ public class BaseElasticSearcher extends BaseSearcher
 				{
 					jsonproperties = jsonproperties.field("type", "long");
 				}
-				else if (detail.isList())
+				else if (detail.isList())  //Or multi valued?
 				{
+					//if( detail.isMultiValue() )
+					jsonproperties = jsonproperties.field("index", "not_analyzed");
 					if (Boolean.parseBoolean(detail.get("nested")))
 					{
 						jsonproperties = jsonproperties.field("type", "nested");
@@ -560,7 +588,6 @@ public class BaseElasticSearcher extends BaseSearcher
 						jsonproperties = jsonproperties.field("type", "string");
 					}
 				}
-
 				else
 				{
 					String indextype = detail.get("indextype");
@@ -857,7 +884,8 @@ public class BaseElasticSearcher extends BaseSearcher
 
 			if ("matches".equals(inTerm.getOperation()))
 			{
-				find = QueryBuilders.matchQuery(fieldid, valueof);
+				find = QueryBuilders.matchQuery(fieldid, valueof); //this is analyzed
+				//find = QueryBuilders.termQuery(fieldid, valueof);
 			}
 			else if ("contains".equals(inTerm.getOperation()))
 			{
@@ -865,7 +893,7 @@ public class BaseElasticSearcher extends BaseSearcher
 			}
 			else
 			{
-				find = QueryBuilders.termQuery(fieldid, valueof);
+				find = QueryBuilders.matchQuery(fieldid, valueof); //This is not analyzed termQuery
 			}
 		}
 		// QueryBuilders.idsQuery(types)
@@ -1401,13 +1429,32 @@ public class BaseElasticSearcher extends BaseSearcher
 		try
 		{
 			setReIndexing(true);
-			rebuildMapping(true);
+			if( fieldConnected )
+			{
+				putMappings(); //We can only try to put mapping. If this failes then they will
+				//need to export their data and factory reset the fields 
+			}
 			//deleteAll(null); //This only deleted the index
 		}
 		finally
 		{
 			setReIndexing(false);
 		}
-
+	}
+	
+	@Override
+	public void restoreSettings()
+	{
+		getPropertyDetailsArchive().clearCustomSettings(getSearchType());
+		deleteOldMapping();  //you will lose your data!
+		reIndexAll();
+	}
+	
+	@Override
+	public void reloadSettings()
+	{
+		//getPropertyDetailsArchive().clearCustomSettings(getSearchType());
+		//deleteOldMapping();  //you will lose your data!
+		reIndexAll();
 	}
 }
