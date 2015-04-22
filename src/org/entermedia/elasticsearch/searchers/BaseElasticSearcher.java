@@ -591,7 +591,7 @@ public class BaseElasticSearcher extends BaseSearcher
 				else
 				{
 					String indextype = detail.get("indextype");
-					if (indextype != null)
+					if (indextype != null || detail.getId().equals("sourcepath"))
 					{
 						//indextype = "not_analyzed";
 						jsonproperties = jsonproperties.field("index", indextype);
