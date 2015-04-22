@@ -430,7 +430,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 			search.setTypes(getSearchType());
 			
-			QueryBuilder b = QueryBuilders.termQuery("sourcepath", inValue);
+			QueryBuilder b = QueryBuilders.matchQuery("sourcepath", inValue);
 			search.setQuery(b);
 			SearchResponse response = search.execute().actionGet();
 			Iterator <SearchHit> responseiter = response.getHits().iterator();
