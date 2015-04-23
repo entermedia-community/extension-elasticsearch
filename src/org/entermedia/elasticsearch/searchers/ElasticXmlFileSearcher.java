@@ -1,5 +1,6 @@
 package org.entermedia.elasticsearch.searchers;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -22,9 +23,22 @@ import org.openedit.xml.XmlFile;
 
 import com.openedit.OpenEditException;
 import com.openedit.OpenEditRuntimeException;
+import com.openedit.page.Page;
 import com.openedit.page.manage.PageManager;
 import com.openedit.users.User;
+import com.openedit.util.IntCounter;
 import com.openedit.util.PathProcessor;
+
+/**
+ * This is not going to be used much longer
+ * All other classes can just use base
+ * 
+ * Base and Transient are the same
+ * 
+ * @author shanti
+ *
+ */
+
 
 public class ElasticXmlFileSearcher extends BaseElasticSearcher
 {
@@ -33,16 +47,58 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	protected DataArchive fieldDataArchive; //lazy loaded
 	protected String fieldPrefix;
 	protected String fieldDataFileName;
-protected SourcePathCreator fieldSourcePathCreator;
-	
+	protected SourcePathCreator fieldSourcePathCreator;
+	protected PageManager fieldPageManager;
+	protected IntCounter fieldIntCounter;
+//	GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+//	GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+//	if( !found.isContextEmpty())
+
+	public synchronized String nextId()
+	{
+		Lock lock = getLockManager().lock(getCatalogId(), loadCounterPath(), "admin");
+		try
+		{
+			return String.valueOf(getIntCounter().incrementCount());
+		}
+		finally
+		{//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+//			GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+//			if( !found.isContextEmpty())
+
+			getLockManager().release(getCatalogId(), lock);
+		}
+	}
+
+	protected IntCounter getIntCounter()
+	{
+		if (fieldIntCounter == null)
+		{
+			fieldIntCounter = new IntCounter();
+			// fieldIntCounter.setLabelName(getSearchType() + "IdCount");
+			Page prop = getPageManager().getPage(loadCounterPath());
+			File file = new File(prop.getContentItem().getAbsolutePath());
+			file.getParentFile().mkdirs();//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+//			GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+//			if( !found.isContextEmpty())
+
+			fieldIntCounter.setCounterFile(file);
+		}
+		return fieldIntCounter;
+	}
 	public SourcePathCreator getSourcePathCreator()
 	{
 		return fieldSourcePathCreator;
 	}
+
 	public void setSourcePathCreator(SourcePathCreator inSourcePathCreator)
 	{
 		fieldSourcePathCreator = inSourcePathCreator;
-	}
+	}//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+//	GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+//	if( !found.isContextEmpty())
+
+
 	public PageManager getPageManager()
 	{
 		return fieldPageManager;
@@ -54,10 +110,13 @@ protected SourcePathCreator fieldSourcePathCreator;
 	}
 
 	public String getPathToData()
-	{
+	{//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+//		GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+//		if( !found.isContextEmpty())
+
 		return "/WEB-INF/data/" + getCatalogId() + "/" + getPrefix();
 	}
-	
+
 	public String getDataFileName()
 	{
 		if (fieldDataFileName == null)
@@ -66,10 +125,15 @@ protected SourcePathCreator fieldSourcePathCreator;
 		}
 		return fieldDataFileName;
 	}
-	public void setDataFileName(String inName)
+
+	public void setDataFileName(String inName)//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+//	GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+//	if( !found.isContextEmpty())
+
 	{
 		fieldDataFileName = inName;
 	}
+
 	public XmlArchive getXmlArchive()
 	{
 		return fieldXmlArchive;
@@ -79,36 +143,36 @@ protected SourcePathCreator fieldSourcePathCreator;
 	{
 		fieldXmlArchive = inXmlArchive;
 	}
-	
+
 	public Data createNewData()
 	{
-		if( getNewDataName() == null)
+		if (getNewDataName() == null)
 		{
-			
-		
 
-		
 			ElementData data = new ElementData();
-			
+
 			return data;
 		}
-		return (Data)getModuleManager().getBean( getNewDataName());
+		return (Data) getModuleManager().getBean(getNewDataName());
 	}
 
-
 	public void reIndexAll() throws OpenEditException
-	{		
-		
-		if( isReIndexing())
+	{
+
+		if (isReIndexing())
 		{
 			return;
 		}
 		setReIndexing(true);
 		try
 		{
-			buildMapping();
-			//For now just add things to the index. It never deletes
-			deleteAll(null); //This only deleted the index
+			if( fieldConnected )
+			{
+				//Someone is forcing a reindex
+				deleteOldMapping();
+				putMappings();
+
+			}
 			final List buffer = new ArrayList(100);
 			PathProcessor processor = new PathProcessor()
 			{
@@ -119,9 +183,8 @@ protected SourcePathCreator fieldSourcePathCreator;
 						return;
 					}
 					String sourcepath = inContent.getPath();
-					sourcepath = sourcepath.substring(getPathToData().length() + 1,
-							sourcepath.length() - getDataFileName().length() - 1);
-					hydrateData( inContent, sourcepath, buffer);
+					sourcepath = sourcepath.substring(getPathToData().length() + 1, sourcepath.length() - getDataFileName().length() - 1);
+					hydrateData(inContent, sourcepath, buffer);
 					incrementCount();
 				}
 			};
@@ -130,10 +193,15 @@ protected SourcePathCreator fieldSourcePathCreator;
 			processor.setPageManager(getPageManager());
 			processor.setIncludeExtensions("xml");
 			processor.process();
-			bulkUpdateIndex(buffer,null);
-			log.info("reindexed " + processor.getExecCount());
-			flushChanges();			
-		} catch(Exception e){
+			if (processor.getExecCount() > 0)
+			{
+				bulkUpdateIndex(buffer, null);
+				log.info("reindexed " + processor.getExecCount());
+				flushChanges();
+			}
+		}
+		catch (Exception e)
+		{
 			throw new OpenEditRuntimeException(e);
 		}
 		finally
@@ -141,7 +209,13 @@ protected SourcePathCreator fieldSourcePathCreator;
 			setReIndexing(false);
 		}
 	}
+	public void restoreSettings()
+	{
+		getPropertyDetailsArchive().clearCustomSettings(getSearchType());
+		reIndexAll();
+	}
 
+	
 	protected void hydrateData(ContentItem inContent, String sourcepath, List buffer)
 	{
 		String path = inContent.getPath();
@@ -156,19 +230,20 @@ protected SourcePathCreator fieldSourcePathCreator;
 			data.setElement(element);
 			data.setSourcePath(sourcepath);
 			buffer.add(data);
-			if( buffer.size() > 99)
+			if (buffer.size() > 99)
 			{
-				updateIndex(buffer,null);
+				updateIndex(buffer, null);
 			}
 		}
 
 	}
+
 	public String getPrefix()
 	{
-		if(fieldPrefix == null)
+		if (fieldPrefix == null)
 		{
 			fieldPrefix = getPageManager().getPage("/" + getCatalogId()).get("defaultdatafolder");
-			if( fieldPrefix == null)
+			if (fieldPrefix == null)
 			{
 				fieldPrefix = getSearchType();
 			}
@@ -183,18 +258,19 @@ protected SourcePathCreator fieldSourcePathCreator;
 
 	public void delete(Data inData, User inUser)
 	{
-		if(inData instanceof SearchHitData){
-			inData = (Data) searchById(inData.getId());
-		}
-		if( inData == null || inData.getSourcePath() == null || inData.getId() == null )
+//		if (inData instanceof SearchHitData)
+//		{
+//			inData = (Data) searchById(inData.getId());
+//		}
+		if (inData == null || inData.getSourcePath() == null || inData.getId() == null)
 		{
 			throw new OpenEditException("Cannot delete null data.");
 			//return;
 		}
-		Lock lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath(),"admin");
+		Lock lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath(), "admin");
 		try
 		{
-			getDataArchive().delete(inData,inUser);
+			getDataArchive().delete(inData, inUser);
 		}
 		finally
 		{
@@ -208,22 +284,25 @@ protected SourcePathCreator fieldSourcePathCreator;
 	public void saveAllData(Collection<Data> inAll, User inUser)
 	{
 		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
-		for (Object object: inAll)
+		for (Object object : inAll)
 		{
-			Data data = (Data)object;
+			Data data = (Data) object;
 			try
 			{
 				updateElasticIndex(details, data);
 			}
-			catch(Throwable ex)
+			catch (Throwable ex)
 			{
-				log.error("problem saving " + data.getId() , ex);
+				log.error("problem saving " + data.getId(), ex);
 				throw new OpenEditException(ex);
 			}
 		}
-		getDataArchive().saveAllData(inAll, getCatalogId(), getPathToData() + "/" ,inUser);
+		getDataArchive().saveAllData(inAll, getCatalogId(), getPathToData() + "/", inUser);
 	}
 
+	//TODO: Deal with non XML saves
+	
+	
 	public void saveData(Data inData, User inUser)
 	{
 		//update the index
@@ -232,19 +311,21 @@ protected SourcePathCreator fieldSourcePathCreator;
 		Lock lock = null;
 		try
 		{
-			lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath() + "/" + getSearchType(),"admin"); //need to lock the entire file
+			//Why did I want to lock it here? Guess so that the xml file wont feel the need to do it?
+			lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath() + "/" + getSearchType(), "admin"); //need to lock the entire file
 			updateElasticIndex(details, inData);
 			//TODO - we might need the sourcepath saved in the below case.
-			if( inData.getSourcePath() == null)
+			if (inData.getSourcePath() == null)
 			{
-				String sourcepath = getSourcePathCreator().createSourcePath(inData, inData.getId() );
+				String sourcepath = getSourcePathCreator().createSourcePath(inData, inData.getId());
 				inData.setSourcePath(sourcepath);
+				updateElasticIndex(details, inData);
 			}
 			getDataArchive().saveData(inData, inUser, lock);
 		}
-		catch(Throwable ex)
+		catch (Throwable ex)
 		{
-			log.error("problem saving " + inData.getId() , ex);
+			log.error("problem saving " + inData.getId(), ex);
 			throw new OpenEditException(ex);
 		}
 		finally
@@ -252,6 +333,7 @@ protected SourcePathCreator fieldSourcePathCreator;
 			getLockManager().release(getCatalogId(), lock);
 		}
 	}
+
 	protected DataArchive getDataArchive()
 	{
 		if (fieldDataArchive == null)
@@ -266,47 +348,71 @@ protected SourcePathCreator fieldSourcePathCreator;
 
 		return fieldDataArchive;
 	}
+
 	public Object searchByField(String inField, String inValue)
 	{
-		if( inValue == null)
+		if (inValue == null)
 		{
 			throw new OpenEditException("Can't search for null value on field " + inField);
 		}
-		Data newdata =  (Data) super.searchByField(inField, inValue);
-		//load up a real object?
-		String sourcepath = null;
-		String id = null;
-		
-		if( newdata == null)
+		Data newdata = (Data) super.searchByField(inField, inValue);
+		if( inField.equals("id"))
 		{
-			return null;	
-		}
-			
-		
-		if( newdata.getSourcePath() == null)
+			if( getNewDataName() != null )
+			{
+				Data typed = createNewData();		
+				typed.setId(newdata.getId());
+				typed.setName(newdata.getName());
+				typed.setSourcePath(newdata.getSourcePath());
+				typed.setProperties(newdata.getProperties());
+				return typed;
+			}	
+		}	
+		return newdata;
+/*		
+		if( inField.equals("id"))
 		{
-				sourcepath = getSourcePathCreator().createSourcePath(newdata, newdata.getId() );
-				
-		}	else{		
-		sourcepath = newdata.getSourcePath();
-		}
-		id = newdata.getId();
-		
-		String path = getPathToData() + "/" + sourcepath + "/" + getSearchType() + ".xml";
-		XmlArchive archive = getDataArchive().getXmlArchive();
-		XmlFile content = archive.getXml(path, getSearchType());
-		//log.info( newdata.getProperties() );
-		if( !content.isExist() )
+			String sourcepath = null;
+			String id = null;
+	
+			if (newdata == null)
+			{
+				return null;
+			}
+	
+			if (newdata.getSourcePath() == null)
+			{
+				//sourcepath = getSourcePathCreator().createSourcePath(newdata, newdata.getId() );
+				throw new OpenEditException("Sourcepath required for " + getSearchType());
+			}
+			else
+			{
+				sourcepath = newdata.getSourcePath();
+			}
+			id = newdata.getId();
+	
+			String path = getPathToData() + "/" + sourcepath + "/" + getSearchType() + ".xml";
+			XmlArchive archive = getDataArchive().getXmlArchive();
+			XmlFile content = archive.getXml(path, getSearchType());
+			//log.info( newdata.getProperties() );
+			if (!content.isExist())
+			{
+				//throw new OpenEditException("Missing data file " + path);
+				return null;
+			}
+			Element element = content.getElementById(id);
+	
+			ElementData realdata = (ElementData) createNewData();
+			realdata.setElement(element);
+			realdata.setSourcePath(sourcepath);
+	
+			return realdata;
+		}	
+		else
 		{
-			//throw new OpenEditException("Missing data file " + path);
-			return null;
+			return newdata;
 		}
-		Element element = content.getElementById(id);
-		
-		ElementData realdata = (ElementData)createNewData();
-		realdata.setElement(element);
-		realdata.setSourcePath(sourcepath);
-
-		return realdata;
+	}
+*/	
 	}
 }

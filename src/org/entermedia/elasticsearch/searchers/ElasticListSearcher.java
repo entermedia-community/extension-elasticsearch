@@ -12,6 +12,7 @@ import org.openedit.Data;
 import org.openedit.data.DataArchive;
 import org.openedit.data.PropertyDetails;
 import org.openedit.data.PropertyDetailsArchive;
+import org.openedit.data.Reloadable;
 import org.openedit.xml.ElementData;
 import org.openedit.xml.XmlFile;
 import org.openedit.xml.XmlSearcher;
@@ -21,7 +22,7 @@ import com.openedit.hittracker.HitTracker;
 import com.openedit.page.manage.PageManager;
 import com.openedit.users.User;
 
-public class ElasticListSearcher extends BaseElasticSearcher
+public class ElasticListSearcher extends BaseElasticSearcher implements Reloadable
 {
 	protected Log log = LogFactory.getLog(ElasticListSearcher.class);
 	protected DataArchive fieldDataArchive; //lazy loaded
@@ -40,7 +41,7 @@ public class ElasticListSearcher extends BaseElasticSearcher
 			PropertyDetailsArchive newarchive = getSearcherManager().getPropertyDetailsArchive(getCatalogId());
 			fieldXmlSearcher.setPropertyDetailsArchive(newarchive);
 		}
-		fieldXmlSearcher.setCacheManager(null);//Important
+		//fieldXmlSearcher.setCacheManager(null);//Important cb: Why in the world would you want always create new caches? 
 		return fieldXmlSearcher;
 	}
 
@@ -48,15 +49,7 @@ public class ElasticListSearcher extends BaseElasticSearcher
 		fieldXmlSearcher = inXmlSearcher;
 	}
 
-	public PageManager getPageManager()
-	{
-		return fieldPageManager;
-	}
-
-	public void setPageManager(PageManager pageManager)
-	{
-		fieldPageManager = pageManager;
-	}
+	
 
 	
 	
@@ -96,20 +89,28 @@ public class ElasticListSearcher extends BaseElasticSearcher
 		try
 		{
 			//For now just add things to the index. It never deletes
-			deleteAll(null); //This only deleted the index
-			
+			if( fieldConnected )
+			{
+				//Someone is forcing a reindex
+				deleteOldMapping();
+				putMappings();
+
+			}
 			 
-			
+			getXmlSearcher().clearIndex();
 			HitTracker settings = getXmlSearcher().getAllHits();
+			Collection toindex = new ArrayList();
 			
-				for (Iterator iterator = settings.iterator(); iterator.hasNext();) 
+			for (Iterator iterator = settings.iterator(); iterator.hasNext();) 
+			{
+				Data data = (Data)iterator.next();					
+				toindex.add(data); //loadData? nah
+				if( toindex.size() > 100)
 				{
-					Data data = (Data)iterator.next();					
-					Collection toindex = new ArrayList();
-					toindex.add(data);
-					updateIndex(toindex,null);		
+					updateIndex(toindex,null);
 				}
-		
+			}
+			updateIndex(toindex,null);
 			
 			flushChanges();			
 		}
@@ -119,7 +120,12 @@ public class ElasticListSearcher extends BaseElasticSearcher
 		}
 	}
 
-	
+	public void restoreSettings()
+	{
+		getPropertyDetailsArchive().clearCustomSettings(getSearchType());
+		reIndexAll();
+	}
+
 	
 
 	public void delete(Data inData, User inUser)
@@ -201,7 +207,8 @@ public class ElasticListSearcher extends BaseElasticSearcher
 	
 	public Object searchById(String inId)
 	{
-		return getXmlSearcher().searchById(inId);
+		//return getXmlSearcher().searchById(inId);
+		return super.searchById(inId); //Dont ever read from XML, just write
 	}
 	
 	

@@ -1,12 +1,11 @@
 package org.entermedia.elasticsearch.searchers;
 
-import org.apache.lucene.document.Document;
 import org.openedit.Data;
 import org.openedit.data.PropertyDetails;
 import org.openedit.entermedia.orders.Order;
 import org.openedit.entermedia.orders.OrderManager;
 
-public class ElasticOrderSearcher extends ElasticXmlFileSearcher
+public class ElasticOrderSearcher extends BaseElasticSearcher
 {
 	
 	protected OrderManager fieldOrderManager;
@@ -34,9 +33,4 @@ public class ElasticOrderSearcher extends ElasticXmlFileSearcher
 		super.updateElasticIndex(details, inData);
 	}
 	
-	@Override
-	public Data createNewData() {
-		// TODO Auto-generated method stub
-		return super.createNewData();
-	}
 }

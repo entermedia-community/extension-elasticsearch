@@ -20,6 +20,9 @@ unziper.unzip(  tmp + "/ROOT.war",  tmp );
 log.add("3. REPLACE LIBS");
 var files = new FileUtils();
 files.deleteMatch( web + "/lib/extension-elasticsearch*.jar");
+
+files.deleteMatch( web + "/lib/antlr-*.jar");
+files.deleteMatch( web + "/lib/asm-*.jar");
 files.deleteMatch( web + "/lib/jline-*.jar");
 files.deleteMatch( web + "/lib/jna-*.jar");
 files.deleteMatch( web + "/lib/jts-*.jar");
@@ -28,31 +31,13 @@ files.deleteMatch( web + "/lib/lucene-grouping-*.jar");
 files.deleteMatch( web + "/lib/lucene-highlighter-*.jar");
 files.deleteMatch( web + "/lib/lucene-memory-*.jar");
 files.deleteMatch( web + "/lib/lucene-misc-*.jar");
-files.deleteMatch( web + "/lib/lucene-queries-*.jar");
+files.deleteMatch( web + "/lib/lucene-expressions-*.jar");
 files.deleteMatch( web + "/lib/lucene-sandbox-*.jar");
 files.deleteMatch( web + "/lib/lucene-spatial-*.jar");
-files.deleteMatch( web + "/lib/lucene-suggest-*.jar");
-
-
-
 files.deleteMatch( web + "/lib/spatial4j-*.jar");
 
 
-files.copyFileByMatch( tmp + "/lib/extension-elasticsearch*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/jna-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/jts-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/elasticsearch-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-grouping-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-highlighter-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-memory-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-misc-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-queries-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-sandbox-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-spatial-*.jar", web + "/lib/");
-files.copyFileByMatch( tmp + "/lib/lucene-suggest-*.jar", web + "/lib/");
-
-
-files.copyFileByMatch( tmp + "/lib/spatial4j-*.jar", web + "/lib/");
+files.copyFileByMatch( tmp + "/lib/*", web + "/lib/");
 
 
 

@@ -10,11 +10,11 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.dom4j.tree.BaseElement;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.entermedia.locks.Lock;
 import org.openedit.Data;
 import org.openedit.data.PropertyDetails;
-import org.openedit.data.PropertyDetailsArchive;
 import org.openedit.users.UserSearcher;
 
 import com.openedit.OpenEditException;
@@ -23,7 +23,7 @@ import com.openedit.hittracker.SearchQuery;
 import com.openedit.users.BaseUser;
 import com.openedit.users.Group;
 import com.openedit.users.User;
-import com.openedit.users.UserManager;
+import com.openedit.users.filesystem.XmlUserArchive;
 
 /**
  *
@@ -31,7 +31,7 @@ import com.openedit.users.UserManager;
 public class ElasticUserSearcher extends BaseElasticSearcher implements UserSearcher
 {
 	private static final Log log = LogFactory.getLog(ElasticUserSearcher.class);
-	protected UserManager fieldUserManager;
+	protected XmlUserArchive fieldXmlUserArchive;
 
 	@Override
 	public Data createNewData()
@@ -39,50 +39,38 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		BaseUser user = new BaseUser();
 		return user;
 	}
-//	public HitTracker getAllHits(WebPageRequest inReq)
-//	{
-//		SearchQuery query = createSearchQuery();
-//		query.addMatches("enabled", "true");
-//		query.addMatches("enabled", "false");
-//		query.addSortBy("name");
-//		query.setAndTogether(false);
-//		if( inReq == null)
-//		{
-//			return search(query);
-//		}
-//		else
-//		{
-//			return cachedSearch(inReq,query);
-//		}
-//		//return new ListHitTracker().setList(getCustomerArchive().)
-//	}
 
-	public UserManager getUserManager()
-	{
-		return fieldUserManager;
+	
+	public XmlUserArchive getXmlUserArchive() {
+		if (fieldXmlUserArchive == null) {
+			fieldXmlUserArchive = (XmlUserArchive) getModuleManager().getBean(
+					getCatalogId(), "xmlUserArchive");
+
+		}
+
+		return fieldXmlUserArchive;
 	}
-
-	public void setUserManager(UserManager inUserManager)
-	{
-		fieldUserManager = inUserManager;
-	}
-
 	
 	public void reIndexAll() throws OpenEditException
 	{
 		log.info("Reindex of customer users directory");
 		try
 		{
+			if( fieldConnected )
+			{
+				deleteOldMapping();
+				putMappings();
+
+			}
 			PropertyDetails details = getPropertyDetailsArchive().getPropertyDetails(getSearchType());
-			Collection usernames = getUserManager().listUserNames();
+			Collection usernames = getXmlUserArchive().listUserNames();
 			if( usernames != null)
 			{
-				deleteAll(null);
 				List users = new ArrayList();
 				for (Iterator iterator = usernames.iterator(); iterator.hasNext();)
 				{
 					String userid = (String) iterator.next();
-					User data = getUserManager().getUser(userid);
+					User data = getXmlUserArchive().getUser(userid);
 					users.add(data);
 					if( users.size() > 50)
 					{
@@ -99,21 +87,17 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 		}
 
 	}
+	public void restoreSettings()
+	{
+		getPropertyDetailsArchive().clearCustomSettings(getSearchType());
+		reIndexAll();
+	}
 
+	
 	//TODO: Replace with in-memory copy for performance reasons?
 	public Object searchById(String inId)
-	{
-		
-//		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/users/" + inId + ".xml","admin");
-//		try
-//		{
-			return getUserManager().loadUser(inId);
-//		}
-//		finally
-//		{
-//			getLockManager().release(getCatalogId(), lock);
-//		}
-
+	{		
+		return getXmlUserArchive().loadUser(inId);
 	}
 
 	/* (non-Javadoc)
@@ -130,7 +114,7 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 	 */
 	public User getUserByEmail(String inEmail)
 	{
-		User user =  getUserManager().getUserByEmail(inEmail);
+		User user =  getXmlUserArchive().getUserByEmail(inEmail);
 		if( user != null)
 		{
 			return getUser(user.getId());
@@ -161,31 +145,14 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 
 	public void saveData(Data inData, User inUser)
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/users/" + inData.getId() + ".xml","admin");
-		try
-		{
-			getUserManager().saveUser((User)inData);
-			super.saveData(inData, inUser); //update the index
-		}
-		finally
-		{
-			getLockManager().release(getCatalogId(), lock);
-		}
-
+		getXmlUserArchive().saveUser((User)inData);
+		super.saveData(inData, inUser); //update the index
 	}
 	
 	public void delete(Data inData, User inUser)
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), "/WEB-INF/data/system/users/" + inData.getId() + ".xml","admin");
-		try
-		{
-			getUserManager().deleteUser((User)inData);
-			super.delete(inData, inUser); //delete the index
-		}
-		finally
-		{
-			getLockManager().release(getCatalogId(), lock);
-		}
+		getXmlUserArchive().deleteUser((User)inData);
+		super.delete(inData, inUser); //delete the index
 	}
 	
 	protected void updateIndex(XContentBuilder inContent, Data inData, PropertyDetails inDetails)
@@ -214,31 +181,6 @@ public class ElasticUserSearcher extends BaseElasticSearcher implements UserSear
 	}
 
 	
-	public void setCatalogId(String inCatalogId)
-	{
-		//This can be removed in the future once we track down a singleton bug
-		if( inCatalogId != null && !inCatalogId.equals("system"))
-		{
-			OpenEditException ex = new OpenEditException("Invalid catalogid catalogid=" + inCatalogId );
-			ex.printStackTrace();
-			log.error( ex);
-			
-			//throw ex;
-		}
-		
-		super.setCatalogId("system");
-		if(fieldPropertyDetailsArchive != null){
-		   fieldPropertyDetailsArchive.setCatalogId("system");
-		   
-		}
-	}
-	public PropertyDetailsArchive getPropertyDetailsArchive()
-	{
-		if (fieldPropertyDetailsArchive == null)
-		{
-			fieldPropertyDetailsArchive = (PropertyDetailsArchive) getSearcherManager().getModuleManager().getBean("system", "propertyDetailsArchive");
-		}
-		fieldPropertyDetailsArchive.setCatalogId("system");
-		return fieldPropertyDetailsArchive;
-	}
+	
+
 }

@@ -1,38 +1,46 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 
 <beans>
 
-	<bean id="clientPool" class="org.entermedia.elasticsearch.ClientPool">
-		<property name="nodeManager">
-			<ref bean="nodeManager" />
-		</property>
-	
-	</bean>
-
-	<bean id="elasticDataSearcher"
-		class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher"
-		scope="prototype">
+	<bean id="nodeManager" class="org.entermedia.elasticsearch.ElasticNodeManager">
 		<property name="pageManager">
 			<ref bean="pageManager" />
-		</property>
-		<property name="xmlArchive">
-			<ref bean="xmlArchive" />
-		</property>
-		<property name="moduleManager">
-			<ref bean="moduleManager" />
-		</property>
-		<property name="clientPool">
-			<ref bean="clientPool" />
-		</property>
-		<property name="lockManager">
-			<ref bean="elasticLockManager" />
 		</property>
 		<property name="searcherManager">
 			<ref bean="searcherManager" />
 		</property>
-				<property name="sourcePathCreator"><ref bean="chunkySourcePathCreator"/></property>		
-		
+		<property name="xmlUtil">
+			<ref bean="xmlUtil" />
+		</property>
+		<property name="lockManager">
+			<ref bean="lockManager" />
+		</property>
+		<property name="webServer"><ref bean="WebServer" /></property>		
+	</bean>
+
+<!-- Remove this one day -->
+	<bean id="elasticTransientSearcher"	class="org.entermedia.elasticsearch.searchers.BaseElasticSearcher"	scope="prototype">
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
+		</property>
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>		
+	</bean>
+
+	<bean id="elasticDataSearcher"	class="org.entermedia.elasticsearch.searchers.BaseElasticSearcher"	scope="prototype">
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
+		</property>
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>		
 	</bean>
 
 
@@ -48,6 +56,10 @@
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>		
+		
 	</bean>
 
 	<bean id="elasticAssetDataConnector"
@@ -62,14 +74,14 @@
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
-		<property name="clientPool">
-			<ref bean="clientPool" />
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
 		</property>
 		<property name="assetSecurityArchive">
 			<ref bean="assetSecurityDataArchive" />
 		</property>
-		<property name="lockManager">
-			<ref bean="elasticLockManager" />
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
 		</property>				
 		<property name="dataFileName">
 			<value>data.xml</value>
@@ -77,55 +89,56 @@
 	</bean>
 
 	<bean id="elasticUserSearcher"
-		class="org.entermedia.elasticsearch.searchers.ElasticUserSearcher">
-		<property name="clientPool">
-			<ref bean="clientPool" />
+		class="org.entermedia.elasticsearch.searchers.ElasticUserSearcher"
+		scope="prototype"
+		>
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
 		</property>
-		<property name="userManager">
-			<ref bean="userManager" />
+			
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>	
+				
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
 		</property>
-		<property name="pageManager">
-			<ref bean="pageManager" />
-		</property>
-		<property name="lockManager">
-			<ref bean="elasticLockManager" />
-		</property>		
+			
 	
 	</bean>
 	<bean id="elasticGroupSearcher"
-		class="org.entermedia.elasticsearch.searchers.ElasticGroupSearcher">
-		<property name="clientPool">
-			<ref bean="clientPool" />
+		class="org.entermedia.elasticsearch.searchers.ElasticGroupSearcher"
+		scope="prototype"
+		>
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
 		</property>
-		<property name="userManager">
-			<ref bean="userManager" />
-		</property>
-		<property name="pageManager">
-			<ref bean="pageManager" />
-		</property>
-		<property name="lockManager">
-			<ref bean="elasticLockManager" />
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
 		</property>		
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
 		
 	</bean>
 
 	<bean id="elasticLockSearcher" class="org.entermedia.elasticsearch.searchers.LockSearcher" scope="prototype">
-		<property name="clientPool">
-			<ref bean="clientPool" />
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
 		</property>
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
-		<property name="pageManager">
-			<ref bean="pageManager" />
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
 		</property>
 		<property name="newDataName"><value>lock</value></property>
 		<property name="checkVersions"><value>true</value></property>
 		<property name="clearIndexOnStart"><value>true</value></property>
 		
 	</bean>
-
-	<bean id="elasticLockManager" class="org.openedit.entermedia.cluster.ClusterLockManager" >
+<!-- 
+	<bean id="lockManager" class="org.openedit.entermedia.cluster.ClusterLockManager" >
 		<property name="searcherManager">
 			<ref bean="searcherManager" />
 		</property>
@@ -133,20 +146,8 @@
 			<ref bean="nodeManager" />
 		</property>
 	</bean>
-
-	<bean id="nodeManager" class="org.openedit.entermedia.cluster.NodeManager" >
-		<property name="pageManager">
-			<ref bean="pageManager" />
-		</property>
-		<property name="searcherManager">
-			<ref bean="searcherManager" />
-		</property>
-		<property name="xmlUtil">
-			<ref bean="xmlUtil" />
-		</property>
-	</bean>
-
-    <bean id="elasticUserProfileSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" scope="prototype">
+ -->
+    <bean id="elasticXmlUserProfileSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" scope="prototype">
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
@@ -156,23 +157,30 @@
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
-		<property name="clientPool">
-			<ref bean="clientPool" />
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
 		</property>
-		<property name="lockManager">
-			<ref bean="elasticLockManager" />
-		</property>		
 		<property name="searcherManager">
 			<ref bean="searcherManager" />
 		</property>
-								<property name="sourcePathCreator"><ref bean="chunkySourcePathCreator"/></property>		
-		
+		<property name="sourcePathCreator"><ref bean="chunkySourcePathCreator"/></property>		
 		<property name="prefix"><value>users</value></property>
 		<property name="newDataName"><value>userProfile</value></property>
 	</bean>
-
+	<bean id="elasticUserProfileSearcher" class="org.entermedia.elasticsearch.searchers.BaseElasticSearcher" scope="prototype">
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>
+		<property name="newDataName"><value>userProfile</value></property>		
+	</bean>
 	
-	<bean id="elasticOrderItemSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" scope="prototype">
+	<bean id="elasticXmlOrderItemSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" scope="prototype">
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
@@ -182,73 +190,54 @@
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
-		<property name="clientPool">
-			<ref bean="clientPool" />
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
 		</property>
-		<property name="lockManager">
-			<ref bean="elasticLockManager" />
-		</property>		
 		<property name="searcherManager">
 			<ref bean="searcherManager" />
 		</property>
-						<property name="sourcePathCreator"><ref bean="chunkySourcePathCreator"/></property>		
-
+		<property name="sourcePathCreator"><ref bean="chunkySourcePathCreator"/></property>		
 		<property name="prefix"><value>assets</value></property>
-
 	</bean>
 
-	<!-- Why is this a LockSearcher? So I can delete the index on boot up -->
-	<bean id="elasticTransientSearcher" class="org.entermedia.elasticsearch.searchers.LockSearcher" scope="prototype">
-		<property name="clientPool">
-			<ref bean="clientPool" />
+	<bean id="elasticOrderItemSearcher" class="org.entermedia.elasticsearch.searchers.BaseElasticSearcher" scope="prototype">
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
 		</property>
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
-		<property name="pageManager">
-			<ref bean="pageManager" />
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
 		</property>
-		<property name="checkVersions"><value>false</value></property>
-		<property name="clearIndexOnStart"><value>false</value></property>
 	</bean>
-	
+
+
 	<bean id="elasticListSearcher" class="org.entermedia.elasticsearch.searchers.ElasticListSearcher" scope="prototype">
-		<property name="pageManager">
-			<ref bean="pageManager" />
-		</property>
 		<property name="xmlSearcher">
 			<ref bean="xmlSearcher" />
 		</property>
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
-		<property name="clientPool">
-			<ref bean="clientPool" />
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
 		</property>
-		<property name="lockManager">
-			<ref bean="elasticLockManager" />
-		</property>		
 		<property name="searcherManager">
 			<ref bean="searcherManager" />
 		</property>
 	</bean>
 
 	<bean id="elasticFolderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticListSearcher" scope="prototype">
-		<property name="pageManager">
-			<ref bean="pageManager" />
-		</property>
 		<property name="xmlSearcher">
 			<ref bean="xmlFolderSearcher" />
 		</property>
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
-		<property name="clientPool">
-			<ref bean="clientPool" />
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
 		</property>
-		<property name="lockManager">
-			<ref bean="elasticLockManager" />
-		</property>		
 		<property name="searcherManager">
 			<ref bean="searcherManager" />
 		</property>
@@ -256,20 +245,18 @@
 
 
 <bean id="elasticCategorySearcher" class="org.entermedia.elasticsearch.categories.ElasticCategorySearcher" scope="prototype">
-		<property name="clientPool">
-			<ref bean="clientPool" />
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
 		</property>
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
-		<property name="pageManager">
-			<ref bean="pageManager" />
-		</property>
-
 		<property name="categoryArchive">
 			<ref bean="searcherCategoryArchive" />
 		</property>
-
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>
 		<property name="newDataName"><value>elasticCategory</value></property>
 		<property name="checkVersions"><value>false</value></property>
 	</bean>
@@ -288,39 +275,51 @@
 		
 	</bean>
 	
-	
-<bean id="elasticOrderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticOrderSearcher" scope="prototype">
-		<property name="clientPool">
-			<ref bean="clientPool" />
+	<bean id="elasticOrderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticOrderSearcher" scope="prototype">
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
 		</property>
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>		
+		<property name="orderManager"><ref bean="orderManager" /></property>
+		<property name="newDataName"><value>order</value></property>
+    </bean>
+	
+	
+<bean id="elasticXmlOrderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlOrderSearcher" scope="prototype">
 		<property name="pageManager">
 			<ref bean="pageManager" />
 		</property>
 
-		<property name="lockManager">
-			<ref bean="elasticLockManager" />
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
 		</property>		
-				<property name="orderManager"><ref bean="orderManager" /></property>
-				<property name="xmlArchive"><ref bean="xmlArchive" /></property>
-		
+		<property name="orderManager"><ref bean="orderManager" /></property>
+		<property name="xmlArchive"><ref bean="xmlArchive" /></property>
 		<property name="newDataName"><value>order</value></property>
-		
-	</bean>
+</bean>
 
 
 	<bean id="assetAutoCompleteElasticSearcher" class="org.entermedia.elasticsearch.searchers.ElasticAutoCompleteSearcher" scope="prototype">
-		<property name="clientPool">
-			<ref bean="clientPool" />
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
 		</property>
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
-		<property name="pageManager">
-			<ref bean="pageManager" />
-		</property>
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>		
 		<property name="checkVersions"><value>false</value></property>
 	</bean>
 	
@@ -329,14 +328,14 @@
 	<bean id="elasticLogSearcher"
 		class="org.entermedia.elasticsearch.searchers.ElasticLogSearcher"
 		scope="prototype">
-		<property name="clientPool">
-			<ref bean="clientPool" />
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
 		</property>
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
-		<property name="pageManager">
-			<ref bean="pageManager" />
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
 		</property>
 		<property name="checkVersions"><value>false</value></property>
 						

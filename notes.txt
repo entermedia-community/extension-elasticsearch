@@ -1,3 +1,76 @@
+curl -XPOST 'http://localhost:9200/stopsmoke_catalog/librarycollectionasset/_search' -d 
+'{
+  "query" : {
+    "match" : {
+      "librarycollection" : {
+        "query" : "AUzVCKLTt_MEqGwaYpLY",
+        "type" : "phrase_prefix",
+        "max_expansions" : 10
+      }
+    }
+  },
+  "facets" : {
+    "librarycollection" : {
+      "terms" : {
+        "field" : "librarycollection",
+        "size" : 10
+      }
+    }
+  }
+}' | python -mjson.tool
+
+
+
+curl -XPOST 'http://localhost:9200/stopsmoke_catalog/librarycollectionasset/_search' -d '{
+  "query" : {
+    "bool" : {
+      "should" : {
+        "term" : {
+          "librarycollection" : "AUzVCKLTt_MEqGwaYpLY"
+        }
+      }
+    }
+  },
+  "facets" : {
+    "librarycollection" : {
+      "terms" : {
+        "field" : "librarycollection",
+        "size" : 10
+      }
+    }
+  }
+}' | python -mjson.tool
+
+
+curl -XPOST 'http://localhost:9200/stopsmoke_catalog/librarycollectionasset/_search' -d '{
+  "query" : {
+    "bool" : {
+      "should" : {
+        "match" : {
+          "librarycollection" : {
+            "query" : "AUzVCKLTt_MEqGwaYpLY",
+            "type" : "boolean"
+          }
+        }
+      }
+    }
+  },
+  "sort" : [ {
+    "assetaddeddate" : {
+      "order" : "desc",
+      "ignore_unmapped" : true
+    }
+  } ],
+  "facets" : {
+    "librarycollection" : {
+      "terms" : {
+        "field" : "librarycollection",
+        "size" : 10
+      }
+    }
+  }
+}' | python -mjson.tool
+
 
 curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search' -d '
 {"query" :
@@ -62,6 +135,16 @@ curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search' -d '
   }
 }
 }' | python -mjson.tool
+
+curl -XGET  'http://127.0.0.1:9200/stopsmoke_catalog/asset/_mapping?pretty=true'  | python -mjson.tool
+
+curl -XGET  'http://127.0.0.1:9200/entermedia_catalogs_testcatalog/asset/_mapping?pretty=true'  | python -mjson.tool
+
+curl -XGET  'http://127.0.0.1:9200/entermedia_catalogs_testcatalog/librarycollectionasset/_mapping?pretty=true'  | python -mjson.tool
+
+
+curl -XGET  'http://127.0.0.1:9200/entermedia_catalogs_testcatalog/librarycollectionasset/_search/?size=1000&pretty=1'  | python -mjson.tool
+
 
 curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search?q=category:index' | python -mjson.tool
 

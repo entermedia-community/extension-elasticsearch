@@ -52,6 +52,12 @@
       <fileset dir="./lib" includes="extension-elasticsearch**.jar"/>
     </delete>
   	<delete>
+      <fileset dir="./lib" includes="antlr**.jar"/>
+    </delete>
+  	<delete>
+      <fileset dir="./lib" includes="asm**.jar"/>
+    </delete>
+  	<delete>
       <fileset dir="./lib" includes="jline-**.jar"/>
     </delete>
   	<delete>
@@ -77,7 +83,7 @@
   	    </delete>
   		
   	<delete>
-      <fileset dir="./lib" includes="lucene-queries-**.jar"/>
+      <fileset dir="./lib" includes="lucene-expressions-**.jar"/>
     </delete>
 	<delete>
       <fileset dir="./lib" includes="lucene-sandbox-**.jar"/>

@@ -1,11 +1,12 @@
 package org.entermedia.elasticsearch.searchers;
 
-import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -20,6 +21,8 @@ import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsReques
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
+import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
+import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
@@ -59,11 +62,9 @@ import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.transport.RemoteTransportException;
-import org.entermedia.elasticsearch.ClientPool;
 import org.entermedia.elasticsearch.ElasticHitTracker;
+import org.entermedia.elasticsearch.ElasticNodeManager;
 import org.entermedia.elasticsearch.ElasticSearchQuery;
-import org.entermedia.locks.Lock;
-import org.entermedia.locks.LockManager;
 import org.openedit.Data;
 import org.openedit.data.BaseData;
 import org.openedit.data.BaseSearcher;
@@ -72,29 +73,37 @@ import org.openedit.data.PropertyDetails;
 import org.openedit.util.DateStorageUtil;
 
 import com.openedit.OpenEditException;
-import com.openedit.Shutdownable;
 import com.openedit.WebPageRequest;
 import com.openedit.hittracker.FilterNode;
 import com.openedit.hittracker.HitTracker;
 import com.openedit.hittracker.SearchQuery;
 import com.openedit.hittracker.Term;
-import com.openedit.page.Page;
-import com.openedit.page.manage.PageManager;
 import com.openedit.users.User;
 import com.openedit.util.IntCounter;
 
-public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdownable
+public class BaseElasticSearcher extends BaseSearcher
 {
+
 	private static final Log log = LogFactory.getLog(BaseElasticSearcher.class);
-	protected ClientPool fieldClientPool;
+	protected ElasticNodeManager fieldElasticNodeManager;
 	protected boolean fieldConnected = false;
-	protected IntCounter fieldIntCounter;
-	protected PageManager fieldPageManager;
-	protected LockManager fieldLockManager;
+	//protected IntCounter fieldIntCounter;
+	//protected PageManager fieldPageManager;
+	//protected LockManager fieldLockManager;
 	protected boolean fieldAutoIncrementId;
 	protected boolean fieldReIndexing;
 	protected boolean fieldCheckVersions;
 	public static final Pattern VALUEDELMITER = Pattern.compile("\\s*\\|\\s*");
+
+	public ElasticNodeManager getElasticNodeManager()
+	{
+		return fieldElasticNodeManager;
+	}
+
+	public void setElasticNodeManager(ElasticNodeManager inElasticNodeManager)
+	{
+		fieldElasticNodeManager = inElasticNodeManager;
+	}
 
 	public boolean isCheckVersions()
 	{
@@ -126,16 +135,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		fieldAutoIncrementId = inAutoIncrementId;
 	}
 
-	public PageManager getPageManager()
-	{
-		return fieldPageManager;
-	}
-
-	public void setPageManager(PageManager inPageManager)
-	{
-		fieldPageManager = inPageManager;
-	}
-
 	public boolean isConnected()
 	{
 		return fieldConnected;
@@ -144,16 +143,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	public void setConnected(boolean inConnected)
 	{
 		fieldConnected = inConnected;
-	}
-
-	public ClientPool getClientPool()
-	{
-		return fieldClientPool;
-	}
-
-	public void setClientPool(ClientPool inClientPool)
-	{
-		fieldClientPool = inClientPool;
 	}
 
 	public SearchQuery createSearchQuery()
@@ -170,7 +159,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 	{
 		connect();
 
-		return getClientPool().getClient();
+		return getElasticNodeManager().getClient();
 	}
 
 	protected String toId(String inId)
@@ -223,8 +212,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			addSorts(inQuery, search);
 			addFacets(inQuery, search);
 
-			json = search.toString();
-
 			ElasticHitTracker hits = new ElasticHitTracker(search, terms);
 
 			if (inQuery.hasFilters())
@@ -239,7 +226,15 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 
 			long end = System.currentTimeMillis() - start;
 
-			log.info(hits.size() + " hits query: " + toId(getCatalogId()) + "/" + getSearchType() + "/_search' -d '" + json + "' sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds]");
+			if (log.isDebugEnabled())
+			{
+				json = search.toString();
+				log.info(hits.size() + " hits query: " + toId(getCatalogId()) + "/" + getSearchType() + "/_search' -d '" + json + "' sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds]");
+			}
+			else
+			{
+				log.info("query: " + toId(getCatalogId()) + "/" + getSearchType() + " " + inQuery.toQuery() + " sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds]");
+			}
 
 			return hits;
 		}
@@ -320,21 +315,16 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				{
 					return;
 				}
-				AdminClient admin = getClientPool().getClient().admin();
-				boolean reindex = false;
+				boolean runmapping = true;
+
+				AdminClient admin = getElasticNodeManager().getClient().admin();
 				try
 				{
 					String indexid = toId(getCatalogId());
 					String cluster = indexid;
 
-					ClusterHealthResponse health = admin.cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet(); // yellow
-																																	// works
-																																	// when
-																																	// you
-																																	// only
-																																	// have
-																																	// one
-																																	// node
+					ClusterHealthResponse health = admin.cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+
 					if (health.isTimedOut())
 					{
 						throw new OpenEditException("Could not get yellow status");
@@ -349,7 +339,12 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 						{
 							XContentBuilder jsonBuilder = XContentFactory.jsonBuilder();
 
-							CreateIndexResponse newindexres = admin.indices().prepareCreate(cluster).setSettings(ImmutableSettings.settingsBuilder().loadFromSource(jsonBuilder.startObject().startObject("analysis").startObject("filter").startObject("snowball").field("type", "snowball").field("language", "English").endObject().endObject().startObject("analyzer").startObject("lowersnowball").field("type", "custom").field("tokenizer", "standard")
+							CreateIndexResponse newindexres = admin.indices().prepareCreate(cluster).setSettings(ImmutableSettings.settingsBuilder().loadFromSource(
+									jsonBuilder.startObject().startObject("analysis").
+																startObject("filter").
+																startObject("snowball").field("type", "snowball").field("language", "English").endObject().endObject().
+																startObject("analyzer").
+																	startObject("lowersnowball").field("type", "custom").field("tokenizer", "standard")
 							// .field("tokenizer",
 							// "keyword")
 							.field("filter", new String[] { "lowercase", "snowball" })
@@ -372,7 +367,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 
 					ClusterState cs = admin.cluster().prepareState().setIndices(indexid).execute().actionGet().getState();
 					IndexMetaData data = cs.getMetaData().index(indexid);
-					boolean runmapping = true;
 					if (data != null)
 					{
 						if (data.getMappings() != null)
@@ -386,18 +380,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 					}
 					if (runmapping)
 					{
-						XContentBuilder source = buildMapping();
-						log.info(cluster + "/" + getSearchType() + "/_mapping' -d '" + source.string() + "'");
-						PutMappingRequest req = Requests.putMappingRequest(cluster).type(getSearchType());
-						req.source(source);
-						PutMappingResponse pres = admin.indices().putMapping(req).actionGet();
-						if (pres.isAcknowledged())
-						{
-							log.info("mapping applied " + getSearchType());
-							reindex = true;
-							getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
-						}
-
+						putMappings();
 					}
 					RefreshRequest req = Requests.refreshRequest(indexid);
 					RefreshResponse rres = admin.indices().refresh(req).actionGet();
@@ -412,7 +395,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				{
 					log.error("index could not be created ", ex);
 				}
-				if (reindex)
+				if (runmapping)
 				{
 					try
 					{
@@ -428,134 +411,218 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 		}
 	}
-
-	protected XContentBuilder buildMapping() throws Exception
+	protected void deleteOldMapping()
 	{
-		XContentBuilder jsonBuilder = XContentFactory.jsonBuilder();
-		XContentBuilder jsonproperties = jsonBuilder.startObject().startObject(getSearchType());
-		jsonproperties = jsonproperties.startObject("properties");
-		List props = getPropertyDetails().findIndexProperties();
-		if (props.size() == 0)
+		AdminClient admin = getElasticNodeManager().getClient().admin();
+		String indexid = toId(getCatalogId());
+		//XContentBuilder source = buildMapping();
+
+		DeleteMappingRequest dreq = Requests.deleteMappingRequest(indexid).types(getSearchType());
+		DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
+		if (dpres.isAcknowledged())
 		{
-			throw new OpenEditException("No fields defined for " + getSearchType());
+			log.info("Cleared out the mapping " + getSearchType() );
+			getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
 		}
-		// https://github.com/elasticsearch/elasticsearch/pull/606
-		// https://gist.github.com/870714
-		/*
-		 * index.analysis.analyzer.lowercase_keyword.type=custom
-		 * index.analysis.analyzer.lowercase_keyword.filter.0=lowercase
-		 * index.analysis.analyzer.lowercase_keyword.tokenizer=keyword
-		 */
+	}
+	protected void putMappings()
+	{
+		AdminClient admin = getElasticNodeManager().getClient().admin();
+		String indexid = toId(getCatalogId());
 
-		jsonproperties = jsonproperties.startObject("_all");
-		jsonproperties = jsonproperties.field("store", "false");
-		jsonproperties = jsonproperties.field("analyzer", "lowersnowball");
-		jsonproperties = jsonproperties.field("index_analyzer", "lowersnowball");
-		jsonproperties = jsonproperties.field("search_analyzer", "lowersnowball"); // lower
-																					// case
-																					// does
-																					// not
-																					// seem
-																					// to
-																					// work
-		jsonproperties = jsonproperties.field("index", "analyzed");
-		jsonproperties = jsonproperties.field("type", "string");
-		jsonproperties = jsonproperties.endObject();
-
-		// Add in namesorted
-		if (getPropertyDetails().contains("name") && !getPropertyDetails().contains("namesorted"))
+		XContentBuilder source = buildMapping();
+		try
 		{
-			props = new ArrayList(props);
-			PropertyDetail detail = new PropertyDetail();
-			detail.setId("namesorted");
-			props.add(detail);
+			log.info(indexid + "/" + getSearchType() + "/_mapping' -d '" + source.string() + "'");
 		}
-
-		for (Iterator i = props.iterator(); i.hasNext();)
+		catch (IOException ex)
 		{
-			PropertyDetail detail = (PropertyDetail) i.next();
+			log.error(ex);
+		}
+		//		GetMappingsRequest find = new GetMappingsRequest().types(getSearchType()); 
+		//		GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
+		//		if( !found.isContextEmpty())
+		try
+		{
+			putMapping(admin, indexid, source);
+			getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+			return;
+		}
+		catch( Exception ex)
+		{
+			log.error("Could not put mapping over existing mapping. Please use restoreDefaults");
+		}
+//		try
+//		{
+//			//Save existing index values
+//			HitTracker all = getAllHits();
+//			//Export to csv file?
+//			
+//			DeleteMappingRequest dreq = Requests.deleteMappingRequest(indexid).types(getSearchType());
+//			DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
+//			if (dpres.isAcknowledged())
+//			{
+//				log.info("Cleared out the mapping " + getSearchType() );
+//				getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+//				putMapping(admin, indexid, source);
+//			}
+//			//save it all back
+//		}
+//		catch( Throwable ex)
+//		{
+//			log.info("failed to clear mapping before reloading ",ex);
+//		}
+	}
 
-			if ("_id".equals(detail.getId()) || "id".equals(detail.getId()))
-			{
-				jsonproperties = jsonproperties.startObject("_id");
-				jsonproperties = jsonproperties.field("index", "not_analyzed");
-				jsonproperties = jsonproperties.field("type", "string");
-				jsonproperties = jsonproperties.endObject();
-				continue;
-			}
-			jsonproperties = jsonproperties.startObject(detail.getId());
-			if ("description".equals(detail.getId()))
-			{
-				String analyzer = "lowersnowball";
-				jsonproperties = jsonproperties.field("analyzer", analyzer);
-				jsonproperties = jsonproperties.field("type", "string");
-				jsonproperties = jsonproperties.field("index", "analyzed");
-				jsonproperties = jsonproperties.field("store", "no");
-				jsonproperties = jsonproperties.field("include_in_all", "false");
-				jsonproperties = jsonproperties.endObject();
+	protected void putMapping(AdminClient admin, String indexid, XContentBuilder source)
+	{
+		PutMappingRequest req = Requests.putMappingRequest(indexid).type(getSearchType());
+		req.source(source);
+		PutMappingResponse pres = admin.indices().putMapping(req).actionGet();
+		if (pres.isAcknowledged())
+		{
+			log.info("mapping applied " + getSearchType());
+			getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+		}
+	}
 
-				continue;
-			}
-			if (detail.isDate())
+	protected XContentBuilder buildMapping()
+	{
+		try
+		{
+			XContentBuilder jsonBuilder = XContentFactory.jsonBuilder();
+			XContentBuilder jsonproperties = jsonBuilder.startObject().startObject(getSearchType());
+			jsonproperties.field("date_detection", "false");
+			jsonproperties = jsonproperties.startObject("properties");
+			List props = getPropertyDetails().findIndexProperties();
+			if (props.size() == 0)
 			{
-				jsonproperties = jsonproperties.field("type", "date");
-				// jsonproperties = jsonproperties.field("format",
-				// "yyyy-MM-dd HH:mm:ss Z");
+				throw new OpenEditException("No fields defined for " + getSearchType());
 			}
-			else if (detail.isBoolean())
+			// https://github.com/elasticsearch/elasticsearch/pull/606
+			// https://gist.github.com/870714
+			/*
+			 * index.analysis.analyzer.lowercase_keyword.type=custom
+			 * index.analysis.analyzer.lowercase_keyword.filter.0=lowercase
+			 * index.analysis.analyzer.lowercase_keyword.tokenizer=keyword
+			 */
+
+			jsonproperties = jsonproperties.startObject("_all");
+			jsonproperties = jsonproperties.field("store", "false");
+			jsonproperties = jsonproperties.field("analyzer", "lowersnowball");
+			jsonproperties = jsonproperties.field("index_analyzer", "lowersnowball");
+			jsonproperties = jsonproperties.field("search_analyzer", "lowersnowball"); // lower
+																						// case
+																						// does
+																						// not
+																						// seem
+																						// to
+																						// work
+			jsonproperties = jsonproperties.field("index", "analyzed");
+			jsonproperties = jsonproperties.field("type", "string");
+			jsonproperties = jsonproperties.endObject();
+
+			// Add in namesorted
+			if (getPropertyDetails().contains("name") && !getPropertyDetails().contains("namesorted"))
 			{
-				jsonproperties = jsonproperties.field("type", "boolean");
+				props = new ArrayList(props);
+				PropertyDetail detail = new PropertyDetail();
+				detail.setId("namesorted");
+				props.add(detail);
 			}
-			else if (detail.isDataType("number"))
+
+			for (Iterator i = props.iterator(); i.hasNext();)
 			{
-				jsonproperties = jsonproperties.field("type", "long");
-			}
-			else if (detail.isList())
-			{
-				if (Boolean.parseBoolean(detail.get("nested")))
+				PropertyDetail detail = (PropertyDetail) i.next();
+
+				if ("_id".equals(detail.getId()) || "id".equals(detail.getId()))
 				{
-					jsonproperties = jsonproperties.field("type", "nested");
+					jsonproperties = jsonproperties.startObject("_id");
+					jsonproperties = jsonproperties.field("index", "not_analyzed");
+					jsonproperties = jsonproperties.field("type", "string");
+					jsonproperties = jsonproperties.endObject();
+					continue;
+				}
+				jsonproperties = jsonproperties.startObject(detail.getId());
+				if ("description".equals(detail.getId()))
+				{
+					String analyzer = "lowersnowball";
+					jsonproperties = jsonproperties.field("analyzer", analyzer);
+					jsonproperties = jsonproperties.field("type", "string");
+					jsonproperties = jsonproperties.field("index", "analyzed");
+					jsonproperties = jsonproperties.field("store", "no");
+					jsonproperties = jsonproperties.field("include_in_all", "false");
+					jsonproperties = jsonproperties.endObject();
+
+					continue;
+				}
+				if (detail.isDate())
+				{
+					jsonproperties = jsonproperties.field("type", "date");
+					//"date_detection" : 0
+					// jsonproperties = jsonproperties.field("format",
+					// "yyyy-MM-dd HH:mm:ss Z");
+				}
+				else if (detail.isBoolean())
+				{
+					jsonproperties = jsonproperties.field("type", "boolean");
+				}
+				else if (detail.isDataType("number"))
+				{
+					jsonproperties = jsonproperties.field("type", "long");
+				}
+				else if (detail.isList())  //Or multi valued?
+				{
+					//if( detail.isMultiValue() )
+					jsonproperties = jsonproperties.field("index", "not_analyzed");
+					if (Boolean.parseBoolean(detail.get("nested")))
+					{
+						jsonproperties = jsonproperties.field("type", "nested");
+					}
+					else
+					{
+						jsonproperties = jsonproperties.field("type", "string");
+					}
 				}
 				else
 				{
+					String indextype = detail.get("indextype");
+					if (indextype != null || detail.getId().equals("sourcepath"))
+					{
+						//indextype = "not_analyzed";
+						jsonproperties = jsonproperties.field("index", indextype);
+					}
 					jsonproperties = jsonproperties.field("type", "string");
 				}
-			}
 
-			else
-			{
-				String indextype = detail.get("indextype");
-				if (indextype == null)
+				if (detail.isStored())
 				{
-					indextype = "not_analyzed";
+					jsonproperties = jsonproperties.field("store", "yes");
 				}
-				jsonproperties = jsonproperties.field("index", indextype);
-				jsonproperties = jsonproperties.field("type", "string");
-			}
+				else
+				{
+					jsonproperties = jsonproperties.field("store", "no");
+				}
+				// this does not work yet
+				// if( detail.isKeyword())
+				// {
+				// jsonproperties = jsonproperties.field("include_in_all", "true");
+				// }
+				// else
+				// {
+				jsonproperties = jsonproperties.field("include_in_all", "false");
+				// }
 
-			if (detail.isStored())
-			{
-				jsonproperties = jsonproperties.field("store", "yes");
+				jsonproperties = jsonproperties.endObject();
 			}
-			else
-			{
-				jsonproperties = jsonproperties.field("store", "no");
-			}
-			// this does not work yet
-			// if( detail.isKeyword())
-			// {
-			// jsonproperties = jsonproperties.field("include_in_all", "true");
-			// }
-			// else
-			// {
-			jsonproperties = jsonproperties.field("include_in_all", "false");
-			// }
-
 			jsonproperties = jsonproperties.endObject();
+			jsonBuilder = jsonproperties.endObject();
+			return jsonproperties;
 		}
-		jsonproperties = jsonproperties.endObject();
-		jsonBuilder = jsonproperties.endObject();
-		return jsonproperties;
+		catch (Throwable ex)
+		{
+			throw new OpenEditException(ex);
+		}
 
 	}
 
@@ -566,7 +633,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		{
 			Term term = (Term) inQuery.getTerms().iterator().next();
 
-			if ("orsGroup".equals(term.getOperation()))
+			if ("orgroup".equals(term.getOperation()) || "orsGroup".equals(term.getOperation())) //orsGroup? 
 			{
 				return addOrsGroup(term);
 			}
@@ -589,7 +656,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			for (Iterator iterator = inQuery.getTerms().iterator(); iterator.hasNext();)
 			{
 				Term term = (Term) iterator.next();
-				if ("orsGroup".equals(term.getOperation()))
+				if ("orgroup".equals(term.getOperation()) || "orsGroup".equals(term.getOperation()))
 				{
 					BoolQueryBuilder or = addOrsGroup(term);
 					bool.must(or);
@@ -610,7 +677,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			for (Iterator iterator = inQuery.getTerms().iterator(); iterator.hasNext();)
 			{
 				Term term = (Term) iterator.next();
-				if ("orsGroup".equals(term.getOperation()))
+				if ("orgroup".equals(term.getOperation()) || "orsGroup".equals(term.getOperation())) //orsGroup?
 				{
 					BoolQueryBuilder or = addOrsGroup(term);
 					bool.should(or);
@@ -813,7 +880,8 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 
 			if ("matches".equals(inTerm.getOperation()))
 			{
-				find = QueryBuilders.matchQuery(fieldid, valueof);
+				find = QueryBuilders.matchQuery(fieldid, valueof); //this is analyzed
+				//find = QueryBuilders.termQuery(fieldid, valueof);
 			}
 			else if ("contains".equals(inTerm.getOperation()))
 			{
@@ -821,7 +889,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			}
 			else
 			{
-				find = QueryBuilders.termQuery(fieldid, valueof);
+				find = QueryBuilders.matchQuery(fieldid, valueof); //This is not analyzed termQuery
 			}
 		}
 		// QueryBuilders.idsQuery(types)
@@ -933,28 +1001,68 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		}
 	}
 
-	 protected void updateIndex(Collection<Data> inBuffer, User inUser) {
-	 String catid = toId(getCatalogId());
-	
-	 // BulkRequestBuilder brb = getClient().prepareBulk();
-	 //
-	// brb.add(Requests.indexRequest(indexName).type(getIndexType()).id(id).source(source));
-	 // }
-	 // if (brb.numberOfActions() > 0) brb.execute().actionGet();
-	 PropertyDetails details = getPropertyDetailsArchive()
-	 .getPropertyDetailsCached(getSearchType());
-	
-	 for (Data data : inBuffer) {
-	 if(data == null){
-	 throw new OpenEditException("Data was null!");
-	 }
-	 updateElasticIndex(details, data);
-	 }
-	 log.info("Saved " + inBuffer.size() + " records into " + catid + "/"
-	 + getSearchType());
-	
-	 inBuffer.clear();
-	 }
+	protected void updateIndex(Collection<Data> inBuffer, User inUser)
+	{
+		String catid = toId(getCatalogId());
+
+		/* 
+		 * TODO: Write a thread safe bulk saver that calls setRefresh(true) and pulls out version information after a save
+		 * 
+		BulkProcessor bulkProcessor = BulkProcessor.builder(
+				getClient(),  
+		        new BulkProcessor.Listener() {
+		            @Override
+		            public void beforeBulk(long executionId,
+		                                   BulkRequest request) { } 
+
+		            @Override
+		            public void afterBulk(long executionId,
+		                                  BulkRequest request,
+		                                  BulkResponse response) { 
+		            	//response.
+		            } 
+
+		            @Override
+		            public void afterBulk(long executionId,
+		                                  BulkRequest request,
+		                                  Throwable failure) { log.error(failure); } 
+		        })
+		        .setBulkActions(10000) 
+		        .setBulkSize(new ByteSizeValue(1, ByteSizeUnit.GB)) 
+		        .setFlushInterval(TimeValue.timeValueSeconds(5)) 
+		        .setConcurrentRequests(1) 
+		        .build();
+		
+		XContentBuilder content = XContentFactory.jsonBuilder().startObject();
+		updateIndex(content, data, details);
+		content.endObject();
+		if( log.isDebugEnabled() )
+		{
+			log.debug("Saving " + getSearchType() + " " + data.getId() + " = " + content.string());
+		}
+
+		// ConcurrentModificationException
+		builder = builder.setSource(content).setRefresh(true);
+		// BulkRequestBuilder brb = getClient().prepareBulk();
+		//
+		// brb.add(Requests.indexRequest(indexName).type(getIndexType()).id(id).source(source));
+		// }
+		// if (brb.numberOfActions() > 0) brb.execute().actionGet();
+		 */
+		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
+
+		for (Data data : inBuffer)
+		{
+			if (data == null)
+			{
+				throw new OpenEditException("Data was null!");
+			}
+			updateElasticIndex(details, data);
+		}
+		//log.info("Saved " + inBuffer.size() + " records into " + catid + "/"	 + getSearchType());
+
+		inBuffer.clear();
+	}
 
 	protected void updateElasticIndex(PropertyDetails details, Data data)
 	{
@@ -973,7 +1081,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			XContentBuilder content = XContentFactory.jsonBuilder().startObject();
 			updateIndex(content, data, details);
 			content.endObject();
-			log.info("Saving " + getSearchType() + " " + data.getId() + " = " + content.string());
+			if( log.isDebugEnabled() )
+			{
+				log.debug("Saving " + getSearchType() + " " + data.getId() + " = " + content.string());
+			}
 
 			// ConcurrentModificationException
 			builder = builder.setSource(content).setRefresh(true);
@@ -1080,7 +1191,6 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 				{
 					if (value != null)
 					{
-
 						// ie date =
 						// DateStorageUtil.getStorageUtil().parseFromStorage(value);
 						Date date = DateStorageUtil.getStorageUtil().parseFromStorage(value);
@@ -1193,30 +1303,31 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 
 	public synchronized String nextId()
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), loadCounterPath(), "admin");
-		try
-		{
-			return String.valueOf(getIntCounter().incrementCount());
-		}
-		finally
-		{
-			getLockManager().release(getCatalogId(), lock);
-		}
-		// throw new OpenEditException("Should not call next ID");
+		//		Lock lock = getLockManager().lock(getCatalogId(), loadCounterPath(), "admin");
+		//		try
+		//		{
+		//			return String.valueOf(getIntCounter().incrementCount());
+		//		}
+		//		finally
+		//		{
+		//			getLockManager().release(getCatalogId(), lock);
+		//		}
+		throw new OpenEditException("Should not call next ID");
 	}
 
 	protected IntCounter getIntCounter()
 	{
-		if (fieldIntCounter == null)
-		{
-			fieldIntCounter = new IntCounter();
-			// fieldIntCounter.setLabelName(getSearchType() + "IdCount");
-			Page prop = getPageManager().getPage(loadCounterPath());
-			File file = new File(prop.getContentItem().getAbsolutePath());
-			file.getParentFile().mkdirs();
-			fieldIntCounter.setCounterFile(file);
-		}
-		return fieldIntCounter;
+		//		if (fieldIntCounter == null)
+		//		{
+		//			fieldIntCounter = new IntCounter();
+		//			// fieldIntCounter.setLabelName(getSearchType() + "IdCount");
+		//			Page prop = getPageManager().getPage(loadCounterPath());
+		//			File file = new File(prop.getContentItem().getAbsolutePath());
+		//			file.getParentFile().mkdirs();
+		//			fieldIntCounter.setCounterFile(file);
+		//		}
+		//		return fieldIntCounter;
+		throw new OpenEditException("Cant load int counters from elasticsearch");
 	}
 
 	/** TODO: Update this location to match the new standard location */
@@ -1225,27 +1336,10 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		return "/WEB-INF/data/" + getCatalogId() + "/" + getSearchType() + "s/idcounter.properties";
 	}
 
-	public LockManager getLockManager()
-	{
-		return fieldLockManager;
-	}
-
-	public void setLockManager(LockManager inLockManager)
-	{
-		fieldLockManager = inLockManager;
-	}
-
-	public void shutdown()
-	{
-		if (fieldClientPool != null)
-		{
-			fieldClientPool.shutdown();
-			fieldConnected = false;
-		}
-	}
-
 	public boolean hasChanged(HitTracker inTracker)
 	{
+		//We dont cache results because another node might have edited a record
+		//We could cache by a timer? risky
 		return true;
 	}
 
@@ -1273,6 +1367,20 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 			if (response.isExists())
 			{
 				Data data = new BaseData(response.getSource());
+				if( getNewDataName() != null )
+				{
+					Data typed = createNewData();		
+					typed.setName(data.getName());
+					Map<String,Object> props = data.getProperties();
+					for (Iterator iterator = props.keySet().iterator(); iterator.hasNext();)
+					{
+						String	key = (String) iterator.next();
+						Object obj = props.get(key);
+						typed.setProperty(key,String.valueOf(obj));
+					}
+					data = typed;
+				}	
+				
 				data.setId(inValue);
 				if (response.getVersion() > -1)
 				{
@@ -1284,6 +1392,7 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		}
 		return super.searchByField(inField, inValue);
 	}
+
 
 	protected void populateKeywords(StringBuffer inFullDesc, Data inData, PropertyDetails inDetails)
 	{
@@ -1315,4 +1424,42 @@ public abstract class BaseElasticSearcher extends BaseSearcher implements Shutdo
 		}
 	}
 
+	public void reIndexAll() throws OpenEditException
+	{
+		//there is not reindex step since it is only in memory
+		if (isReIndexing())
+		{
+			return;
+		}
+		try
+		{
+			setReIndexing(true);
+			if( fieldConnected )
+			{
+				putMappings(); //We can only try to put mapping. If this failes then they will
+				//need to export their data and factory reset the fields 
+			}
+			//deleteAll(null); //This only deleted the index
+		}
+		finally
+		{
+			setReIndexing(false);
+		}
+	}
+	
+	@Override
+	public void restoreSettings()
+	{
+		getPropertyDetailsArchive().clearCustomSettings(getSearchType());
+		deleteOldMapping();  //you will lose your data!
+		reIndexAll();
+	}
+	
+	@Override
+	public void reloadSettings()
+	{
+		//getPropertyDetailsArchive().clearCustomSettings(getSearchType());
+		//deleteOldMapping();  //you will lose your data!
+		reIndexAll();
+	}
 }

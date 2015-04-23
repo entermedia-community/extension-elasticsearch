@@ -2,7 +2,22 @@
 
 <asset name="simple test" id="101">
   <category id="index"/>
+  <property name="assetviews">0</property>
+  <property name="height">0</property>
+  <property name="namesorted">simple test</property>
+  <property name="shoppingcarttarget">false</property>
+  <property name="description">101 simple test Index admin Index users admin 101</property>
+  <property name="length">0</property>
+  <property name="viewasset">group_administrators | true | user_admin</property>
+  <property name="catalogid">entermedia/catalogs/testcatalog</property>
+  <property name="pages">0</property>
+  <property name="width">0</property>
+  <property name="category-exact">index</property>
   <property name="caption">test101</property>
-  <property name="recordmodificationdate">2011-08-22 16:02:32 -0400</property>
+  <property name="recordmodificationdate">2015-03-17 15:14:12 -0400</property>
+  <property name="publisheds3">false</property>
+  <property name="filesize">0</property>
   <property name="owner">admin</property>
+  <property name="assetvotes">0</property>
+  <property name=".version">2</property>
 </asset>

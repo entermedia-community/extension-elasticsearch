@@ -11,14 +11,12 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.entermedia.elasticsearch.searchers.BaseElasticSearcher;
 import org.openedit.Data;
-import org.openedit.data.BaseData;
 import org.openedit.data.PropertyDetails;
 import org.openedit.entermedia.Category;
 import org.openedit.entermedia.CategoryArchive;
 import org.openedit.entermedia.xmldb.CategorySearcher;
 
 import com.openedit.OpenEditException;
-import com.openedit.users.User;
 
 public class ElasticCategorySearcher extends BaseElasticSearcher implements CategorySearcher
 {

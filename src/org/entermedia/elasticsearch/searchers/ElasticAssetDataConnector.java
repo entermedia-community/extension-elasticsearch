@@ -2,6 +2,9 @@ package org.entermedia.elasticsearch.searchers;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -20,6 +23,8 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.entermedia.elasticsearch.SearchHitData;
+import org.entermedia.locks.Lock;
 import org.openedit.Data;
 import org.openedit.data.DataArchive;
 import org.openedit.data.PropertyDetails;
@@ -35,13 +40,15 @@ import com.openedit.OpenEditException;
 import com.openedit.hittracker.HitTracker;
 import com.openedit.users.User;
 import com.openedit.util.IntCounter;
+import com.openedit.util.OutputFiller;
 import com.openedit.util.PathProcessor;
 
 public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements DataConnector
 {
 	protected AssetSecurityArchive fieldAssetSecurityArchive;
 	protected MediaArchive fieldMediaArchive;
-
+	protected IntCounter fieldIntCounter;
+	protected OutputFiller filler = new OutputFiller();
 	public Data createNewData()
 	{
 		return new Asset();
@@ -65,23 +72,24 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 
 	}
 
-	
-	
-	
+
 	public void reIndexAll() throws OpenEditException
 	{		
 		if( isReIndexing())
 		{
-			return;
+			return;  //TODO: Make a lock so that two servers startin up dont conflict?
 		}
 		setReIndexing(true);
 		try
 		{
-			buildMapping();
-
 			getMediaArchive().getAssetArchive().clearAssets();
 			//For now just add things to the index. It never deletes
-			deleteAll(null); //This only deleted the index
+			if( fieldConnected )
+			{
+				//Someone is forcing a reindex
+				deleteOldMapping();
+				putMappings();
+			}
 			final List buffer = new ArrayList(100);
 			PathProcessor processor = new PathProcessor()
 			{
@@ -209,7 +217,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			throw new OpenEditException(ex);
 		}
 	}
-
+	/*
 	protected void hydrateData(ContentItem inContent, String sourcepath, List buffer)
 	{
 		Asset data = getMediaArchive().getAssetBySourcePath(sourcepath);
@@ -223,7 +231,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			updateIndex(buffer, null);
 		}
 	}
-
+	*/
 	protected void populatePermission(XContentBuilder inContent, Asset inAsset, String inPermission) throws IOException
 	{
 		List add = getAssetSecurityArchive().getAccessList(getMediaArchive(), inAsset);
@@ -247,6 +255,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 
 		// fullDesc.append(asset.getId());
 		// fullDesc.append(' ');
+		
 		String keywords = asTokens(asset.getKeywords());
 		fullDesc.append(keywords);
 		fullDesc.append(' ');
@@ -259,15 +268,47 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			fullDesc.append(cat.getName());
 			fullDesc.append(' ');
 		}
-
-		String[] dirs = asset.getSourcePath().split("/");
-
-		for (int i = 0; i < dirs.length; i++)
+		if( asset.getSourcePath() != null)
 		{
-			fullDesc.append(dirs[i]);
-			fullDesc.append(' ');
+			String[] dirs = asset.getSourcePath().split("/");
+	
+			for (int i = 0; i < dirs.length; i++)
+			{
+				fullDesc.append(dirs[i]);
+				fullDesc.append(' ');
+			}
+			if( Boolean.parseBoolean(asset.get("hasfulltext")))
+			{
+				ContentItem item = getPageManager().getRepository().getStub("/WEB-INF/data/" + getCatalogId() +"/assets/" + asset.getSourcePath() + "/fulltext.txt");
+				if( item.exists() )
+				{
+					Reader input = null;
+					try
+					{
+						input= new InputStreamReader( item.getInputStream(), "UTF-8");
+						StringWriter output = new StringWriter(); 
+						filler.fill(input, output);
+						fullDesc.append(output.toString());
+					}
+					catch( IOException ex)
+					{
+						log.error(ex);
+					}
+					finally
+					{
+						filler.close(input);
+					}
+				}
+			}
 		}
-
+//		fullDesc.append(asset.get("fulltext")); //TODO: Is this set? Should we store this another way?
+//
+//		//TODO: Limit the size? Trim words?
+		if( fullDesc.length() > 500000)
+		{
+			return fullDesc.substring(0,500000);
+		}
+		
 		String result = fullDesc.toString();// fixInvalidCharacters(fullDesc.toString());
 		return result;
 	}
@@ -355,17 +396,29 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		}
 		return fieldIntCounter;
 	}
+	public synchronized String nextId()
+	{
+		Lock lock = getLockManager().lock(getCatalogId(), loadCounterPath(), "admin");
+		try
+		{
+			return String.valueOf(getIntCounter().incrementCount());
+		}
+		finally
+		{
+			getLockManager().release(getCatalogId(), lock);
+		}
+	}
 
 	public Object searchByField(String inField, String inValue)
 	{
 		if (inField.equals("id") || inField.equals("_id"))
 		{
 			GetResponse response = getClient().prepareGet(toId(getCatalogId()), getSearchType(), inValue).execute().actionGet();
+			if(!response.isExists())
+			{
+				return null;
+			}
 			return createAssetFromResponse(response.getId(),response.getSource());
-			// if(!response.isExists())
-			// {
-			// return null;
-			// }
 			// String path = (String)response.getSource().get("sourcepath");
 
 			// return getAssetArchive().getAssetBySourcePath(path);
@@ -377,7 +430,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			search.setSearchType(SearchType.DFS_QUERY_THEN_FETCH);
 			search.setTypes(getSearchType());
 			
-			QueryBuilder b = QueryBuilders.termQuery("sourcepath", inValue);
+			QueryBuilder b = QueryBuilders.matchQuery("sourcepath", inValue);
 			search.setQuery(b);
 			SearchResponse response = search.execute().actionGet();
 			Iterator <SearchHit> responseiter = response.getHits().iterator();
@@ -388,11 +441,6 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 				
 			}
 			return null;
-
-	        	
-			
-		
-			
 		}
 		return super.searchByField(inField, inValue);
 	}
@@ -403,8 +451,6 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		if(inSource == null){
 			return null;
 		}
-		
-		
 		asset.setId(inId);
 		
 		for (Iterator iterator = inSource.keySet().iterator(); iterator.hasNext();)
@@ -457,15 +503,32 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			if(category != null){
 				asset.addCategory(category);
 			}
-			
 		}
-		
-		ContentItem originalPage = getPageManager().getRepository().getStub("/WEB-INF/data/" + getCatalogId() + "/originals/" + asset.getSourcePath());
-		asset.setFolder(originalPage.isFolder());
+		String isfolder = asset.get("isfolder");
+		if( isfolder == null)
+		{
+			ContentItem originalPage = getPageManager().getRepository().getStub("/WEB-INF/data/" + getCatalogId() + "/originals/" + asset.getSourcePath());
+			asset.setFolder(originalPage.isFolder());
+		}	
 		return asset;
 	}
 	
-
+	//TODO: Make an ElasticAsset bean type that can be searched and saved
+	@Override
+	public Data loadData(Data inHit)
+	{
+		if( inHit instanceof Asset)
+		{
+			return inHit;
+		}
+		//Stuff might get out of date?
+		if( inHit instanceof SearchHitData)
+		{
+			SearchHitData db = (SearchHitData)inHit;
+			return createAssetFromResponse(inHit.getId(), db.getSearchHit().getSource() );
+		}
+		return (Data)searchById(inHit.getId());
+	}
 	protected AssetArchive getAssetArchive()
 	{
 		return getMediaArchive().getAssetArchive();
