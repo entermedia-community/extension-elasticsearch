@@ -31,8 +31,11 @@ public class ElasticHitTracker extends HitTracker
 
 	protected SearchRequestBuilder fieldSearcheRequestBuilder;
 	protected FilterBuilder fieldFilterBuilder;
-
 	protected Map fieldChunks;
+	protected int fieldHitsPerChunk = 40;
+	protected QueryBuilder terms;
+	//protected List fieldFilterOptions;
+
 	public FilterBuilder getFilterBuilder()
 	{
 		return fieldFilterBuilder;
@@ -43,9 +46,6 @@ public class ElasticHitTracker extends HitTracker
 		fieldFilterBuilder = inFilterBuilder;
 	}
 
-	protected int fieldHitsPerChunk = 40;
-	protected QueryBuilder terms;
-	protected List fieldFilterOptions;
 
 	public QueryBuilder getTerms()
 	{
@@ -117,15 +117,7 @@ public class ElasticHitTracker extends HitTracker
 				getSearcheRequestBuilder().setPostFilter(getFilterBuilder());
 			}
 			response = getSearcheRequestBuilder().execute().actionGet();
-			if (response.getFacets() != null && fieldFilterOptions == null)
-			{
-				Map facets = response.getFacets().facetsAsMap();
-				//log.info(facets);
-				if (facets != null)
-				{
-					loadFacets(facets);
-				}
-			}
+			
 			if (getChunks().size() > 30)
 			{
 				SearchResponse first = getChunks().get(0);
@@ -136,59 +128,6 @@ public class ElasticHitTracker extends HitTracker
 			getChunks().put(chunk, response);
 		}
 		return response;
-	}
-
-	private void loadFacets(Map inFacets)
-	{
-		ArrayList facets = new ArrayList();
-		for (Iterator iterator = inFacets.keySet().iterator(); iterator.hasNext();)
-		{
-			String key = (String) iterator.next();
-			TermsFacet f = (TermsFacet) inFacets.get(key);
-			if (f.getEntries().size() > 0)
-			{
-				FilterNode parent = new FilterNode();
-				parent.setId(f.getName());
-				parent.setName(f.getName());
-				PropertyDetail detail = getSearcher().getDetail(f.getName());
-				if (detail != null)
-				{
-					parent.setName(detail.getText());
-				}
-
-				for (Iterator iterator2 = f.getEntries().iterator(); iterator2.hasNext();)
-				{
-					Entry entry = (Entry) iterator2.next();
-					int count = entry.getCount();
-					String term = entry.getTerm().string();
-					FilterNode child = new FilterNode();
-					child.setId(term);
-					if (detail.isList())
-					{
-						Data data = getSearcher().getSearcherManager().getData(getCatalogId(), detail.getListId(), term);
-						if(data != null)
-						{
-							child.setName(data.getName());
-						} else{
-							//child.setName(term);
-							continue;
-						}
-					}
-					else
-					{
-						child.setName(term);
-					}
-
-					child.setProperty("count", String.valueOf(entry.getCount()));
-					parent.addChild(child);
-				}
-
-				facets.add(parent);
-			}
-		}
-		setFilterOptions(facets);
-		//log.info("found some facets");
-
 	}
 
 	protected Map<Integer, SearchResponse> getChunks()
@@ -254,14 +193,60 @@ public class ElasticHitTracker extends HitTracker
 	}
 
 	@Override
-	public List<FilterNode> getFilterOptions()
+	protected List loadFacetsFromResults()  //parse em
 	{
-		return fieldFilterOptions;
-	}
+		List topfacets = new ArrayList(); 
+		SearchResponse response = getSearchResponse(0);
+		//TODO: Should save the response and only load it if someone needs the data
+		if (response.getFacets() != null )
+		{
+			Map facets = response.getFacets().facetsAsMap();
+			//log.info(facets);
+			for (Iterator iterator = facets.keySet().iterator(); iterator.hasNext();)
+			{
+				String key = (String) iterator.next();
+				TermsFacet f = (TermsFacet) facets.get(key);
+				if (f.getEntries().size() > 0)
+				{
+					FilterNode parent = new FilterNode();
+					parent.setId(f.getName());
+					parent.setName(f.getName());
+					PropertyDetail detail = getSearcher().getDetail(f.getName());
+					if (detail != null)
+					{
+						parent.setName(detail.getText());
+					}
+					for (Iterator iterator2 = f.getEntries().iterator(); iterator2.hasNext();)
+					{
+						Entry entry = (Entry) iterator2.next();
+						int count = entry.getCount();
+						String term = entry.getTerm().string();
+						FilterNode child = new FilterNode();
+						child.setId(term);
+						if (detail.isList())
+						{
+							Data data = getSearcher().getSearcherManager().getData(getCatalogId(), detail.getListId(), term);
+							if(data != null)
+							{
+								child.setName(data.getName());
+							} else{
+								//child.setName(term);
+								continue;
+							}
+						}
+						else
+						{
+							child.setName(term);
+						}
 
-	public void setFilterOptions(List inFilterOptions)
-	{
-		fieldFilterOptions = inFilterOptions;
-	}
+						child.setProperty("count", String.valueOf(entry.getCount()));
+						parent.addChild(child);
+					}
+					topfacets.add(parent);
+				}
+			}
+		}
+		return topfacets;
 
+	}	
 }

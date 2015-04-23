@@ -1342,6 +1342,8 @@ public class BaseElasticSearcher extends BaseSearcher
 
 	public boolean hasChanged(HitTracker inTracker)
 	{
+		//We dont cache results because another node might have edited a record
+		//We could cache by a timer? risky
 		return true;
 	}
 
