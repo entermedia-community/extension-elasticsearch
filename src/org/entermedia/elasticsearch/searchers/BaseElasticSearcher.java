@@ -6,6 +6,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -26,8 +27,6 @@ import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
-import org.elasticsearch.action.bulk.BulkProcessor;
-import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
@@ -44,9 +43,6 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.unit.ByteSizeUnit;
-import org.elasticsearch.common.unit.ByteSizeValue;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
@@ -1375,7 +1371,13 @@ public class BaseElasticSearcher extends BaseSearcher
 				{
 					Data typed = createNewData();		
 					typed.setName(data.getName());
-					typed.setProperties(data.getProperties());
+					Map<String,Object> props = data.getProperties();
+					for (Iterator iterator = props.keySet().iterator(); iterator.hasNext();)
+					{
+						String	key = (String) iterator.next();
+						Object obj = props.get(key);
+						typed.setProperty(key,String.valueOf(obj));
+					}
 					data = typed;
 				}	
 				
@@ -1390,6 +1392,7 @@ public class BaseElasticSearcher extends BaseSearcher
 		}
 		return super.searchByField(inField, inValue);
 	}
+
 
 	protected void populateKeywords(StringBuffer inFullDesc, Data inData, PropertyDetails inDetails)
 	{
