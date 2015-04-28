@@ -27,13 +27,13 @@ public class ElasticCategorySearcher extends BaseElasticSearcher implements Cate
 	{
 		return new ElasticCategory(this);
 	}
-	protected Category refreshData(String inId, GetResponse response) 
-	{
-		ElasticCategory category = (ElasticCategory)createNewData();
-		category.setProperties(response.getSource());
-		
-		return category;
-	}
+//	protected Category refreshData(String inId, GetResponse response) 
+//	{
+//		ElasticCategory category = (ElasticCategory)createNewData();
+//		category.setProperties(response.getSource());
+//		
+//		return category;
+//	}
 
 	public List findChildren(Category inParent) 
 	{
@@ -101,6 +101,7 @@ public class ElasticCategorySearcher extends BaseElasticSearcher implements Cate
 				ElasticCategory data = (ElasticCategory) createNewData();
 				data.setProperties(response.getSource());
 				//data.
+				//copyData(data, typed);
 				data.setId(inValue);
 				if( response.getVersion() > -1)
 				{

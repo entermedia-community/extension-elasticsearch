@@ -2,7 +2,6 @@ package org.entermedia.elasticsearch.searchers;
 
 import java.util.Iterator;
 
-import org.dom4j.tree.BaseElement;
 import org.openedit.Data;
 import org.openedit.event.WebEvent;
 import org.openedit.event.WebEventListener;

@@ -90,7 +90,8 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 				deleteOldMapping();
 				putMappings();
 			}
-			final List buffer = new ArrayList(100);
+			final List tosave = new ArrayList(500);
+			
 			PathProcessor processor = new PathProcessor()
 			{
 				public void processFile(ContentItem inContent, User inUser)
@@ -103,7 +104,12 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 					sourcepath = sourcepath.substring(getPathToData().length() + 1,
 							sourcepath.length() - getDataFileName().length() - 1);
 					Asset asset = getMediaArchive().getAssetArchive().getAssetBySourcePath(sourcepath);
-					updateIndex(asset);
+					tosave.add(asset);
+					if(tosave.size() == 500)
+					{
+						updateIndex(tosave,null);
+						tosave.clear();
+					}
 					incrementCount();
 				}
 			};
@@ -112,7 +118,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			processor.setPageManager(getPageManager());
 			processor.setIncludeExtensions("xml");
 			processor.process();
-			//updateIndex(buffer,null);
+			updateIndex(tosave,null);
 			log.info("reindexed " + processor.getExecCount());
 			flushChanges();			
 		}
@@ -351,13 +357,13 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		}
 	}
 
-	/**
-	 * @deprecated Need to simplify
-	 */
-	public void updateIndex(Collection<Data> all, boolean b)
-	{
-		updateIndex(all, null);
-	}
+//	/**
+//	 * @deprecated Need to simplify
+//	 */
+//	public void updateIndex(Collection<Data> all, boolean b)
+//	{
+//		updateIndex(all, null);
+//	}
 
 	public AssetSecurityArchive getAssetSecurityArchive()
 	{

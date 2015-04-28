@@ -195,7 +195,8 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			processor.process();
 			if (processor.getExecCount() > 0)
 			{
-				bulkUpdateIndex(buffer, null);
+				updateIndex(buffer, null);
+				buffer.clear();
 				log.info("reindexed " + processor.getExecCount());
 				flushChanges();
 			}
@@ -283,20 +284,21 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 	//This is the main APU for saving and updates to the index
 	public void saveAllData(Collection<Data> inAll, User inUser)
 	{
-		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
-		for (Object object : inAll)
-		{
-			Data data = (Data) object;
-			try
-			{
-				updateElasticIndex(details, data);
-			}
-			catch (Throwable ex)
-			{
-				log.error("problem saving " + data.getId(), ex);
-				throw new OpenEditException(ex);
-			}
-		}
+//		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
+//		for (Object object : inAll)
+//		{
+//			Data data = (Data) object;
+//			try
+//			{
+//				updateElasticIndex(details, data);
+//			}
+//			catch (Throwable ex)
+//			{
+//				log.error("problem saving " + data.getId(), ex);
+//				throw new OpenEditException(ex);
+//			}
+//		}
+		updateIndex(inAll, inUser);
 		getDataArchive().saveAllData(inAll, getCatalogId(), getPathToData() + "/", inUser);
 	}
 
@@ -364,7 +366,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 				typed.setId(newdata.getId());
 				typed.setName(newdata.getName());
 				typed.setSourcePath(newdata.getSourcePath());
-				typed.setProperties(newdata.getProperties());
+				copyData(newdata,typed);//.setProperties(newdata.getProperties());
 				return typed;
 			}	
 		}	

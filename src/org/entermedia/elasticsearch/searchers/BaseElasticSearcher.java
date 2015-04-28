@@ -6,7 +6,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -27,11 +26,15 @@ import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
 import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
+import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkProcessor;
+import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -43,6 +46,9 @@ import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
 import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.unit.ByteSizeUnit;
+import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
@@ -93,6 +99,18 @@ public class BaseElasticSearcher extends BaseSearcher
 	protected boolean fieldAutoIncrementId;
 	protected boolean fieldReIndexing;
 	protected boolean fieldCheckVersions;
+	protected boolean fieldRefreshSaves = true;
+	
+	public boolean isRefreshSaves()
+	{
+		return fieldRefreshSaves;
+	}
+
+	public void setRefreshSaves(boolean inRefreshSaves)
+	{
+		fieldRefreshSaves = inRefreshSaves;
+	}
+
 	public static final Pattern VALUEDELMITER = Pattern.compile("\\s*\\|\\s*");
 
 	public ElasticNodeManager getElasticNodeManager()
@@ -418,11 +436,18 @@ public class BaseElasticSearcher extends BaseSearcher
 		//XContentBuilder source = buildMapping();
 
 		DeleteMappingRequest dreq = Requests.deleteMappingRequest(indexid).types(getSearchType());
-		DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
-		if (dpres.isAcknowledged())
+		try
 		{
-			log.info("Cleared out the mapping " + getSearchType() );
-			getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+			DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
+			if (dpres.isAcknowledged())
+			{
+				log.info("Cleared out the mapping " + getSearchType() );
+				getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+			}
+		}	
+		catch (Throwable ex)
+		{
+			log.error(ex);
 		}
 	}
 	protected void putMappings()
@@ -450,7 +475,7 @@ public class BaseElasticSearcher extends BaseSearcher
 		}
 		catch( Exception ex)
 		{
-			log.error("Could not put mapping over existing mapping. Please use restoreDefaults");
+			log.error("Could not put mapping over existing mapping. Please use restoreDefaults",ex);
 		}
 //		try
 //		{
@@ -477,8 +502,10 @@ public class BaseElasticSearcher extends BaseSearcher
 	protected void putMapping(AdminClient admin, String indexid, XContentBuilder source)
 	{
 		PutMappingRequest req = Requests.putMappingRequest(indexid).type(getSearchType());
-		req.source(source);
+		req = req.source(source).ignoreConflicts(true);
+		req.validate();
 		PutMappingResponse pres = admin.indices().putMapping(req).actionGet();
+		
 		if (pres.isAcknowledged())
 		{
 			log.info("mapping applied " + getSearchType());
@@ -587,9 +614,12 @@ public class BaseElasticSearcher extends BaseSearcher
 				else
 				{
 					String indextype = detail.get("indextype");
-					if (indextype != null || detail.getId().equals("sourcepath"))
+					if( indextype == null && detail.getId().equals("sourcepath"))
 					{
-						//indextype = "not_analyzed";
+						indextype = "not_analyzed";
+					}
+					if (indextype != null )
+					{
 						jsonproperties = jsonproperties.field("index", indextype);
 					}
 					jsonproperties = jsonproperties.field("type", "string");
@@ -944,11 +974,14 @@ public class BaseElasticSearcher extends BaseSearcher
 	public void saveData(Data inData, User inUser)
 	{
 		// update the index
-		List<Data> list = new ArrayList(1);
-		list.add((Data) inData);
-		saveAllData(list, inUser);
+		//List<Data> list = new ArrayList(1);
+		//list.add((Data) inData);
+		//saveAllData(list, inUser);
+		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
+		updateElasticIndex(details, inData);
+ 
 	}
-
+/*
 	protected void bulkUpdateIndex(Collection<Data> inBuffer, User inUser)
 	{
 		try
@@ -993,75 +1026,119 @@ public class BaseElasticSearcher extends BaseSearcher
 
 			}
 			log.info("Saved " + inBuffer.size() + " records into " + catid + "/" + getSearchType());
-			inBuffer.clear();
 		}
 		catch (Exception e)
 		{
 			throw new OpenEditException(e);
 		}
 	}
+*/
+	public void updateIndex(Collection<Data> inBuffer, User inUser)
+	{
+		if( inBuffer.size() > 1 )
+		{
+			updateInBatch( inBuffer, inUser);
+		}
+		else
+		{
+			PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
+			for (Data data : inBuffer)
+			{
+				if (data == null)
+				{
+					throw new OpenEditException("Data was null!");
+				}
+				updateElasticIndex(details, data);
+			}
+		}
+		//inBuffer.clear();
+	}
 
-	protected void updateIndex(Collection<Data> inBuffer, User inUser)
+	protected void updateInBatch(Collection<Data> inBuffer, User inUser)
 	{
 		String catid = toId(getCatalogId());
 
-		/* 
-		 * TODO: Write a thread safe bulk saver that calls setRefresh(true) and pulls out version information after a save
-		 * 
-		BulkProcessor bulkProcessor = BulkProcessor.builder(
-				getClient(),  
-		        new BulkProcessor.Listener() {
-		            @Override
-		            public void beforeBulk(long executionId,
-		                                   BulkRequest request) { } 
-
-		            @Override
-		            public void afterBulk(long executionId,
-		                                  BulkRequest request,
-		                                  BulkResponse response) { 
-		            	//response.
-		            } 
-
-		            @Override
-		            public void afterBulk(long executionId,
-		                                  BulkRequest request,
-		                                  Throwable failure) { log.error(failure); } 
-		        })
-		        .setBulkActions(10000) 
-		        .setBulkSize(new ByteSizeValue(1, ByteSizeUnit.GB)) 
-		        .setFlushInterval(TimeValue.timeValueSeconds(5)) 
-		        .setConcurrentRequests(1) 
-		        .build();
+		//We cant use this for normal updates since we do not get back the id or the version for new data object
 		
-		XContentBuilder content = XContentFactory.jsonBuilder().startObject();
-		updateIndex(content, data, details);
-		content.endObject();
-		if( log.isDebugEnabled() )
+		//final Map<String, Data> toversion = new HashMap(inBuffer.size());
+		final List<Data> toprocess = new ArrayList(inBuffer);
+		final List errors = new ArrayList();
+		//Make this not return till it is finished?
+		BulkProcessor bulkProcessor = BulkProcessor.builder(getClient(), new BulkProcessor.Listener()
 		{
-			log.debug("Saving " + getSearchType() + " " + data.getId() + " = " + content.string());
-		}
+			@Override
+			public void beforeBulk(long executionId, BulkRequest request)
+			{
+			}
 
+			@Override
+			public void afterBulk(long executionId, BulkRequest request, BulkResponse response)
+			{
+				for (int i = 0; i < response.getItems().length; i++)
+				{
+					//request.getFromContext(key)
+					BulkItemResponse res = response.getItems()[i];
+					//Data toupdate = toversion.get(res.getId());
+					Data toupdate = toprocess.get(res.getItemId());
+					if( toupdate != null)
+					{
+						if (isCheckVersions())
+						{
+							toupdate.setProperty(".version", String.valueOf(res.getVersion()));
+						}
+						toupdate.setId(res.getId());
+					}
+				}
+			}
+
+			@Override
+			public void afterBulk(long executionId, BulkRequest request, Throwable failure)
+			{
+				log.error(failure);
+				errors.add( failure );
+			}
+		}).setBulkActions(inBuffer.size()).setBulkSize(new ByteSizeValue(1, ByteSizeUnit.GB)).setFlushInterval(TimeValue.timeValueSeconds(5)).setConcurrentRequests(2).build();
+
+		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
+
+		for (Iterator iterator = inBuffer.iterator(); iterator.hasNext();)
+		{
+			try
+			{
+				Data data2 = (Data) iterator.next();
+				XContentBuilder content = XContentFactory.jsonBuilder().startObject();
+				updateIndex(content, data2, details);
+				content.endObject();
+				IndexRequest req = Requests.indexRequest(catid).type(getSearchType());
+				if( data2.getId() != null)
+				{
+					req = req.id(data2.getId());
+				}
+				req = req.source(content);
+				if( isRefreshSaves() )
+				{
+					req.refresh(true);
+				}
+				bulkProcessor.add(req);
+			}
+			catch (Exception ex)
+			{
+				log.error(ex);
+			}
+		}
+		bulkProcessor.close();
+
+		if( errors.size() > 0)
+		{
+			throw new OpenEditException((Throwable)errors.get(0));
+		}
 		// ConcurrentModificationException
-		builder = builder.setSource(content).setRefresh(true);
+		//builder = builder.setSource(content).setRefresh(true);
 		// BulkRequestBuilder brb = getClient().prepareBulk();
 		//
 		// brb.add(Requests.indexRequest(indexName).type(getIndexType()).id(id).source(source));
 		// }
 		// if (brb.numberOfActions() > 0) brb.execute().actionGet();
-		 */
-		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
-
-		for (Data data : inBuffer)
-		{
-			if (data == null)
-			{
-				throw new OpenEditException("Data was null!");
-			}
-			updateElasticIndex(details, data);
-		}
-		//log.info("Saved " + inBuffer.size() + " records into " + catid + "/"	 + getSearchType());
-
-		inBuffer.clear();
 	}
 
 	protected void updateElasticIndex(PropertyDetails details, Data data)
@@ -1086,8 +1163,11 @@ public class BaseElasticSearcher extends BaseSearcher
 				log.debug("Saving " + getSearchType() + " " + data.getId() + " = " + content.string());
 			}
 
-			// ConcurrentModificationException
-			builder = builder.setSource(content).setRefresh(true);
+			builder = builder.setSource(content);
+			if( isRefreshSaves() )
+			{
+				builder = builder.setRefresh(true);
+			}
 			if (isCheckVersions())
 			{
 				updateVersion(data, builder);
@@ -1370,14 +1450,7 @@ public class BaseElasticSearcher extends BaseSearcher
 				if( getNewDataName() != null )
 				{
 					Data typed = createNewData();		
-					typed.setName(data.getName());
-					Map<String,Object> props = data.getProperties();
-					for (Iterator iterator = props.keySet().iterator(); iterator.hasNext();)
-					{
-						String	key = (String) iterator.next();
-						Object obj = props.get(key);
-						typed.setProperty(key,String.valueOf(obj));
-					}
+					copyData(data, typed);
 					data = typed;
 				}	
 				
@@ -1391,6 +1464,20 @@ public class BaseElasticSearcher extends BaseSearcher
 			return null;
 		}
 		return super.searchByField(inField, inValue);
+	}
+
+	protected void copyData(Data data, Data typed)
+	{
+		typed.setId(data.getId());
+		typed.setName(data.getName());
+		typed.setSourcePath(data.getSourcePath());
+		Map<String,Object> props = data.getProperties();
+		for (Iterator iterator = props.keySet().iterator(); iterator.hasNext();)
+		{
+			String	key = (String) iterator.next();
+			Object obj = props.get(key);
+			typed.setProperty(key,String.valueOf(obj));
+		}
 	}
 
 

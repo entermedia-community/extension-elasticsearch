@@ -13,7 +13,7 @@
 			<ref bean="xmlUtil" />
 		</property>
 		<property name="lockManager">
-			<ref bean="lockManager" />
+			<ref bean="elasticLockManager" />
 		</property>
 		<property name="webServer"><ref bean="WebServer" /></property>		
 	</bean>
@@ -137,8 +137,7 @@
 		<property name="clearIndexOnStart"><value>true</value></property>
 		
 	</bean>
-<!-- 
-	<bean id="lockManager" class="org.openedit.entermedia.cluster.ClusterLockManager" >
+	<bean id="elasticLockManager" class="org.openedit.entermedia.cluster.ClusterLockManager" >
 		<property name="searcherManager">
 			<ref bean="searcherManager" />
 		</property>
@@ -146,7 +145,6 @@
 			<ref bean="nodeManager" />
 		</property>
 	</bean>
- -->
     <bean id="elasticXmlUserProfileSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" scope="prototype">
 		<property name="pageManager">
 			<ref bean="pageManager" />
@@ -320,6 +318,7 @@
 		<property name="searcherManager">
 			<ref bean="searcherManager" />
 		</property>		
+		<property name="refreshSaves"><value>false</value></property>
 		<property name="checkVersions"><value>false</value></property>
 	</bean>
 	
@@ -337,6 +336,7 @@
 		<property name="searcherManager">
 			<ref bean="searcherManager" />
 		</property>
+		<property name="refreshSaves"><value>false</value></property>
 		<property name="checkVersions"><value>false</value></property>
 						
 		
