@@ -1,5 +1,4 @@
 <beans>
-<beans>
 
 	<!-- Core types -->
 	<bean id="transientSearcher" bean="elasticTransientSearcher" />
@@ -28,8 +27,5 @@
 
 <!--  deprecated AssetRelatedKeywordSearcher -->
 
-
-
 </beans>
-	     
-</beans>
+	    
