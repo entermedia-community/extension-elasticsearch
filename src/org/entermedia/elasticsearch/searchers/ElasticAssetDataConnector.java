@@ -462,9 +462,9 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		{
 			String key = (String) iterator.next();
 			Object object = inSource.get(key);
-//			if("category".equals(key)){
-//				continue;
-//			}
+			if("category".equals(key)){
+				continue;
+			}
 			String val = null;
 			if (object instanceof String) {
 				val= (String) object;
@@ -490,15 +490,18 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 				asset.setProperty(key, val);
 			}
 		}
-//		Collection categories = asset.getValues("categories");
-//		for (Iterator iterator = categories.iterator(); iterator.hasNext();)
-//		{
-//			String categoryid = (String) iterator.next();
-//			Category category = getMediaArchive().getCategory(categoryid); //Cache this? Or lazy load em
-//			if(category != null){
-//				asset.addCategory(category);
-//			}
-//		}
+		Collection categories = (Collection)inSource.get("category");
+		if( categories != null)
+		{
+			for (Iterator iterator = categories.iterator(); iterator.hasNext();)
+			{
+				String categoryid = (String) iterator.next();
+				Category category = getMediaArchive().getCategory(categoryid); //Cache this? Or lazy load em
+				if(category != null){
+					asset.addCategory(category);
+				}
+			}
+		}	
 		String isfolder = asset.get("isfolder");
 		if( isfolder == null)
 		{
