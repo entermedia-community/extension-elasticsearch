@@ -26,7 +26,6 @@ import org.elasticsearch.search.SearchHit;
 import org.entermedia.elasticsearch.SearchHitData;
 import org.entermedia.locks.Lock;
 import org.openedit.Data;
-import org.openedit.data.DataArchive;
 import org.openedit.data.PropertyDetails;
 import org.openedit.entermedia.Asset;
 import org.openedit.entermedia.AssetArchive;
@@ -402,14 +401,14 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 	}
 	public synchronized String nextId()
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), loadCounterPath(), "admin");
+		Lock lock = getLockManager().lock(loadCounterPath(), "admin");
 		try
 		{
 			return String.valueOf(getIntCounter().incrementCount());
 		}
 		finally
 		{
-			getLockManager().release(getCatalogId(), lock);
+			getLockManager().release(lock);
 		}
 	}
 
@@ -528,11 +527,6 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		return (Data)searchById(inHit.getId());
 	}
 	protected AssetArchive getAssetArchive()
-	{
-		return getMediaArchive().getAssetArchive();
-	}
-
-	protected DataArchive getDataArchive()
 	{
 		return getMediaArchive().getAssetArchive();
 	}

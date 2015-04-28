@@ -5,6 +5,7 @@
 	<bean id="listSearcher" bean="elasticListSearcher" />
 	<bean id="folderSearcher" bean="elasticFolderSearcher" />
 	<bean id="dataSearcher" bean="elasticDataSearcher" />
+	<bean id="lockManager" bean="elasticLockManager" />
 
 	<!-- Java implementations -->
 	<bean id="assetSearcher" bean="elasticAssetSearcher" />
@@ -17,6 +18,8 @@
 	<bean id="orderSearcher" bean="elasticOrderSearcher" />
 	<bean id="orderhistorySearcher" bean="elasticDataSearcher" />
 	<bean id="orderitemSearcher" bean="elasticDataSearcher" />
+
+
 
 	<!--  Little used -->
 	<bean id="uploadqueueSearcher" bean="elasticDataSearcher" />

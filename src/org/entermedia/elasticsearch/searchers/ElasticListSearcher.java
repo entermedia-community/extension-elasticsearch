@@ -137,7 +137,7 @@ public class ElasticListSearcher extends BaseElasticSearcher implements Reloadab
 		{
 			throw new OpenEditException("Cannot delete null data.");
 		}
-		Lock lock = getLockManager().lock(getCatalogId(), getSearchType() + "/" + inData.getSourcePath(),"admin");
+		Lock lock = getLockManager().lock(getSearchType() + "/" + inData.getSourcePath(),"admin");
 		try
 		{
 			getXmlSearcher().delete(inData, inUser);
@@ -145,7 +145,7 @@ public class ElasticListSearcher extends BaseElasticSearcher implements Reloadab
 		}
 		finally
 		{
-			getLockManager().release(getCatalogId(), lock);
+			getLockManager().release(lock);
 		}
 		// Remove from Index
 	}
@@ -160,22 +160,15 @@ public class ElasticListSearcher extends BaseElasticSearcher implements Reloadab
 		for (Object object: inAll)
 		{
 			Data data = (Data)object;
-			Lock lock = null;
 			try
 			{
-				
-				lock = getLockManager().lock(getCatalogId(), getSearchType() + "/" + data.getSourcePath(),"admin");
 				updateElasticIndex(details, data);
-				getXmlSearcher().saveAllData(inAll, inUser);
+				getXmlSearcher().saveAllData(inAll, inUser); //locks
 			}
 			catch(Throwable ex)
 			{
 				log.error("problem saving " + data.getId() , ex);
 				throw new OpenEditException(ex);
-			}
-			finally
-			{
-				getLockManager().release(getCatalogId(), lock);
 			}
 		}
 	}
@@ -185,11 +178,8 @@ public class ElasticListSearcher extends BaseElasticSearcher implements Reloadab
 		//update the index
 		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
 
-		Lock lock = null;
 		try
 		{
-			
-			lock = getLockManager().lock(getCatalogId(), getSearchType(),"admin");
 			updateElasticIndex(details, inData);
 			getXmlSearcher().saveData(inData, inUser);
 		}
@@ -197,10 +187,6 @@ public class ElasticListSearcher extends BaseElasticSearcher implements Reloadab
 		{
 			log.error("problem saving " + inData.getId() , ex);
 			throw new OpenEditException(ex);
-		}
-		finally
-		{
-			getLockManager().release(getCatalogId(), lock);
 		}
 	}
 	

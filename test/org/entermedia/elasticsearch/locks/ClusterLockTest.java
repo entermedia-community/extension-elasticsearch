@@ -13,40 +13,40 @@ public class ClusterLockTest extends LockTest
 	//Had some problems with the very first lock not being saved ok
 	public void testLock()
 	{
-		ClusterLockManager manager = (ClusterLockManager)getStaticFixture().getModuleManager().getBean("lockManager");
+		String catid = "entermedia/catalogs/testcatalog";
+		ClusterLockManager manager = (ClusterLockManager)getStaticFixture().getModuleManager().getBean(catid,"lockManager");
 		
 		String path = "/entermedia/catalogs/testcatalog/assets/users/101/index.html";
-		String catid = "entermedia/catalogs/testcatalog";
 		
-		manager.releaseAll(catid, path);
+		manager.releaseAll(path);
 		
-		Lock lock = manager.lock(catid, path, "admin");
+		Lock lock = manager.lock(path, "admin");
 		assertNotNull(lock);
 
-		LockSearcher searcher = (LockSearcher)manager.getLockSearcher(catid);
+		LockSearcher searcher = (LockSearcher)manager.getLockSearcher();
 		searcher.clearStaleLocks();
 		
-		lock = manager.loadLock(catid, path);
+		lock = manager.loadLock(path);
 		assertFalse(lock.isLocked());
 
 		//clear
-		//manager.lockIfPossible(inCatId, inPath, inOwnerId)
-		//manager.release(inCatId, inPath, inOwnerId)
+		//manager.lockIfPossible(ininPath, inOwnerId)
+		//manager.release(ininPath, inOwnerId)
 	}
 
 	public void testVersion() throws Exception
 	{
-		ClusterLockManager manager = (ClusterLockManager)getStaticFixture().getModuleManager().getBean("lockManager");
-		String path = "/entermedia/catalogs/testcatalog/assets/users/101/index.html";
 		String catid = "entermedia/catalogs/testcatalog";
+		ClusterLockManager manager = (ClusterLockManager)getStaticFixture().getModuleManager().getBean(catid,"lockManager");
+		String path = "/entermedia/catalogs/testcatalog/assets/users/101/index.html";
 		
-		Lock lockfirst = manager.loadLock(catid, path);
+		Lock lockfirst = manager.loadLock(path);
 		String version = lockfirst.get("_version");
 		assertNotNull(version);
 
-		Lock locksecond = manager.loadLock(catid, path);
+		Lock locksecond = manager.loadLock(path);
 		locksecond.setOwnerId("fastdude");
-		manager.getLockSearcher(catid).saveData(locksecond, null);
+		manager.getLockSearcher().saveData(locksecond, null);
 
 		String version2 = locksecond.get("_version");
 		assertNotNull(version2);
@@ -55,7 +55,7 @@ public class ClusterLockTest extends LockTest
 		boolean failed = false;
 		try
 		{
-			manager.getLockSearcher(catid).saveData(lockfirst, null);
+			manager.getLockSearcher().saveData(lockfirst, null);
 		}
 		catch( ConcurrentModificationException ex)
 		{

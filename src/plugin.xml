@@ -12,9 +12,6 @@
 		<property name="xmlUtil">
 			<ref bean="xmlUtil" />
 		</property>
-		<property name="lockManager">
-			<ref bean="elasticLockManager" />
-		</property>
 		<property name="webServer"><ref bean="WebServer" /></property>		
 	</bean>
 

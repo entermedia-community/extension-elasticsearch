@@ -243,8 +243,8 @@ public class BaseElasticSearcher extends BaseSearcher
 			hits.setSearchQuery(inQuery);
 
 
-			//if (log.isDebugEnabled())
-			if( true )
+			if (log.isDebugEnabled())
+			//if( true )
 			{
 				json = search.toString();
 				long end = System.currentTimeMillis() - start;
@@ -252,7 +252,7 @@ public class BaseElasticSearcher extends BaseSearcher
 			}
 			else
 			{
-				log.info("query: " + toId(getCatalogId()) + "/" + getSearchType() + " " + inQuery.toQuery() + " sort by " + inQuery.getSorts());
+				log.info(toId(getCatalogId()) + "/" + getSearchType() + " " + inQuery.toQuery() + " sort by " + inQuery.getSorts());
 			}
 
 			return hits;
@@ -1550,4 +1550,28 @@ public class BaseElasticSearcher extends BaseSearcher
 		//deleteOldMapping();  //you will lose your data!
 		reIndexAll();
 	}
+	
+	public HitTracker loadHits(WebPageRequest inReq)
+	{
+		String id = inReq.findValue("hitssessionid");
+		if (id != null)
+		{
+			HitTracker tracker = (HitTracker) inReq.getSessionValue(id);
+			//tracker = checkCurrent(inReq, tracker); //only run search when using cachedSearch
+			if (tracker != null)
+			{
+				String hitsname = inReq.findValue("hitsname");
+				if( hitsname == null)
+				{
+					hitsname = tracker.getHitsName();
+				}
+				inReq.putPageValue(hitsname, tracker);
+			}
+			return tracker;
+		}
+		return null;
+	}
+
+	
+	
 }

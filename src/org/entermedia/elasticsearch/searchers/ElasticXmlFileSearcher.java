@@ -56,7 +56,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 
 	public synchronized String nextId()
 	{
-		Lock lock = getLockManager().lock(getCatalogId(), loadCounterPath(), "admin");
+		Lock lock = getLockManager().lock(loadCounterPath(), "admin");
 		try
 		{
 			return String.valueOf(getIntCounter().incrementCount());
@@ -66,7 +66,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 //			GetMappingsResponse found = admin.indices().getMappings(find).actionGet();
 //			if( !found.isContextEmpty())
 
-			getLockManager().release(getCatalogId(), lock);
+			getLockManager().release(lock);
 		}
 	}
 
@@ -268,16 +268,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			throw new OpenEditException("Cannot delete null data.");
 			//return;
 		}
-		Lock lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath(), "admin");
-		try
-		{
-			getDataArchive().delete(inData, inUser);
-		}
-		finally
-		{
-			getLockManager().release(getCatalogId(), lock);
-		}
-		// Remove from Index
+		getDataArchive().delete(inData, inUser);
 		super.delete(inData, inUser);
 	}
 
@@ -314,7 +305,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		try
 		{
 			//Why did I want to lock it here? Guess so that the xml file wont feel the need to do it?
-			lock = getLockManager().lock(getCatalogId(), getPathToData() + "/" + inData.getSourcePath() + "/" + getSearchType(), "admin"); //need to lock the entire file
+			lock = getLockManager().lock(getPathToData() + "/" + inData.getSourcePath() + "/" + getSearchType(), "admin"); //need to lock the entire file
 			updateElasticIndex(details, inData);
 			//TODO - we might need the sourcepath saved in the below case.
 			if (inData.getSourcePath() == null)
@@ -332,7 +323,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		}
 		finally
 		{
-			getLockManager().release(getCatalogId(), lock);
+			getLockManager().release(lock);
 		}
 	}
 

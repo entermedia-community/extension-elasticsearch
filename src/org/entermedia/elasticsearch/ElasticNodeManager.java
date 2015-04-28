@@ -45,16 +45,7 @@ public class ElasticNodeManager extends NodeManager
 
 	protected Client fieldClient;
 	protected boolean fieldShutdown = false;
-	protected LockManager fieldLockManager;
-	public LockManager getLockManager()
-	{
-		return fieldLockManager;
-	}
 
-	public void setLockManager(LockManager inLockManager)
-	{
-		fieldLockManager = inLockManager;
-	}
 	
 	public Client getClient()
 	{
@@ -142,14 +133,19 @@ public class ElasticNodeManager extends NodeManager
 		Lock lock  = null;
 		try
 		{
-			lock = getLockManager().lock(inCatalogId, "snapshot", "elasticNodeManager");
+			lock = getLockManager(inCatalogId).lock("snapshot", "elasticNodeManager");
 			return createSnapShot(inCatalogId,lock);
 		}
 		finally
 		{
-			getLockManager().release(inCatalogId, lock);
+			getLockManager(inCatalogId).release(lock);
 		}
 	}
+	protected LockManager getLockManager(String inCatalogId)
+	{
+		return getSearcherManager().getLockManager(inCatalogId);
+	}
+
 	public String createSnapShot(String inCatalogId, Lock inLock)
 	{
 		String indexid = toId(inCatalogId);
@@ -186,7 +182,7 @@ public class ElasticNodeManager extends NodeManager
 		
 		try
 		{
-			lock = getLockManager().lock(inCatalogId, "snapshot", "elasticNodeManager");
+			lock = getLockManager(inCatalogId).lock("snapshot", "elasticNodeManager");
 	
 			List list = listSnapShots(inCatalogId);
 			if( list.size() > 0)
@@ -209,7 +205,7 @@ public class ElasticNodeManager extends NodeManager
 		}
 		finally
 		{
-			getLockManager().release(inCatalogId, lock);
+			getLockManager(inCatalogId).release(lock);
 		}
 	}
 		
