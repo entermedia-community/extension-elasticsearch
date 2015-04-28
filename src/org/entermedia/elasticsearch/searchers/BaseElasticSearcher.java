@@ -242,16 +242,17 @@ public class BaseElasticSearcher extends BaseSearcher
 			hits.setSearcher(this);
 			hits.setSearchQuery(inQuery);
 
-			long end = System.currentTimeMillis() - start;
 
-			if (log.isDebugEnabled())
+			//if (log.isDebugEnabled())
+			if( true )
 			{
 				json = search.toString();
-				log.info(hits.size() + " hits query: " + toId(getCatalogId()) + "/" + getSearchType() + "/_search' -d '" + json + "' sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds]");
+				long end = System.currentTimeMillis() - start;
+				log.info(toId(getCatalogId()) + "/" + getSearchType() + "/_search' -d '" + json + "' \n" + hits.size() + " hits in: " + (double) end / 1000D + " seconds]" );
 			}
 			else
 			{
-				log.info("query: " + toId(getCatalogId()) + "/" + getSearchType() + " " + inQuery.toQuery() + " sort by " + inQuery.getSorts() + " in " + (double) end / 1000D + " seconds]");
+				log.info("query: " + toId(getCatalogId()) + "/" + getSearchType() + " " + inQuery.toQuery() + " sort by " + inQuery.getSorts());
 			}
 
 			return hits;

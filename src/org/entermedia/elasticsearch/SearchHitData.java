@@ -1,5 +1,6 @@
 package org.entermedia.elasticsearch;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -31,6 +32,12 @@ public class SearchHitData extends BaseData implements Data, MultiValued, Saveab
 		fieldSearchHit = inSearchHit;
 	}
 
+	@Override
+	public void setProperty(String inId, String inValue)
+	{
+		// TODO Auto-generated method stub
+		super.setProperty(inId, inValue);
+	}
 	public String get(String inId)
 	{
 		String svalue = super.get(inId);
@@ -52,21 +59,34 @@ public class SearchHitData extends BaseData implements Data, MultiValued, Saveab
 			}
 			return null;
 		}
-
+		Object value = null;
 		SearchHitField field = getSearchHit().field(inId);
 		if (field != null)
 		{
-			Object value = field.getValue();
-			if (value != null)
-			{
-				return String.valueOf(value);
-			}
+			value = field.getValue();
 		}
-		Object found = getSearchHit().getSource().get(inId);
-		if (found != null)
+		if( value == null)
 		{
-			String val = String.valueOf(found);
-			return val;
+			value = getSearchHit().getSource().get(inId);
+		}
+		if (value != null)
+		{
+			if( value instanceof Collection)
+			{
+				StringBuffer values = new StringBuffer();
+				Collection existingvalues = (Collection)value;
+				for (Iterator iterator = existingvalues.iterator(); iterator.hasNext();)
+				{
+					String detail = (String) iterator.next();
+					values.append(detail);
+					if( iterator.hasNext())
+					{
+						values.append(" | ");
+					}
+				}
+				return values.toString();
+			}
+			return String.valueOf(value);
 		}
 		return null;
 	}

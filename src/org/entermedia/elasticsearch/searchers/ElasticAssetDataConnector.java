@@ -175,7 +175,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			}
 			if (i > 0)
 			{
-				inContent.array("category", catids);
+				inContent.field("category", catids);
 			}
 
 		
@@ -211,12 +211,10 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 				Category cat = (Category)iterator.next();
 				String catid = cat.getId();
 				realcats.add(catid);
-				
-
 			}
 			String[] array = new String[realcats.size()];
 			array =  realcats.toArray(array);
-			inContent.array("category-exact",array );
+			inContent.field("category-exact",array);
 		}
 		catch (Exception ex)
 		{
@@ -424,7 +422,8 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 			{
 				return null;
 			}
-			return createAssetFromResponse(response.getId(),response.getSource());
+			Asset asset =  createAssetFromResponse(response.getId(),response.getSource());
+			return asset;
 			// String path = (String)response.getSource().get("sourcepath");
 
 			// return getAssetArchive().getAssetBySourcePath(path);
@@ -463,9 +462,9 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		{
 			String key = (String) iterator.next();
 			Object object = inSource.get(key);
-			if("category".equals(key)){
-				continue;
-			}
+//			if("category".equals(key)){
+//				continue;
+//			}
 			String val = null;
 			if (object instanceof String) {
 				val= (String) object;
@@ -486,30 +485,20 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 				Collection values = (Collection) object;
 				asset.setValues(key, (Collection<String>) object);
 			}
-			if(val != null){
-			asset.setProperty(key, val);
+			else if(val != null)
+			{
+				asset.setProperty(key, val);
 			}
 		}
-		
-		Object exactcats =  (Object)inSource.get("category-exact");
-		List categories;
-		
-		if(exactcats instanceof List){
-			categories = (List) exactcats;
-		}
-		else{
-			categories = new ArrayList();
-			categories.add(exactcats);
-		}
-		
-		for (Iterator iterator = categories.iterator(); iterator.hasNext();)
-		{
-			String categoryid = (String) iterator.next();
-			Category category = getMediaArchive().getCategory(categoryid);
-			if(category != null){
-				asset.addCategory(category);
-			}
-		}
+//		Collection categories = asset.getValues("categories");
+//		for (Iterator iterator = categories.iterator(); iterator.hasNext();)
+//		{
+//			String categoryid = (String) iterator.next();
+//			Category category = getMediaArchive().getCategory(categoryid); //Cache this? Or lazy load em
+//			if(category != null){
+//				asset.addCategory(category);
+//			}
+//		}
 		String isfolder = asset.get("isfolder");
 		if( isfolder == null)
 		{
