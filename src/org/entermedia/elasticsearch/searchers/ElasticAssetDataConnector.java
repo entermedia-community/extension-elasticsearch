@@ -335,7 +335,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 	{
 		HashSet allCatalogs = new HashSet();
 		Collection catalogs = inAsset.getCategories();
-		allCatalogs.addAll(catalogs);
+		//allCatalogs.addAll(catalogs);
 		for (Iterator iter = catalogs.iterator(); iter.hasNext();)
 		{
 			Category catalog = (Category) iter.next();
@@ -461,7 +461,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		{
 			String key = (String) iterator.next();
 			Object object = inSource.get(key);
-			if("category".equals(key)){
+			if("category-exact".equals(key)){
 				continue;
 			}
 			String val = null;
@@ -489,7 +489,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 				asset.setProperty(key, val);
 			}
 		}
-		Collection categories = (Collection)inSource.get("category");
+		Collection categories = (Collection)inSource.get("category-exact");
 		if( categories != null)
 		{
 			for (Iterator iterator = categories.iterator(); iterator.hasNext();)

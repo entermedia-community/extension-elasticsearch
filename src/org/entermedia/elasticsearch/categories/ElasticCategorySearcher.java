@@ -12,13 +12,14 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.entermedia.elasticsearch.searchers.BaseElasticSearcher;
 import org.openedit.Data;
 import org.openedit.data.PropertyDetails;
+import org.openedit.data.Reloadable;
 import org.openedit.entermedia.Category;
 import org.openedit.entermedia.CategoryArchive;
 import org.openedit.entermedia.xmldb.CategorySearcher;
 
 import com.openedit.OpenEditException;
 
-public class ElasticCategorySearcher extends BaseElasticSearcher implements CategorySearcher
+public class ElasticCategorySearcher extends BaseElasticSearcher implements CategorySearcher//, Reloadable
 {
 	private static final Log log = LogFactory.getLog(ElasticCategorySearcher.class);
 	protected CategoryArchive fieldCategoryArchive;
@@ -52,9 +53,48 @@ public class ElasticCategorySearcher extends BaseElasticSearcher implements Cate
 
 	public void reIndexAll() throws OpenEditException 
 	{
-		//This is the one time we load up the categories from the XML file
-	
+		
+		//there is not reindex step since it is only in memory
+		if (isReIndexing())
+		{
+			return;
+		}
+		try
+		{
+			setReIndexing(true);
+			if( fieldConnected )
+			{
+				putMappings(); //We can only try to put mapping. If this failes then they will
+				//need to export their data and factory reset the fields 
+			}
+			//deleteAll(null); //This only deleted the index
+			//This is the one time we load up the categories from the XML file
+			Category parent = getCategoryArchive().getRootCategory();
+			List tosave = new ArrayList();
+			updateChildren(parent,tosave);
+			updateIndex(tosave,null);
+		}
+		finally
+		{
+			setReIndexing(false);
+		}	
 	}
+	private void updateChildren(Category inParent, List inTosave)
+	{
+		// TODO Auto-generated method stub
+		inTosave.add(inParent);
+		if( inTosave.size() == 100)
+		{
+			updateIndex(inTosave,null);
+			inTosave.clear();
+		}
+		for (Iterator iterator = inParent.getChildren().iterator(); iterator.hasNext();)
+		{
+			Category child = (Category) iterator.next();
+			updateChildren(child,inTosave);
+		}
+	}
+
 	protected void updateIndex(XContentBuilder inContent, Data inData, PropertyDetails inDetails)
 	{
 		Category category = (Category)inData;

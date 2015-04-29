@@ -252,7 +252,7 @@ public class BaseElasticSearcher extends BaseSearcher
 			}
 			else
 			{
-				log.info(toId(getCatalogId()) + "/" + getSearchType() + " " + inQuery.toQuery() + " sort by " + inQuery.getSorts());
+				log.info(toId(getCatalogId()) + "/" + getSearchType() + " " + inQuery.toQuery() + " sort by " + inQuery.getSorts() + hits.size() + " hits" );
 			}
 
 			return hits;
@@ -408,9 +408,9 @@ public class BaseElasticSearcher extends BaseSearcher
 						log.error("Could not refresh shards");
 					}
 
-					log.info("Node is ready for " + getSearchType());
+					log.info(getCatalogId() + " Node is ready for " + getSearchType());
 				}
-				catch (Exception ex)
+ 				catch (Exception ex)
 				{
 					log.error("index could not be created ", ex);
 				}
@@ -471,7 +471,7 @@ public class BaseElasticSearcher extends BaseSearcher
 		try
 		{
 			putMapping(admin, indexid, source);
-			getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+			admin.cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
 			return;
 		}
 		catch( Exception ex)
@@ -510,7 +510,7 @@ public class BaseElasticSearcher extends BaseSearcher
 		if (pres.isAcknowledged())
 		{
 			log.info("mapping applied " + getSearchType());
-			getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+			admin.cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
 		}
 	}
 

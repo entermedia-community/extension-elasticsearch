@@ -255,6 +255,8 @@ public class SearcherCategoryArchive implements CategoryArchive
 			String parentPath = PathUtilities.extractDirectoryPath(inPath);
 			if (parentPath == null || parentPath == "/" || parentPath.length() == 0)
 			{
+				getRootCategory().addChild(child); //No parents left
+				saveCategory(child);
 				return child;
 			}
 
