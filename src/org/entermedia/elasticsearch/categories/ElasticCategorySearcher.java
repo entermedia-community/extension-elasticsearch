@@ -12,12 +12,12 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.entermedia.elasticsearch.searchers.BaseElasticSearcher;
 import org.openedit.Data;
 import org.openedit.data.PropertyDetails;
-import org.openedit.data.Reloadable;
 import org.openedit.entermedia.Category;
 import org.openedit.entermedia.CategoryArchive;
 import org.openedit.entermedia.xmldb.CategorySearcher;
 
 import com.openedit.OpenEditException;
+import com.openedit.users.User;
 
 public class ElasticCategorySearcher extends BaseElasticSearcher implements CategorySearcher//, Reloadable
 {
@@ -79,7 +79,7 @@ public class ElasticCategorySearcher extends BaseElasticSearcher implements Cate
 			setReIndexing(false);
 		}	
 	}
-	private void updateChildren(Category inParent, List inTosave)
+	protected void updateChildren(Category inParent, List inTosave)
 	{
 		// TODO Auto-generated method stub
 		inTosave.add(inParent);
@@ -154,7 +154,16 @@ public class ElasticCategorySearcher extends BaseElasticSearcher implements Cate
 		return super.searchByField(inField, inValue);
 	}
 	
-
+	public void saveData(Data inData, User inUser)
+	{
+		super.saveData(inData, inUser);
+//		ElasticCategory cat = (ElasticCategory)inData;
+//		cat = (ElasticCategory)cat.getParentCategory();
+//		if( cat == null)
+//		{
+//			cat.setChildren(null); //force a reload?
+//		}
+	}
 	
 	
 	

@@ -252,7 +252,7 @@ public class BaseElasticSearcher extends BaseSearcher
 			}
 			else
 			{
-				log.info(toId(getCatalogId()) + "/" + getSearchType() + " " + inQuery.toQuery() + " sort by " + inQuery.getSorts() + hits.size() + " hits" );
+				log.info(toId(getCatalogId()) + "/" + getSearchType() + " "  + hits.size() + " hits q=" + inQuery.toQuery() + " sort by " + inQuery.getSorts() );
 			}
 
 			return hits;
