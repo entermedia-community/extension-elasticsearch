@@ -246,9 +246,6 @@
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
-		<property name="categoryArchive">
-			<ref bean="searcherCategoryArchive" />
-		</property>
 		<property name="searcherManager">
 			<ref bean="searcherManager" />
 		</property>
@@ -259,7 +256,7 @@
 	<bean id="elasticCategory" class="org.entermedia.elasticsearch.categories.ElasticCategory" scope="prototype" >
 	</bean>	
 	
-<bean id="searcherCategoryArchive" class="org.entermedia.elasticsearch.categories.SearcherCategoryArchive"
+<bean id="elasticCategoryArchive" class="org.entermedia.elasticsearch.categories.SearcherCategoryArchive"
 		scope="prototype">
 		<property name="moduleManager">
 			<ref bean="moduleManager" />

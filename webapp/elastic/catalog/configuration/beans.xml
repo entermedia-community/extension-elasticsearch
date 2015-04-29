@@ -18,6 +18,7 @@
 	<bean id="orderSearcher" bean="elasticOrderSearcher" />
 	<bean id="orderhistorySearcher" bean="elasticDataSearcher" />
 	<bean id="orderitemSearcher" bean="elasticDataSearcher" />
+	<bean id="xmlCategoryArchive" bean="elasticCategoryArchive" />
 
 
 

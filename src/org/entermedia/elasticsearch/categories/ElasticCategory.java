@@ -34,6 +34,11 @@ public class ElasticCategory extends Category
 	}
 	public List getChildren()
 	{
+		boolean dirty = getCategorySearcher().getRootCategory().refresh();
+		if( dirty)
+		{
+			fieldChildren = null;
+		}
 		if (fieldChildren == null)
 		{
 			fieldChildren = getCategorySearcher().findChildren(this);

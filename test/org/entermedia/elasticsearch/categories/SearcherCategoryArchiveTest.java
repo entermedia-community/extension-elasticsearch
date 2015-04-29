@@ -13,7 +13,7 @@ public class SearcherCategoryArchiveTest  extends BaseEnterMediaTest
 	{
 		CategoryArchive archive = getMediaArchive().getCategoryArchive();
 		assertNotNull("asset searcher is NULL!", archive);
-		assertTrue( archive instanceof SearcherCategoryArchive );
+		assertTrue( archive instanceof ElasticCategoryArchive );
 	}
 
 	public void testLoadTree()

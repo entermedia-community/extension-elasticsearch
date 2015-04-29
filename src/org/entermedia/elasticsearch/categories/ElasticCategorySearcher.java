@@ -13,7 +13,6 @@ import org.entermedia.elasticsearch.searchers.BaseElasticSearcher;
 import org.openedit.Data;
 import org.openedit.data.PropertyDetails;
 import org.openedit.entermedia.Category;
-import org.openedit.entermedia.CategoryArchive;
 import org.openedit.entermedia.xmldb.CategorySearcher;
 
 import com.openedit.OpenEditException;
@@ -22,7 +21,8 @@ import com.openedit.users.User;
 public class ElasticCategorySearcher extends BaseElasticSearcher implements CategorySearcher//, Reloadable
 {
 	private static final Log log = LogFactory.getLog(ElasticCategorySearcher.class);
-	protected CategoryArchive fieldCategoryArchive;
+	//protected CategoryArchive fieldCategoryArchive;
+	protected Category fieldRootCategory;
 	
 	public Data createNewData()
 	{
@@ -69,10 +69,10 @@ public class ElasticCategorySearcher extends BaseElasticSearcher implements Cate
 			}
 			//deleteAll(null); //This only deleted the index
 			//This is the one time we load up the categories from the XML file
-			Category parent = getCategoryArchive().getRootCategory();
-			List tosave = new ArrayList();
-			updateChildren(parent,tosave);
-			updateIndex(tosave,null);
+//			Category parent = getCategoryArchive().getRootCategory();
+//			List tosave = new ArrayList();
+//			updateChildren(parent,tosave);
+//			updateIndex(tosave,null);
 		}
 		finally
 		{
@@ -115,21 +115,37 @@ public class ElasticCategorySearcher extends BaseElasticSearcher implements Cate
 	@Override
 	public Category getRootCategory()
 	{
-		return getCategoryArchive().getRootCategory();
+		if( fieldRootCategory == null)
+		{
+			fieldRootCategory = (Category)searchById("index");
+			if( fieldRootCategory == null)
+			{
+				fieldRootCategory = (Category)createNewData();
+				fieldRootCategory.setId("index");
+				fieldRootCategory.setName("Index");
+				saveData(fieldRootCategory, null);
+				//We are going to create a database tool to import categories.xml
+			}
+		}	
+		return fieldRootCategory;
 	}
-	public CategoryArchive getCategoryArchive()
+//	public CategoryArchive getCategoryArchive()
+//	{
+//		if(fieldCategoryArchive != null){
+//			fieldCategoryArchive.setCatalogId(getCatalogId());
+//		}
+//		return fieldCategoryArchive;
+//	}
+//	public void setCategoryArchive(CategoryArchive inCategoryArchive)
+//	{
+//		fieldCategoryArchive = inCategoryArchive;
+//		inCategoryArchive.setCatalogId(getCatalogId());
+//	}
+	@Override
+	public Category getCategory(String inCatalog)
 	{
-		if(fieldCategoryArchive != null){
-			fieldCategoryArchive.setCatalogId(getCatalogId());
-		}
-		return fieldCategoryArchive;
+		return (Category)searchById(inCatalog);
 	}
-	public void setCategoryArchive(CategoryArchive inCategoryArchive)
-	{
-		fieldCategoryArchive = inCategoryArchive;
-		inCategoryArchive.setCatalogId(getCatalogId());
-	}
-	
 	
 	public Object searchByField(String inField, String inValue)
 	{
@@ -153,11 +169,17 @@ public class ElasticCategorySearcher extends BaseElasticSearcher implements Cate
 		}
 		return super.searchByField(inField, inValue);
 	}
+
+	@Override
+	public void saveCategory(Category inCategory)
+	{
+		saveData(inCategory, null);
+	}
 	
 	public void saveData(Data inData, User inUser)
 	{
 		super.saveData(inData, inUser);
-//		ElasticCategory cat = (ElasticCategory)inData;
+		getRootCategory().setProperty("dirty", true);
 //		cat = (ElasticCategory)cat.getParentCategory();
 //		if( cat == null)
 //		{
