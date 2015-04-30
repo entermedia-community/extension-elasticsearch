@@ -256,7 +256,7 @@
 	<bean id="elasticCategory" class="org.entermedia.elasticsearch.categories.ElasticCategory" scope="prototype" >
 	</bean>	
 	
-<bean id="elasticCategoryArchive" class="org.entermedia.elasticsearch.categories.SearcherCategoryArchive"
+<bean id="elasticCategoryArchive" class="org.entermedia.elasticsearch.categories.ElasticCategoryArchive"
 		scope="prototype">
 		<property name="moduleManager">
 			<ref bean="moduleManager" />

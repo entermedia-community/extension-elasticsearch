@@ -241,7 +241,7 @@ public class ElasticCategoryArchive implements CategoryArchive
 	public Category cacheCategory(Category inCategory)
 	{
 		//the category is saved but we wanted to update the local map. Not needed for real time Elastic backed systems
-		return null;
+		return inCategory;
 	}
 
 }
