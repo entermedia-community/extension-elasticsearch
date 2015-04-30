@@ -250,10 +250,10 @@ public class BaseElasticSearcher extends BaseSearcher
 				long end = System.currentTimeMillis() - start;
 				log.info(toId(getCatalogId()) + "/" + getSearchType() + "/_search' -d '" + json + "' \n" + hits.size() + " hits in: " + (double) end / 1000D + " seconds]" );
 			}
-			else
-			{
-				log.info(toId(getCatalogId()) + "/" + getSearchType() + " "  + hits.size() + " hits q=" + inQuery.toQuery() + " sort by " + inQuery.getSorts() );
-			}
+//			else
+//			{
+//				log.info(toId(getCatalogId()) + "/" + getSearchType() + " "  + hits.size() + " hits q=" + inQuery.toQuery() + " sort by " + inQuery.getSorts() );
+//			}
 
 			return hits;
 		}
