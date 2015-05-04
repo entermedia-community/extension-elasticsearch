@@ -9,7 +9,6 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dom4j.Element;
-import org.entermedia.elasticsearch.SearchHitData;
 import org.entermedia.locks.Lock;
 import org.openedit.Data;
 import org.openedit.data.DataArchive;
@@ -56,7 +55,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 
 	public synchronized String nextId()
 	{
-		Lock lock = getLockManager().lock(loadCounterPath(), "admin");
+		Lock lock = getLockManager().lock(loadCounterPath(), "ElasticXmlFileSearcher.nextId");
 		try
 		{
 			return String.valueOf(getIntCounter().incrementCount());
@@ -266,9 +265,8 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		if (inData == null || inData.getSourcePath() == null || inData.getId() == null)
 		{
 			throw new OpenEditException("Cannot delete null data.");
-			//return;
 		}
-		getDataArchive().delete(inData, inUser);
+		getDataArchive().delete(getCatalogId(), inData, inUser);
 		super.delete(inData, inUser);
 	}
 
@@ -290,7 +288,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 //			}
 //		}
 		updateIndex(inAll, inUser);
-		getDataArchive().saveAllData(inAll, getCatalogId(), getPathToData() + "/", inUser);
+		getDataArchive().saveAllData(getCatalogId(),inAll, inUser);
 	}
 
 	//TODO: Deal with non XML saves
@@ -301,30 +299,14 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		//update the index
 		PropertyDetails details = getPropertyDetailsArchive().getPropertyDetailsCached(getSearchType());
 
-		Lock lock = null;
-		try
+		updateElasticIndex(details, inData);
+		if (inData.getSourcePath() == null)
 		{
-			//Why did I want to lock it here? Guess so that the xml file wont feel the need to do it?
-			lock = getLockManager().lock(getPathToData() + "/" + inData.getSourcePath() + "/" + getSearchType(), "admin"); //need to lock the entire file
+			String sourcepath = getSourcePathCreator().createSourcePath(inData, inData.getId());
+			inData.setSourcePath(sourcepath);
 			updateElasticIndex(details, inData);
-			//TODO - we might need the sourcepath saved in the below case.
-			if (inData.getSourcePath() == null)
-			{
-				String sourcepath = getSourcePathCreator().createSourcePath(inData, inData.getId());
-				inData.setSourcePath(sourcepath);
-				updateElasticIndex(details, inData);
-			}
-			getDataArchive().saveData(inData, inUser, lock);
 		}
-		catch (Throwable ex)
-		{
-			log.error("problem saving " + inData.getId(), ex);
-			throw new OpenEditException(ex);
-		}
-		finally
-		{
-			getLockManager().release(lock);
-		}
+		getDataArchive().saveData(getCatalogId(),inData, inUser);
 	}
 
 	protected DataArchive getDataArchive()
@@ -336,6 +318,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			archive.setDataFileName(getDataFileName());
 			archive.setElementName(getSearchType());
 			archive.setPathToData(getPathToData());
+			archive.setSearcherManager(getSearcherManager());
 			fieldDataArchive = archive;
 		}
 

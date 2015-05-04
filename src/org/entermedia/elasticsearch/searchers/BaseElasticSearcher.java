@@ -243,8 +243,8 @@ public class BaseElasticSearcher extends BaseSearcher
 			hits.setSearchQuery(inQuery);
 
 
-			if (log.isDebugEnabled())
-			//if( true )
+			//if (log.isDebugEnabled())
+			if( true )
 			{
 				json = search.toString();
 				long end = System.currentTimeMillis() - start;
