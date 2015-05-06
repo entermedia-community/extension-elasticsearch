@@ -1118,7 +1118,7 @@ public class BaseElasticSearcher extends BaseSearcher
 				req = req.source(content);
 				if( isRefreshSaves() )
 				{
-					req.refresh(true);
+					req = req.refresh(true);
 				}
 				bulkProcessor.add(req);
 			}
