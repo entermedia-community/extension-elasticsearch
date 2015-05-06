@@ -1036,9 +1036,9 @@ public class BaseElasticSearcher extends BaseSearcher
 */
 	public void updateIndex(Collection<Data> inBuffer, User inUser)
 	{
-		if( inBuffer.size() > 1 )
+		if( inBuffer.size() > 50 )
 		{
-			updateInBatch( inBuffer, inUser);
+			updateInBatch( inBuffer, inUser);  //This is asynchronous
 		}
 		else
 		{
