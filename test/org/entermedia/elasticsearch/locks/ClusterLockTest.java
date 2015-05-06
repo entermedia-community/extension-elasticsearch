@@ -23,15 +23,19 @@ public class ClusterLockTest extends LockTest
 		Lock lock = manager.lock(path, "admin");
 		assertNotNull(lock);
 
+		Lock nopossible = manager.lockIfPossible(path, "sfdsf");
+		assertNull(nopossible);
+
 		LockSearcher searcher = (LockSearcher)manager.getLockSearcher();
 		searcher.clearStaleLocks();
 		
 		lock = manager.loadLock(path);
-		assertFalse(lock.isLocked());
+		assertNull(lock);
 
 		//clear
-		//manager.lockIfPossible(ininPath, inOwnerId)
-		//manager.release(ininPath, inOwnerId)
+		Lock yespossible = manager.lockIfPossible(path, "sfdsf");
+		assertNotNull(yespossible);
+		manager.release(yespossible);
 	}
 
 	public void testVersion() throws Exception
@@ -40,15 +44,15 @@ public class ClusterLockTest extends LockTest
 		ClusterLockManager manager = (ClusterLockManager)getStaticFixture().getModuleManager().getBean(catid,"lockManager");
 		String path = "/entermedia/catalogs/testcatalog/assets/users/101/index.html";
 		
-		Lock lockfirst = manager.loadLock(path);
-		String version = lockfirst.get("_version");
+		Lock lockfirst = manager.lock(path,"testing");
+		String version = lockfirst.get(".version");
 		assertNotNull(version);
 
 		Lock locksecond = manager.loadLock(path);
 		locksecond.setOwnerId("fastdude");
 		manager.getLockSearcher().saveData(locksecond, null);
 
-		String version2 = locksecond.get("_version");
+		String version2 = locksecond.get(".version");
 		assertNotNull(version2);
 		
 		lockfirst.setOwnerId("slowdude");
