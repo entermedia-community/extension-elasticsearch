@@ -1557,9 +1557,26 @@ public class BaseElasticSearcher extends BaseSearcher
 		if (id != null)
 		{
 			HitTracker tracker = (HitTracker) inReq.getSessionValue(id);
-			//tracker = checkCurrent(inReq, tracker); //only run search when using cachedSearch
+			boolean runsearch = false;
+			String clear = inReq.getRequestParameter(getSearchType() + "clearselection");
+			if( clear != null)
+			{
+				runsearch = true;
+			}
+			else
+			{
+				String showonly = inReq.getRequestParameter(getSearchType() + "showonlyselections");
+				if(showonly != null)
+				{
+					runsearch = true;
+				}
+			}
 			if (tracker != null)
 			{
+				if( runsearch )
+				{
+					tracker = cachedSearch(inReq, tracker.getSearchQuery()); //only run search when using cachedSearch
+				}
 				String hitsname = inReq.findValue("hitsname");
 				if( hitsname == null)
 				{
