@@ -266,7 +266,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 		{
 			throw new OpenEditException("Cannot delete null data.");
 		}
-		getDataArchive().delete(getCatalogId(), inData, inUser);
+		getDataArchive().delete(inData, inUser);
 		super.delete(inData, inUser);
 	}
 
@@ -288,7 +288,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 //			}
 //		}
 		updateIndex(inAll, inUser);
-		getDataArchive().saveAllData(getCatalogId(),inAll, inUser);
+		getDataArchive().saveAllData(inAll, inUser);
 	}
 
 	//TODO: Deal with non XML saves
@@ -306,19 +306,17 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			inData.setSourcePath(sourcepath);
 			updateElasticIndex(details, inData);
 		}
-		getDataArchive().saveData(getCatalogId(),inData, inUser);
+		getDataArchive().saveData(inData, inUser);
 	}
 
 	protected DataArchive getDataArchive()
 	{
 		if (fieldDataArchive == null)
 		{
-			XmlDataArchive archive = new XmlDataArchive();
-			archive.setXmlArchive(getXmlArchive());
+			DataArchive archive = (DataArchive)getModuleManager().getBean(getCatalogId(),"xmlDataArchive");
 			archive.setDataFileName(getDataFileName());
 			archive.setElementName(getSearchType());
 			archive.setPathToData(getPathToData());
-			archive.setSearcherManager(getSearcherManager());
 			fieldDataArchive = archive;
 		}
 

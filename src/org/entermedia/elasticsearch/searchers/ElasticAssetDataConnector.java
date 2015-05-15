@@ -26,6 +26,7 @@ import org.elasticsearch.search.SearchHit;
 import org.entermedia.elasticsearch.SearchHitData;
 import org.entermedia.locks.Lock;
 import org.openedit.Data;
+import org.openedit.data.DataArchive;
 import org.openedit.data.PropertyDetails;
 import org.openedit.entermedia.Asset;
 import org.openedit.entermedia.AssetArchive;
@@ -53,6 +54,21 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 		return new Asset();
 	}
 
+	protected DataArchive getDataArchive()
+	{
+		if (fieldDataArchive == null)
+		{
+			DataArchive archive = (DataArchive)getModuleManager().getBean(getCatalogId(),"assetDataArchive");
+			archive.setDataFileName(getDataFileName());
+			archive.setElementName(getSearchType());
+			archive.setPathToData(getPathToData());
+			fieldDataArchive = archive;
+		}
+
+		return fieldDataArchive;
+	}
+
+	
 	public void deleteFromIndex(String inId)
 	{
 		// TODO Auto-generated method stub
