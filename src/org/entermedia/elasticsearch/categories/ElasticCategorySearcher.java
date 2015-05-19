@@ -188,5 +188,14 @@ public class ElasticCategorySearcher extends BaseElasticSearcher implements Cate
 	}
 	
 	
+	@Override
+	public void delete(Data inData, User inUser) {
+		// TODO Auto-generated method stub
+		super.delete(inData, inUser);
+		getRootCategory().setProperty("dirty", true);
+
+		getRootCategory().refresh();
+	}
+	
 	
 }
