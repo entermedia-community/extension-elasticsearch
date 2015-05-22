@@ -256,15 +256,12 @@
 	<bean id="elasticCategory" class="org.entermedia.elasticsearch.categories.ElasticCategory" scope="prototype" >
 	</bean>	
 	
-<bean id="elasticCategoryArchive" class="org.entermedia.elasticsearch.categories.ElasticCategoryArchive"
+	<bean id="elasticCategoryArchive" class="org.entermedia.elasticsearch.categories.ElasticCategoryArchive"
 		scope="prototype">
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
-				<property name="searcherManager"><ref bean="searcherManager" /></property>
-		
-		
-		
+		<property name="searcherManager"><ref bean="searcherManager" /></property>
 	</bean>
 	
 	<bean id="elasticOrderSearcher" class="org.entermedia.elasticsearch.searchers.ElasticOrderSearcher" scope="prototype">

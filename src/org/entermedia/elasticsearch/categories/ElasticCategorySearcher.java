@@ -14,6 +14,7 @@ import org.openedit.Data;
 import org.openedit.data.PropertyDetails;
 import org.openedit.entermedia.Category;
 import org.openedit.entermedia.xmldb.CategorySearcher;
+import org.openedit.entermedia.xmldb.XmlCategoryArchive;
 
 import com.openedit.OpenEditException;
 import com.openedit.users.User;
@@ -21,7 +22,21 @@ import com.openedit.users.User;
 public class ElasticCategorySearcher extends BaseElasticSearcher implements CategorySearcher//, Reloadable
 {
 	private static final Log log = LogFactory.getLog(ElasticCategorySearcher.class);
-	//protected CategoryArchive fieldCategoryArchive;
+	protected XmlCategoryArchive fieldXmlCategoryArchive;
+	public XmlCategoryArchive getXmlCategoryArchive()
+	{
+		if( fieldXmlCategoryArchive == null)
+		{
+			fieldXmlCategoryArchive = (XmlCategoryArchive)getModuleManager().getBean(getCatalogId(),"xmlCategoryArchive");
+		}
+		return fieldXmlCategoryArchive;
+	}
+
+	public void setXmlCategoryArchive(XmlCategoryArchive inXmlCategoryArchive)
+	{
+		fieldXmlCategoryArchive = inXmlCategoryArchive;
+	}
+
 	protected Category fieldRootCategory;
 	
 	public Data createNewData()
@@ -73,6 +88,9 @@ public class ElasticCategorySearcher extends BaseElasticSearcher implements Cate
 //			List tosave = new ArrayList();
 //			updateChildren(parent,tosave);
 //			updateIndex(tosave,null);
+			fieldRootCategory = null;
+			getRootCategory();
+			
 		}
 		finally
 		{
@@ -120,16 +138,33 @@ public class ElasticCategorySearcher extends BaseElasticSearcher implements Cate
 			fieldRootCategory = (Category)searchById("index");
 			if( fieldRootCategory == null)
 			{
-				fieldRootCategory = (Category)createNewData();
-				fieldRootCategory.setId("index");
-				fieldRootCategory.setName("Index");
-				saveData(fieldRootCategory, null);
+				fieldRootCategory = getXmlCategoryArchive().getRootCategory();
+				fieldXmlCategoryArchive = null;
+				if( fieldRootCategory == null)
+				{
+						fieldRootCategory = (Category)createNewData();
+						fieldRootCategory.setId("index");
+						fieldRootCategory.setName("Index");
+				}
+				fieldRootCategory.setProperty("dirty", true);
+				saveCategoryTree(fieldRootCategory);
 				//We are going to create a database tool to import categories.xml
 			}
 		}	
 		return fieldRootCategory;
 	}
-//	public CategoryArchive getCategoryArchive()
+	
+    protected void saveCategoryTree(Category inRootCategory)
+	{
+		saveData(inRootCategory, null);
+		for (Iterator iterator = inRootCategory.getChildren().iterator(); iterator.hasNext();)
+		{
+			Category child = (Category) iterator.next();
+			saveCategoryTree(child);
+		}
+	}
+
+	//	public CategoryArchive getCategoryArchive()
 //	{
 //		if(fieldCategoryArchive != null){
 //			fieldCategoryArchive.setCatalogId(getCatalogId());
