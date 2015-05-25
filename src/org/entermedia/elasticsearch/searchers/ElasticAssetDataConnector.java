@@ -51,7 +51,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 	protected OutputFiller filler = new OutputFiller();
 	public Data createNewData()
 	{
-		return new Asset();
+		return new Asset(getMediaArchive());
 	}
 
 	protected DataArchive getDataArchive()
@@ -467,7 +467,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 
 	protected Asset createAssetFromResponse(String inId, Map inSource)
 	{
-		Asset asset = new Asset();
+		Asset asset = (Asset)createNewData();
 		if(inSource == null){
 			return null;
 		}
