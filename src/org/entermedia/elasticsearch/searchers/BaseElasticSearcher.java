@@ -1226,7 +1226,14 @@ public class BaseElasticSearcher extends BaseSearcher
 		{
 			log.info("Null Data");
 		}
-
+		populateDoc(inContent, inData, inDetails);
+		
+		
+	
+	}
+	
+	protected void populateDoc(XContentBuilder inContent, Data inData, PropertyDetails inDetails){
+		
 		Map props = inData.getProperties();
 		HashSet everything = new HashSet(props.keySet());
 		everything.add("id");
@@ -1358,6 +1365,13 @@ public class BaseElasticSearcher extends BaseSearcher
 			}
 		}
 	}
+
+	
+	
+	
+	
+	
+	
 
 	public void deleteAll(User inUser)
 	{
@@ -1590,5 +1604,43 @@ public class BaseElasticSearcher extends BaseSearcher
 	}
 
 	
+	
+	
+	
+	public void updateData(Data inData, Map inSource){
+		for (Iterator iterator = inSource.keySet().iterator(); iterator.hasNext();)
+		{
+			String key = (String) iterator.next();
+			Object object = inSource.get(key);
+			if("category-exact".equals(key)){
+				continue;
+			}
+			String val = null;
+			if (object instanceof String) {
+				val= (String) object;
+			}
+			if (object instanceof Date) {
+				val= String.valueOf((Date) object);
+			}
+			if (object instanceof Boolean) {
+				val= String.valueOf((Boolean) object);
+			}
+			if (object instanceof Integer) {
+				val= String.valueOf((Integer) object);
+			}
+			if (object instanceof Float) {
+				val= String.valueOf((Float) object);
+			}
+			if (object instanceof Collection) {
+				continue;
+//				Collection values = (Collection) object;
+//				inData.setValues(key, (Collection<String>) object);
+			}
+			else if(val != null)
+			{
+				inData.setProperty(key, val);
+			}
+		}
+	}
 	
 }
