@@ -11,11 +11,11 @@ var tmp = web + "/tmp";
 
 log.add("1. GET THE LATEST WAR FILE");
 var downloader = new Downloader();
-downloader.download( war, tmp + "/ROOT.war");
+downloader.download( war, tmp + "/extension-elasticsearch.zip");
 
 log.add("2. UNZIP WAR FILE");
 var unziper = new ZipUtil();
-unziper.unzip(  tmp + "/ROOT.war",  tmp );
+unziper.unzip(  tmp + "/extension-elasticsearch.zip",  tmp );
 
 log.add("3. REPLACE LIBS");
 var files = new FileUtils();
