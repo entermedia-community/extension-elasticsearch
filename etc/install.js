@@ -37,7 +37,7 @@ files.deleteMatch( web + "/lib/lucene-spatial-*.jar");
 files.deleteMatch( web + "/lib/spatial4j-*.jar");
 log.add("Here");
 
-files.copyFileByMatch(tmp + "/lib/*",web + "/lib/");
+files.copyFileByMatch(tmp + "/lib/*.jar",web + "/lib/");
 
 log.add("5. CLEAN UP");
 files.deleteAll(tmp);
