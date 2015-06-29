@@ -112,6 +112,7 @@ public class ElasticNodeManager extends NodeManager
 		return replace.replace(value, params);
 	}
 
+	//called from the lock manager
 	public void shutdown()
 	{
 		if(!fieldShutdown)

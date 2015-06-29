@@ -64,6 +64,7 @@ public class LockSearcher extends BaseElasticSearcher implements Shutdownable
 		{
 			fieldElasticNodeManager.shutdown();
 			fieldConnected = false;
+			fieldElasticNodeManager = null;
 		}
 	}
 }
