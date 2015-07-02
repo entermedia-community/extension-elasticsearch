@@ -92,7 +92,17 @@ public class ElasticCategory extends Category
 	}
 	
 	
-	
+	public boolean refresh()
+	{
+		boolean dirty = isPropertyTrue("dirty");
+		if( dirty )
+		{
+			fieldChildren = null;
+			setProperty("dirty", false);
+			return true;
+		}
+		return false;
+	}
 	
 	
 }

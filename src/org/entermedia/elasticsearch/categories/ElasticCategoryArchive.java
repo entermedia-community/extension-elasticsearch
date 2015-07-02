@@ -167,6 +167,10 @@ public class ElasticCategoryArchive implements CategoryArchive
 	public Category createCategoryTree(String inPath) throws OpenEditException
 	{
 		Category newcat = createCategoryTree(inPath, null);
+		if( newcat != null && newcat.getParentCategory() != null)
+		{
+			newcat.getParentCategory().refresh();
+		}
 		return newcat;
 	}
 
@@ -237,11 +241,6 @@ public class ElasticCategoryArchive implements CategoryArchive
 		}
 	}
 
-	@Override
-	public Category cacheCategory(Category inCategory)
-	{
-		//the category is saved but we wanted to update the local map. Not needed for real time Elastic backed systems
-		return inCategory;
-	}
+
 
 }
