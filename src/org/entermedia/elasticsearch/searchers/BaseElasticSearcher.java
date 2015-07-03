@@ -232,12 +232,6 @@ public class BaseElasticSearcher extends BaseSearcher
 
 			ElasticHitTracker hits = new ElasticHitTracker(search, terms);
 
-			if (inQuery.hasFilters())
-			{
-				FilterBuilder filter = addFilters(inQuery, search);
-				hits.setFilterBuilder(filter);
-			}
-
 			hits.setIndexId(getIndexId());
 			hits.setSearcher(this);
 			hits.setSearchQuery(inQuery);
@@ -270,21 +264,6 @@ public class BaseElasticSearcher extends BaseSearcher
 			}
 			throw new OpenEditException(ex);
 		}
-	}
-
-	protected FilterBuilder addFilters(SearchQuery inQuery, SearchRequestBuilder inSearch)
-	{
-
-		AndFilterBuilder andFilter = FilterBuilders.andFilter();
-		for (Iterator iterator = inQuery.getFilters().iterator(); iterator.hasNext();)
-		{
-			FilterNode node = (FilterNode) iterator.next();
-
-			TermFilterBuilder filter = FilterBuilders.termFilter(node.getId(), node.get("value"));
-			andFilter.add(filter);
-		}
-		return andFilter;
-
 	}
 
 	// protected void addQueryFilters(SearchQuery inQuery, QueryBuilder inTerms)

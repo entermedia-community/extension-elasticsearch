@@ -10,11 +10,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.FilterBuilder;
+import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.IdsQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermFilterBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.facet.terms.TermsFacet;
 import org.elasticsearch.search.facet.terms.TermsFacet.Entry;
@@ -24,28 +27,17 @@ import org.openedit.data.PropertyDetail;
 import com.openedit.OpenEditException;
 import com.openedit.hittracker.FilterNode;
 import com.openedit.hittracker.HitTracker;
+import com.openedit.hittracker.SearchQuery;
 
 public class ElasticHitTracker extends HitTracker
 {
 	private static final Log log = LogFactory.getLog(ElasticHitTracker.class);
 
 	protected SearchRequestBuilder fieldSearcheRequestBuilder;
-	protected FilterBuilder fieldFilterBuilder;
 	protected Map fieldChunks;
 	protected int fieldHitsPerChunk = 40;
 	protected QueryBuilder terms;
 	//protected List fieldFilterOptions;
-
-	public FilterBuilder getFilterBuilder()
-	{
-		return fieldFilterBuilder;
-	}
-
-	public void setFilterBuilder(FilterBuilder inFilterBuilder)
-	{
-		fieldFilterBuilder = inFilterBuilder;
-	}
-
 
 	public QueryBuilder getTerms()
 	{
@@ -81,25 +73,7 @@ public class ElasticHitTracker extends HitTracker
 	public void setShowOnlySelected(boolean inShowOnlySelected)
 	{
 		fieldShowOnlySelected = inShowOnlySelected;
-
-		if (isShowOnlySelected() && fieldSelections != null && fieldSelections.size() > 0)
-		{
-
-			BoolQueryBuilder bool = QueryBuilders.boolQuery();
-			bool.must(getTerms());
-			String[] fieldSelected = fieldSelections.toArray(new String[fieldSelections.size()]);
-			IdsQueryBuilder b = QueryBuilders.idsQuery();
-			b.addIds(fieldSelected);
-			bool.must(b);
-			getSearcheRequestBuilder().setQuery(bool);
-		}
-
-		else
-		{
-
-			getSearcheRequestBuilder().setQuery(getTerms());
-
-		}
+		
 		getChunks().clear();
 	}
 
@@ -113,9 +87,31 @@ public class ElasticHitTracker extends HitTracker
 			int end = (inChunk + 1) * fieldHitsPerChunk;
 
 			getSearcheRequestBuilder().setFrom(start).setSize(end).setExplain(false);
-			if(getFilterBuilder() != null){
-				getSearcheRequestBuilder().setPostFilter(getFilterBuilder());
+			if(getSearchQuery().hasFilters())
+			{
+				BoolQueryBuilder bool = QueryBuilders.boolQuery();
+				bool.must(getTerms());
+				for (Iterator iterator = getSearchQuery().getFilters().iterator(); iterator.hasNext();)
+				{
+					FilterNode node = (FilterNode) iterator.next();
+					QueryBuilder term = QueryBuilders.matchQuery(node.getId(), node.get("value"));
+					bool.must(term);
+				}
+				getSearcheRequestBuilder().setQuery(bool);
 			}
+			
+			if (isShowOnlySelected() && fieldSelections != null && fieldSelections.size() > 0)
+			{
+				String[] fieldSelected = fieldSelections.toArray(new String[fieldSelections.size()]);
+				FilterBuilder filter = FilterBuilders.idsFilter().ids(fieldSelected);
+				//andFilter.add(filter);
+				getSearcheRequestBuilder().setPostFilter(filter);
+			}
+			else
+			{
+				getSearcheRequestBuilder().setPostFilter((AndFilterBuilder)null);
+			}
+			
 			response = getSearcheRequestBuilder().execute().actionGet();
 			
 			if (getChunks().size() > 30)
@@ -249,4 +245,10 @@ public class ElasticHitTracker extends HitTracker
 		return topfacets;
 
 	}	
+	
+	public void invalidate()
+	{
+		setIndexId(getIndexId() + 1);
+		fieldFilterOptions = null;		
+	}
 }
