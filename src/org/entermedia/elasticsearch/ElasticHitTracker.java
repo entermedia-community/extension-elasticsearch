@@ -35,6 +35,7 @@ public class ElasticHitTracker extends HitTracker
 
 	protected SearchRequestBuilder fieldSearcheRequestBuilder;
 	protected Map fieldChunks;
+	protected int fieldHitsPerChunk = 40;
 	protected QueryBuilder terms;
 	//protected List fieldFilterOptions;
 
@@ -82,8 +83,8 @@ public class ElasticHitTracker extends HitTracker
 		SearchResponse response = (SearchResponse) getChunks().get(chunk);
 		if (response == null)
 		{
-			int start = (inChunk) * getHitsPerPage();
-			int end = (inChunk + 1) * getHitsPerPage();
+			int start = (inChunk) * fieldHitsPerChunk;
+			int end = (inChunk + 1) * fieldHitsPerChunk;
 
 			getSearcheRequestBuilder().setFrom(start).setSize(end).setExplain(false);
 			if(getSearchQuery().hasFilters())
@@ -140,10 +141,10 @@ public class ElasticHitTracker extends HitTracker
 		// Get the relative location based on the page we are on
 
 		// ie 50 / 40 = 1
-		int chunk = inCount / getHitsPerPage();
+		int chunk = inCount / fieldHitsPerChunk;
 
 		// 50 - (1 * 40) = 10 relative
-		int indexlocation = inCount - (chunk * getHitsPerPage());
+		int indexlocation = inCount - (chunk * fieldHitsPerChunk);
 
 		// get the chunk 1
 		SearchResponse searchResponse = getSearchResponse(chunk);
