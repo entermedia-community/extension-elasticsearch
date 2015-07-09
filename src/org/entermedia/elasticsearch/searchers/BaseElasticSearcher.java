@@ -594,7 +594,7 @@ public class BaseElasticSearcher extends BaseSearcher
 				else
 				{
 					String indextype = detail.get("indextype");
-					if( indextype == null && detail.getId().equals("sourcepath"))
+					if( indextype == null && detail.getId().contains("sourcepath"))
 					{
 						indextype = "not_analyzed";
 					}
@@ -887,7 +887,6 @@ public class BaseElasticSearcher extends BaseSearcher
 		}
 		else
 		{
-
 			if ("matches".equals(inTerm.getOperation()))
 			{
 				find = QueryBuilders.matchQuery(fieldid, valueof); //this is analyzed
@@ -900,6 +899,7 @@ public class BaseElasticSearcher extends BaseSearcher
 			else
 			{
 				find = QueryBuilders.matchQuery(fieldid, valueof); //This is not analyzed termQuery
+				//find = QueryBuilders.termQuery(fieldid, valueof);
 			}
 		}
 		// QueryBuilders.idsQuery(types)
