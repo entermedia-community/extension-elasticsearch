@@ -196,9 +196,9 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			{
 				updateIndex(buffer, null);
 				buffer.clear();
-				log.info("reindexed " + processor.getExecCount());
 				flushChanges();
 			}
+			log.info("reindexed " + processor.getExecCount());
 		}
 		catch (Exception e)
 		{
