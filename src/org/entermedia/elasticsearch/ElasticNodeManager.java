@@ -59,12 +59,12 @@ public class ElasticNodeManager extends NodeManager
 				}
 				NodeBuilder nb = NodeBuilder.nodeBuilder();//.client(client)local(true);
 				
-				Page config = getPageManager().getPage("/WEB-INF/node.xml");
+				Page config = getPageManager().getPage("/WEB-INF/node.xml"); //Legacy DO Not use REMOVE sometime
 				if( !config.exists() )
 				{
-					throw new OpenEditException("Missing " + config.getPath());
+					//throw new OpenEditException("Missing " + config.getPath());
+					config = getPageManager().getPage("/system/configuration/node.xml");
 				}
-
 				
 				for (Iterator iterator = getLocalNode().getElement().elementIterator("property"); iterator.hasNext();)
 				{
