@@ -594,9 +594,12 @@ public class BaseElasticSearcher extends BaseSearcher
 				else
 				{
 					String indextype = detail.get("indextype");
-					if( indextype == null && detail.getId().contains("sourcepath"))
+					if( indextype == null )
 					{
-						indextype = "not_analyzed";
+						if( detail.getId().endsWith("id") || detail.getId().contains("sourcepath"))
+						{
+							indextype = "not_analyzed";
+						}
 					}
 					if (indextype != null )
 					{
