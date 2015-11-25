@@ -245,7 +245,7 @@ public class ElasticXmlFileSearcher extends BaseElasticSearcher
 			fieldPrefix = getPageManager().getPage("/" + getCatalogId()).get("defaultdatafolder");
 			if (fieldPrefix == null)
 			{
-				fieldPrefix = getSearchType();
+				fieldPrefix = getSearchType() + "s"; //legacy support
 			}
 		}
 		return fieldPrefix;

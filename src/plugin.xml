@@ -320,7 +320,7 @@
 		scope="prototype">
 		<property name="elasticNodeManager">
 			<ref bean="nodeManager" />
-		</property>
+		</property>Data
 		<property name="moduleManager">
 			<ref bean="moduleManager" />
 		</property>
@@ -333,6 +333,24 @@
 		
 	</bean>
 	
+	  <bean id="elasticXmlFileSearcher" class="org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher" scope="prototype">
+		<property name="pageManager">
+			<ref bean="pageManager" />
+		</property>
+		<property name="xmlArchive">
+			<ref bean="xmlArchive" />
+		</property>
+		<property name="moduleManager">
+			<ref bean="moduleManager" />
+		</property>
+		<property name="elasticNodeManager">
+			<ref bean="nodeManager" />
+		</property>
+		<property name="searcherManager">
+			<ref bean="searcherManager" />
+		</property>
+		<property name="sourcePathCreator"><ref bean="chunkySourcePathCreator"/></property>		
+	</bean>
 	
 	
 	
