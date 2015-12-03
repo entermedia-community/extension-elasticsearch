@@ -51,7 +51,11 @@ public class ElasticSearchQuery extends SearchQuery
 		}
 		return addAfter(detail, inSearchDate);
 	}
-
+	public void addJoinFilter(SearchQuery filterQuery, String inFilterColumn, boolean inFilterHasMultiValues, String filterSearchType, String inResultsColumn)
+	{
+		//TODO: Upgrade to ElasticSearch and create a smart object that will perform the 
+		//https://www.elastic.co/guide/en/elasticsearch/reference/2.0/query-dsl-has-parent-query.html
+	}
 	public Term addAfter(PropertyDetail inFieldId,final Date inDate)
 	{
 		Term term = new Term()

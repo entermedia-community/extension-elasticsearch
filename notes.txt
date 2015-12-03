@@ -1,4 +1,62 @@
-curl -XPOST 'http://localhost:9200/stopsmoke_catalog/librarycollectionasset/_search' -d 
+curl -XPOST 'http://localhost:9200/qa_catalog/asseteditLog/_mapping'  -d '{"asseteditLog":{"date_detection":"false","properties":{"_all":{"store":"false","analyzer":"lowersnowball","index_analyzer":"lowersnowball","search_analyzer":"lowersnowball","index":"analyzed","type":"string"},"_id":{"index":"not_analyzed","type":"string"},"details":{"type":"string","store":"yes","include_in_all":"false"},"operation":{"type":"string","store":"yes","include_in_all":"false"},"sourcepath":{"index":null,"type":"string","store":"yes","include_in_all":"false"},"user":{"type":"string","store":"yes","include_in_all":"false"},"date":{"type":"date","store":"yes","include_in_all":"false"}}}}' | python -mjson.tool
+
+curl -XPOST 'http://localhost:9200/qa_catalog/view/_search' -d '{
+  "query" : {
+    "bool" : {
+      "must" : [ {
+        "match" : {
+          "module" : {
+            "query" : "asset",
+            "type" : "boolean"
+          }
+        }
+      }, {
+        "term" : {
+          "systemdefined" : false
+        }
+      }, {
+        "filtered" : {
+          "query" : {
+            "match_all" : { }
+          },
+          "filter" : {
+            "exists" : {
+              "field" : "rendertable"
+            }
+          }
+        }
+      } ]
+    }
+  },
+  "sort" : [ {
+    "ordering" : {
+      "order" : "asc",
+      "ignore_unmapped" : true
+    }
+  } ]
+}' | python -mjson.tool
+
+
+curl -XPOST 'http://localhost:9200/qa_catalog/asseteditlogtwo/_mapping'  -d '
+{
+    "asseteditlogtwo": {
+        "date_detection": "false",
+        "properties": {
+            "sourcepath": {
+                "include_in_all": "false",
+                "store": "yes",
+                "type": "string"
+            },
+            "user": {
+                "include_in_all": "false",
+                "store": "yes",
+                "type": "string"
+            }
+        }
+    }
+}' | python -mjson.tool
+
+curl -XPOST 'http://localhost:9200/qa_catalog/librarycollectionasset/_search' -d 
 '{
   "query" : {
     "match" : {
@@ -21,7 +79,7 @@ curl -XPOST 'http://localhost:9200/stopsmoke_catalog/librarycollectionasset/_sea
 
 
 
-curl -XPOST 'http://localhost:9200/stopsmoke_catalog/librarycollectionasset/_search' -d '{
+curl -XPOST 'http://localhost:9200/qa_catalog/librarycollectionasset/_search' -d '{
   "query" : {
     "bool" : {
       "should" : {
@@ -42,7 +100,7 @@ curl -XPOST 'http://localhost:9200/stopsmoke_catalog/librarycollectionasset/_sea
 }' | python -mjson.tool
 
 
-curl -XPOST 'http://localhost:9200/stopsmoke_catalog/librarycollectionasset/_search' -d '{
+curl -XPOST 'http://localhost:9200/qa_catalog/librarycollectionasset/_search' -d '{
   "query" : {
     "bool" : {
       "should" : {
@@ -71,6 +129,85 @@ curl -XPOST 'http://localhost:9200/stopsmoke_catalog/librarycollectionasset/_sea
   }
 }' | python -mjson.tool
 
+
+curl -XPOST 'http://localhost:9200/qa_catalog/asset/_search' -d '{
+  "query" : {
+    "bool" : {
+      "must" : [ {
+        "match" : {
+          "category" : {
+            "query" : "index",
+            "type" : "boolean"
+          }
+        }
+      }, {
+        "bool" : {
+          "should" : [ {
+            "match" : {
+              "viewasset" : {
+                "query" : "true",
+                "type" : "boolean"
+              }
+            }
+          }, {
+            "match" : {
+              "viewasset" : {
+                "query" : "library_au0frs_hkxnnxpqa7hz4",
+                "type" : "boolean"
+              }
+            }
+          }, {
+            "match" : {
+              "viewasset" : {
+                "query" : "group_administrators",
+                "type" : "boolean"
+              }
+            }
+          }, {
+            "match" : {
+              "viewasset" : {
+                "query" : "user_admin",
+                "type" : "boolean"
+              }
+            }
+          } ]
+        }
+      } ]
+    }
+  },
+  "sort" : [ {
+    "assetaddeddate" : {
+      "order" : "desc",
+      "ignore_unmapped" : true
+    }
+  } ],
+  "facets" : {
+    "libraries" : {
+      "terms" : {
+        "field" : "libraries",
+        "size" : 10
+      }
+    },
+    "assettype" : {
+      "terms" : {
+        "field" : "assettype",
+        "size" : 10
+      }
+    },
+    "fileformat" : {
+      "terms" : {
+        "field" : "fileformat",
+        "size" : 10
+      }
+    },
+    "editstatus" : {
+      "terms" : {
+        "field" : "editstatus",
+        "size" : 10
+      }
+    }
+  }
+}' | python -mjson.tool
 
 curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search' -d '
 {"query" :
@@ -136,7 +273,7 @@ curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search' -d '
 }
 }' | python -mjson.tool
 
-curl -XGET  'http://127.0.0.1:9200/stopsmoke_catalog/asset/_mapping?pretty=true'  | python -mjson.tool
+	curl -XGET  'http://127.0.0.1:9200/qa_catalog/asset/_mapping?pretty=true'  | python -mjson.tool
 
 curl -XGET  'http://127.0.0.1:9200/entermedia_catalogs_testcatalog/asset/_mapping?pretty=true'  | python -mjson.tool
 
@@ -149,6 +286,9 @@ curl -XGET  'http://127.0.0.1:9200/entermedia_catalogs_testcatalog/librarycollec
 curl -XPOST 'http://localhost:9200/media_catalogs_public/asset/_search?q=category:index' | python -mjson.tool
 
 curl -XGET 'http://localhost:9200/media_catalogs_public/asset/_mapping?pretty=true'
+curl -XGET 'http://localhost:9200/qa_catalog/lock/_mapping?pretty=true'| python -mjson.tool
+
+
 
 curl -XGET 'http://localhost:9200/system/user/_search' -d '{"term":{"_all":"admin"}}'
 
@@ -167,3 +307,73 @@ curl -XPOST 'http://localhost:9200/system/group/_search' -d '{
     }
   } ]
 }'
+
+curl -XPOST 'http://localhost:9200/qa_catalog/asset/_search' -d '{
+  "query" : {
+    "bool" : {
+      "must" : [ {
+        "term" : {
+          "category" : "index"
+        }
+      }, {
+        "bool" : {
+          "should" : [ {
+            "match" : {
+              "viewasset" : {
+                "query" : "true",
+                "type" : "boolean"
+              }
+            }
+          }, {
+            "match" : {
+              "viewasset" : {
+                "query" : "group_administrators",
+                "type" : "boolean"
+              }
+            }
+          }, {
+            "match" : {
+              "viewasset" : {
+                "query" : "user_admin",
+                "type" : "boolean"
+              }
+            }
+          } ]
+        }
+      } ]
+    }
+  },
+  "sort" : [ {
+    "assetaddeddate" : {
+      "order" : "desc",
+      "ignore_unmapped" : true
+    }
+  } ],
+  "facets" : {
+    "libraries" : {
+      "terms" : {
+        "field" : "libraries",
+        "size" : 10
+      }
+    },
+    "assettype" : {
+      "terms" : {
+        "field" : "assettype",
+        "size" : 10
+      }
+    },
+    "fileformat" : {
+      "terms" : {
+        "field" : "fileformat",
+        "size" : 10
+      }
+    },
+    "editstatus" : {
+      "terms" : {
+        "field" : "editstatus",
+        "size" : 10
+      }
+    }
+  }
+}'  | python -mjson.tool
+
