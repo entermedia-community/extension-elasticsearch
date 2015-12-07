@@ -324,20 +324,21 @@ public class BaseElasticSearcher extends BaseSearcher
 						{
 							XContentBuilder settingsBuilder = XContentFactory.jsonBuilder()
 									.startObject()
-										.startObject("analysis").
-											startObject("filter").
-												startObject("snowball").field("type", "snowball").field("language", "English")
-												.endObject()
-											.endObject().
-											startObject("analyzer").
-												startObject("lowersnowball").field("type", "custom").field("tokenizer", "standard").field("filter", new String[] { "lowercase", "snowball" })									
+										.startObject("analysis")
+//											.startObject("filter").
+//												startObject("snowball").field("type", "snowball").field("language", "English")
+//												.endObject()
+//											.endObject()
+											.startObject("analyzer").
+												startObject("lowersnowball").field("type", "snowball").field("language", "English")								
 												.endObject()
 											.endObject()
 										.endObject()
 									.endObject();
 
-							CreateIndexResponse newindexres = admin.indices().prepareCreate("index_name").setSettings(settingsBuilder).get();
-							
+							CreateIndexResponse newindexres = admin.indices().prepareCreate(cluster).setSettings(settingsBuilder).execute().actionGet();
+							//CreateIndexResponse newindexres = admin.indices().prepareCreate(cluster).execute().actionGet();
+
 							if (newindexres.isAcknowledged())
 							{
 								log.info("index created " + cluster);
@@ -350,6 +351,9 @@ public class BaseElasticSearcher extends BaseSearcher
 						}
 					}
 
+		
+					
+					
 					ClusterState cs = admin.cluster().prepareState().setIndices(indexid).execute().actionGet().getState();
 					IndexMetaData data = cs.getMetaData().index(indexid);
 					if (data != null)
@@ -510,8 +514,8 @@ public class BaseElasticSearcher extends BaseSearcher
 			jsonproperties = jsonproperties.startObject("_all");
 			jsonproperties = jsonproperties.field("store", "false");
 			jsonproperties = jsonproperties.field("analyzer", "lowersnowball");
-			jsonproperties = jsonproperties.field("index_analyzer", "lowersnowball");
-			jsonproperties = jsonproperties.field("search_analyzer", "lowersnowball"); // lower
+			//jsonproperties = jsonproperties.field("index_analyzer", "lowersnowball");
+			//jsonproperties = jsonproperties.field("search_analyzer", "lowersnowball"); // lower
 																						// case
 																						// does
 																						// not

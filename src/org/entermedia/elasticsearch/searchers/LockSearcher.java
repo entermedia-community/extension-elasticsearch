@@ -58,7 +58,7 @@ public class LockSearcher extends BaseElasticSearcher implements Shutdownable
 		            .setSearchType(SearchType.QUERY_THEN_FETCH)
 		            .setQuery(builder)
 		            .setTypes(getSearchType())
-		            .setSize(Integer.MAX_VALUE)
+		            .setSize(10000)//Investigate deleting other ways (plugin)
 		           // .addFields("id")
 		            .execute()
 		            .actionGet();

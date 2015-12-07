@@ -26,7 +26,7 @@ import com.openedit.hittracker.SearchQuery;
 public class SearcherTest extends BaseEnterMediaTest
 {
 
-public void xxtestBasicRead() throws Exception
+public void testBasicRead() throws Exception
 {
 		// on startup
 		//Node node = NodeBuilder.nodeBuilder().client(true).node();
