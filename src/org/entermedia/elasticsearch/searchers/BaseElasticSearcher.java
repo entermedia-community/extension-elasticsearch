@@ -20,8 +20,6 @@ import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsReques
 import org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsResponse;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
-import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingRequest;
-import org.elasticsearch.action.admin.indices.mapping.delete.DeleteMappingResponse;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
 import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
@@ -29,10 +27,8 @@ import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
-import org.elasticsearch.action.deletebyquery.DeleteByQueryRequestBuilder;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
@@ -45,25 +41,19 @@ import org.elasticsearch.client.Requests;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.cluster.metadata.MappingMetaData;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
-import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.ExistsFilterBuilder;
-import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.TermFilterBuilder;
-import org.elasticsearch.search.facet.FacetBuilder;
-import org.elasticsearch.search.facet.FacetBuilders;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
@@ -80,7 +70,6 @@ import org.openedit.util.DateStorageUtil;
 
 import com.openedit.OpenEditException;
 import com.openedit.WebPageRequest;
-import com.openedit.hittracker.FilterNode;
 import com.openedit.hittracker.HitTracker;
 import com.openedit.hittracker.SearchQuery;
 import com.openedit.hittracker.Term;
@@ -294,12 +283,10 @@ public class BaseElasticSearcher extends BaseSearcher
 			PropertyDetail detail = (PropertyDetail) iterator.next();
 			if (detail.isFilter())
 			{
-				FacetBuilder b = FacetBuilders.termsFacet(detail.getId()).field(detail.getId()).size(10);
-				inSearch.addFacet(b);
+				AggregationBuilder b = AggregationBuilders.terms(detail.getId()).field(detail.getId()).size(10);
+				inSearch.addAggregation(b);
 			}
-
 		}
-
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -335,22 +322,22 @@ public class BaseElasticSearcher extends BaseSearcher
 					{
 						try
 						{
-							XContentBuilder jsonBuilder = XContentFactory.jsonBuilder();
+							XContentBuilder settingsBuilder = XContentFactory.jsonBuilder()
+									.startObject()
+										.startObject("analysis").
+											startObject("filter").
+												startObject("snowball").field("type", "snowball").field("language", "English")
+												.endObject()
+											.endObject().
+											startObject("analyzer").
+												startObject("lowersnowball").field("type", "custom").field("tokenizer", "standard").field("filter", new String[] { "lowercase", "snowball" })									
+												.endObject()
+											.endObject()
+										.endObject()
+									.endObject();
 
-							CreateIndexResponse newindexres = admin.indices().prepareCreate(cluster).setSettings(ImmutableSettings.settingsBuilder().loadFromSource(
-									jsonBuilder.startObject().startObject("analysis").
-																startObject("filter").
-																startObject("snowball").field("type", "snowball").field("language", "English").endObject().endObject().
-																startObject("analyzer").
-																	startObject("lowersnowball").field("type", "custom").field("tokenizer", "standard")
-							// .field("tokenizer",
-							// "keyword")
-							.field("filter", new String[] { "lowercase", "snowball" })
-							// .field("filter",
-							// new
-							// String[]{"lowercase"})
-							.endObject().endObject().endObject().endObject().string())).execute().actionGet();
-
+							CreateIndexResponse newindexres = admin.indices().prepareCreate("index_name").setSettings(settingsBuilder).get();
+							
 							if (newindexres.isAcknowledged())
 							{
 								log.info("index created " + cluster);
@@ -411,25 +398,27 @@ public class BaseElasticSearcher extends BaseSearcher
 	}
 	protected void deleteOldMapping()
 	{
-		AdminClient admin = getElasticNodeManager().getClient().admin();
-		String indexid = toId(getCatalogId());
-		//XContentBuilder source = buildMapping();
-
-		DeleteMappingRequest dreq = Requests.deleteMappingRequest(indexid).types(getSearchType());
-		try
-		{
-			DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
-			if (dpres.isAcknowledged())
-			{
-				log.info("Cleared out the mapping " + getSearchType() );
-				getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
-			}
-		}	
-		catch (Throwable ex)
-		{
-			log.error(ex);
-		}
+		log.info("Does not work");
 	}
+//		AdminClient admin = getElasticNodeManager().getClient().admin();
+//		String indexid = toId(getCatalogId());
+//		//XContentBuilder source = buildMapping();
+//
+//		//DeleteMappingRequest dreq = Requests.deleteMappingRequest(indexid).types(getSearchType());
+//		try
+//		{
+//			DeleteMappingResponse dpres = admin.indices().deleteMapping(dreq).actionGet();
+//			if (dpres.isAcknowledged())
+//			{
+//				log.info("Cleared out the mapping " + getSearchType() );
+//				getClient().admin().cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
+//			}
+//		}	
+//		catch (Throwable ex)
+//		{
+//			log.error(ex);
+//		}
+//	}
 	protected void putMappings()
 	{
 		AdminClient admin = getElasticNodeManager().getClient().admin();
@@ -455,7 +444,10 @@ public class BaseElasticSearcher extends BaseSearcher
 		}
 		catch( Exception ex)
 		{
+			//https://www.elastic.co/guide/en/elasticsearch/guide/current/scan-scroll.html
+			//https://github.com/jprante/elasticsearch-knapsack
 			log.error("Could not put mapping over existing mapping. Please use restoreDefaults",ex);
+			throw new OpenEditException("Mapping was not able to be merged, you will need to export data");
 		}
 //		try
 //		{
@@ -482,7 +474,7 @@ public class BaseElasticSearcher extends BaseSearcher
 	protected void putMapping(AdminClient admin, String indexid, XContentBuilder source)
 	{
 		PutMappingRequest req = Requests.putMappingRequest(indexid).type(getSearchType());
-		req = req.source(source).ignoreConflicts(true);
+		req = req.source(source);
 		req.validate();
 		PutMappingResponse pres = admin.indices().putMapping(req).actionGet();
 		
@@ -491,6 +483,7 @@ public class BaseElasticSearcher extends BaseSearcher
 			log.info("mapping applied " + getSearchType());
 			admin.cluster().prepareHealth().setWaitForYellowStatus().execute().actionGet();
 		}
+		
 	}
 
 	protected XContentBuilder buildMapping()
@@ -797,9 +790,9 @@ public class BaseElasticSearcher extends BaseSearcher
 
 		if (valueof.equals("*"))
 		{
-			QueryBuilder all = QueryBuilders.matchAllQuery();
-			ExistsFilterBuilder filter = FilterBuilders.existsFilter(fieldid);
-			find = QueryBuilders.filteredQuery(all, filter);
+			find = QueryBuilders.matchAllQuery();
+			//ExistsFilterBuilder filter = FilterBuilders.existsFilter(fieldid);
+			//find = QueryBuilders.filteredQuery(all, filter);
 
 		}
 		else if (valueof.endsWith("*"))
@@ -1348,19 +1341,19 @@ public class BaseElasticSearcher extends BaseSearcher
 		}
 	}
 
-	
-	
-	
-	
-	
-	
-
 	public void deleteAll(User inUser)
 	{
 		log.info("Deleted all records database " + getSearchType());
-		DeleteByQueryRequestBuilder delete = getClient().prepareDeleteByQuery(toId(getCatalogId()));
-		delete.setTypes(getSearchType());
-		delete.setQuery(new MatchAllQueryBuilder()).execute().actionGet();
+//		DeleteByQueryRequestBuilder delete = getClient().prepareDeleteByQuery(toId(getCatalogId()));
+//		delete.setTypes(getSearchType());
+//		delete.setQuery(new MatchAllQueryBuilder()).execute().actionGet();
+		getAllHits().setHitsPerPage(10000);
+		for (Iterator iterator = getAllHits().iterator(); iterator.hasNext();)
+		{
+			Data row = (Data) iterator.next();
+			delete(row,null);
+		}
+		
 	}
 
 	public void delete(Data inData, User inUser)
@@ -1368,7 +1361,7 @@ public class BaseElasticSearcher extends BaseSearcher
 		String id = inData.getId();
 
 		DeleteRequestBuilder delete = getClient().prepareDelete(toId(getCatalogId()), getSearchType(), id);
-		delete.setOperationThreaded(false).setRefresh(true).execute().actionGet();
+		delete.setRefresh(true).execute().actionGet();
 
 	}
 
@@ -1535,7 +1528,7 @@ public class BaseElasticSearcher extends BaseSearcher
 	public void restoreSettings()
 	{
 		getPropertyDetailsArchive().clearCustomSettings(getSearchType());
-		deleteOldMapping();  //you will lose your data!
+		//deleteOldMapping();  //you will lose your data!
 		reIndexAll();
 	}
 	

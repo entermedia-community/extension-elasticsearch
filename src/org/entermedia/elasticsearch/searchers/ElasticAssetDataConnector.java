@@ -73,7 +73,7 @@ public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements
 	{
 		// TODO Auto-generated method stub
 		DeleteRequestBuilder delete = getClient().prepareDelete(toId(getCatalogId()), getSearchType(), inId);
-		delete.setOperationThreaded(false).setRefresh(true).execute().actionGet();
+		delete.setRefresh(true).execute().actionGet();
 		// delete()
 	}
 

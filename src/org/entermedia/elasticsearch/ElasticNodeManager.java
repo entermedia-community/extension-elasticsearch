@@ -17,16 +17,20 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dom4j.Element;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
+import org.elasticsearch.action.admin.cluster.repositories.put.PutRepositoryAction;
 import org.elasticsearch.action.admin.cluster.repositories.put.PutRepositoryRequestBuilder;
+import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotAction;
 import org.elasticsearch.action.admin.cluster.snapshots.create.CreateSnapshotRequestBuilder;
+import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsAction;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsRequestBuilder;
 import org.elasticsearch.action.admin.cluster.snapshots.get.GetSnapshotsResponse;
+import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotAction;
 import org.elasticsearch.action.admin.cluster.snapshots.restore.RestoreSnapshotRequestBuilder;
+import org.elasticsearch.action.admin.indices.close.CloseIndexAction;
 import org.elasticsearch.action.admin.indices.close.CloseIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.client.AdminClient;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.snapshots.SnapshotInfo;
@@ -154,20 +158,28 @@ public class ElasticNodeManager extends NodeManager
 	
 	//log.info("Deleted nodeid=" + id + " records database " + getSearchType() );
 	
-	    Settings settings = ImmutableSettings.builder()
+	    Settings settings = Settings.settingsBuilder()
 	            .put("location", path)
 	            .build();
-
 	    PutRepositoryRequestBuilder putRepo = 
-	    		new PutRepositoryRequestBuilder(getClient().admin().cluster());
+	    		new PutRepositoryRequestBuilder(getClient().admin().cluster(),PutRepositoryAction.INSTANCE);
 	    putRepo.setName(indexid)
 	            .setType("fs")
 	            .setSettings(settings) //With Unique location saved for each catalog
 	            .execute().actionGet();
 
-	    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 	    
-	    CreateSnapshotRequestBuilder builder = new CreateSnapshotRequestBuilder(getClient().admin().cluster());
+//	    PutRepositoryRequestBuilder putRepo = 
+//	    		new PutRepositoryRequestBuilder(getClient().admin().cluster());
+//	    putRepo.setName(indexid)
+//	            .setType("fs")
+//	            .setSettings(settings) //With Unique location saved for each catalog
+//	            .execute().actionGet();
+
+	    SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+	  //  CreateSnapshotRequestBuilder(elasticSearchClient, CreateSnapshotAction.INSTANCE)
+	    
+	    CreateSnapshotRequestBuilder builder = new CreateSnapshotRequestBuilder(getClient(),CreateSnapshotAction.INSTANCE);
 	    String snapshotid =  format.format(new Date());
 	    builder.setRepository(indexid)
 	            .setIndices(indexid)
@@ -219,20 +231,21 @@ public class ElasticNodeManager extends NodeManager
 	    if (!new File(path).exists()) {
 	    	return Collections.emptyList();
 	    }
-	    
-	    Settings settings = ImmutableSettings.builder()
+	    Settings settings = Settings.settingsBuilder()
 	            .put("location", path)
 	            .build();
+	    
 	    PutRepositoryRequestBuilder putRepo = 
-	    		new PutRepositoryRequestBuilder(getClient().admin().cluster());
+	    		new PutRepositoryRequestBuilder(getClient().admin().cluster(),PutRepositoryAction.INSTANCE);
 	    putRepo.setName(indexid)
 	            .setType("fs")
 	            .setSettings(settings) //With Unique location saved for each catalog
 	            .execute().actionGet();
 	    
 		GetSnapshotsRequestBuilder builder = 
-		            new GetSnapshotsRequestBuilder(getClient().admin().cluster());
+		            new GetSnapshotsRequestBuilder(getClient(),GetSnapshotsAction.INSTANCE);
 	    builder.setRepository(indexid);
+	    
 	    GetSnapshotsResponse getSnapshotsResponse = builder.execute().actionGet();
 	    List results =  new ArrayList(getSnapshotsResponse.getSnapshots());
 	
@@ -255,24 +268,15 @@ public class ElasticNodeManager extends NodeManager
 
 		   // Obtain the snapshot and check the indices that are in the snapshot
 	    AdminClient admin = getClient().admin();
-//		GetSnapshotsRequestBuilder builder = new GetSnapshotsRequestBuilder(admin.cluster());
-//	    builder.setRepository(reponame);
-//	    builder.setSnapshots(inSnapShotId);
-//	    GetSnapshotsResponse getSnapshotsResponse = builder.execute().actionGet();
 	
 	    //TODO: Close index!!
-	   // admin.indices().close(new CloseIndexRequest(indexid));
-	    // Check if the index exists and if so, close it before we can restore it.
-	    //ImmutableList indices = getSnapshotsResponse.getSnapshots().get(0).indices();
 	    
 	    try
 	    {
 		    CloseIndexRequestBuilder closeIndexRequestBuilder =
-		            new CloseIndexRequestBuilder(admin.indices());
+		            new CloseIndexRequestBuilder(getClient(),CloseIndexAction.INSTANCE);
 		    closeIndexRequestBuilder.setIndices(indexid);
 		    closeIndexRequestBuilder.execute().actionGet();
-	
-			//admin.indices().close(new CloseIndexRequest(indexid));
 	
 		    try
 		    {
@@ -284,7 +288,7 @@ public class ElasticNodeManager extends NodeManager
 		    }
 		    
 		    // Now execute the actual restore action
-		    RestoreSnapshotRequestBuilder restoreBuilder = new RestoreSnapshotRequestBuilder(admin.cluster());
+		    RestoreSnapshotRequestBuilder restoreBuilder = new RestoreSnapshotRequestBuilder(getClient(),RestoreSnapshotAction.INSTANCE);
 		    restoreBuilder.setRepository(indexid).setSnapshot(inSnapShotId);
 		    restoreBuilder.execute().actionGet();
 

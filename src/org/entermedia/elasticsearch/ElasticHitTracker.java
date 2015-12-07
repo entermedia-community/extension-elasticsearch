@@ -10,24 +10,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.FilterBuilder;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.IdsQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.TermFilterBuilder;
 import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.facet.terms.TermsFacet;
-import org.elasticsearch.search.facet.terms.TermsFacet.Entry;
+import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.filters.Filters.Bucket;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.openedit.Data;
 import org.openedit.data.PropertyDetail;
 
 import com.openedit.OpenEditException;
 import com.openedit.hittracker.FilterNode;
 import com.openedit.hittracker.HitTracker;
-import com.openedit.hittracker.SearchQuery;
 
 public class ElasticHitTracker extends HitTracker
 {
@@ -102,14 +97,15 @@ public class ElasticHitTracker extends HitTracker
 			
 			if (isShowOnlySelected() && fieldSelections != null && fieldSelections.size() > 0)
 			{
-				String[] fieldSelected = fieldSelections.toArray(new String[fieldSelections.size()]);
-				FilterBuilder filter = FilterBuilders.idsFilter().ids(fieldSelected);
+				String[] fieldSelected = (String[])fieldSelections.toArray(new String[fieldSelections.size()]);
+				QueryBuilder built = QueryBuilders.idsQuery(fieldSelected);
+				//FilterBuilder filter = FilterBuilders.idsFilter().ids(fieldSelected);
 				//andFilter.add(filter);
-				getSearcheRequestBuilder().setPostFilter(filter);
+				getSearcheRequestBuilder().setPostFilter(built);
 			}
 			else
 			{
-				getSearcheRequestBuilder().setPostFilter((AndFilterBuilder)null);
+				getSearcheRequestBuilder().setPostFilter((QueryBuilder)null);
 			}
 			
 			response = getSearcheRequestBuilder().execute().actionGet();
@@ -194,15 +190,19 @@ public class ElasticHitTracker extends HitTracker
 		List topfacets = new ArrayList(); 
 		SearchResponse response = getSearchResponse(0);
 		//TODO: Should save the response and only load it if someone needs the data
-		if (response.getFacets() != null )
+		if (response.getAggregations() != null )
 		{
-			Map facets = response.getFacets().facetsAsMap();
+			Aggregations facets = response.getAggregations();
 			//log.info(facets);
-			for (Iterator iterator = facets.keySet().iterator(); iterator.hasNext();)
+			for (Iterator iterator = facets.iterator(); iterator.hasNext();)
 			{
-				String key = (String) iterator.next();
-				TermsFacet f = (TermsFacet) facets.get(key);
-				if (f.getEntries().size() > 0)
+				Terms f = (Terms) iterator.next();
+				
+//				Collection<Terms.Bucket> buckets = terms.getBuckets();
+//				assertThat(buckets.size(), equalTo(3));
+				
+				
+				if (f.getBuckets().size() > 0)
 				{
 					FilterNode parent = new FilterNode();
 					parent.setId(f.getName());
@@ -212,11 +212,11 @@ public class ElasticHitTracker extends HitTracker
 					{
 						parent.setName(detail.getText());
 					}
-					for (Iterator iterator2 = f.getEntries().iterator(); iterator2.hasNext();)
+					for (Iterator iterator2 = f.getBuckets().iterator(); iterator2.hasNext();)
 					{
-						Entry entry = (Entry) iterator2.next();
-						int count = entry.getCount();
-						String term = entry.getTerm().string();
+						Bucket entry = (Bucket) iterator2.next();
+						long count = entry.getDocCount();
+						String term = entry.getKeyAsString();
 						FilterNode child = new FilterNode();
 						child.setId(term);
 						if (detail.isList())
@@ -235,7 +235,7 @@ public class ElasticHitTracker extends HitTracker
 							child.setName(term);
 						}
 
-						child.setProperty("count", String.valueOf(entry.getCount()));
+						child.setProperty("count", String.valueOf(count));
 						parent.addChild(child);
 					}
 					topfacets.add(parent);

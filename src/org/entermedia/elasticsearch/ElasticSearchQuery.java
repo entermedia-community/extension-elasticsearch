@@ -9,7 +9,6 @@ import java.util.Date;
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.DateTools.Resolution;
 import org.openedit.data.PropertyDetail;
-import org.openedit.data.lucene.NumberUtils;
 import org.openedit.util.DateStorageUtil;
 
 import com.openedit.hittracker.SearchQuery;
@@ -22,23 +21,23 @@ public class ElasticSearchQuery extends SearchQuery
 		// TODO Auto-generated constructor stub
 	}
 
-	protected transient NumberUtils fieldNumberUtils;
-
-	public NumberUtils getNumberUtils()
-	{
-		if (fieldNumberUtils == null)
-		{
-			fieldNumberUtils = new NumberUtils();
-
-		}
-
-		return fieldNumberUtils;
-	}
-
-	public void setNumberUtils(NumberUtils inNumberUtils)
-	{
-		fieldNumberUtils = inNumberUtils;
-	}
+//	protected transient NumberUtils fieldNumberUtils;
+//
+//	public NumberUtils getNumberUtils()
+//	{
+//		if (fieldNumberUtils == null)
+//		{
+//			fieldNumberUtils = new NumberUtils();
+//
+//		}
+//
+//		return fieldNumberUtils;
+//	}
+//
+//	public void setNumberUtils(NumberUtils inNumberUtils)
+//	{
+//		fieldNumberUtils = inNumberUtils;
+//	}
 
 	public Term addAfter(String inString, Date inSearchDate)
 	{
@@ -404,11 +403,7 @@ public class ElasticSearchQuery extends SearchQuery
 		{
 			public String toQuery()
 			{
-				String lowval = getNumberUtils().long2sortableStr(Long.MIN_VALUE);
-				String highval = getNumberUtils().long2sortableStr(getValue());
-
-				String fin = getDetail().getId() + ":[" + lowval + " TO " + highval + "]";
-				return fin;
+				return getValue();
 			}
 		};
 		term.setOperation("lessthannumber");
@@ -426,14 +421,9 @@ public class ElasticSearchQuery extends SearchQuery
 		{
 			public String toQuery()
 			{
-				//must use int or long since double only works on double values
-				long one = high + 1; //is inclusive
-				String lowval = getNumberUtils().long2sortableStr(one);
-				String highval = getNumberUtils().long2sortableStr(Long.MAX_VALUE);
-
-				String fin = getDetail().getId() + ":[" + lowval + " TO " + highval + "]";
-				return fin;
+				return getValue();
 			}
+
 		};
 		term.setOperation("greaterthannumber");
 		term.setDetail(inFieldId);
@@ -448,10 +438,9 @@ public class ElasticSearchQuery extends SearchQuery
 		{
 			public String toQuery()
 			{
-				String val = getNumberUtils().long2sortableStr(getValue());
-				String fin = getDetail().getId() + ":\"" + val + "\"";
-				return fin;
+				return getValue();
 			}
+
 		};
 		term.setOperation("greaterthannumber");
 		term.setDetail(inField);
@@ -469,12 +458,9 @@ public class ElasticSearchQuery extends SearchQuery
 		{
 			public String toQuery()
 			{
-				String lowvals = getNumberUtils().long2sortableStr(getParameter("lowval"));
-				String highvals = getNumberUtils().long2sortableStr(getParameter("highval"));
-
-				String fin = getDetail().getId() + ":[" + lowvals + " TO " +  highvals+ "]";
-				return fin;
+				return getValue();
 			}
+
 		};
 		term.setDetail(inField);
 		term.setOperation("betweennumbers");
@@ -495,12 +481,9 @@ public class ElasticSearchQuery extends SearchQuery
 		{
 			public String toQuery()
 			{
-				String lowvals = getNumberUtils().double2sortableStr(getParameter("lowval"));
-				String highvals = getNumberUtils().double2sortableStr(getParameter("highval"));
-
-				String fin = getDetail().getId() + ":[" + lowvals + " TO " +  highvals+ "]";
-				return fin;
+				return getValue();
 			}
+
 		};
 		term.setDetail(inField);
 		term.setOperation("betweennumbers");

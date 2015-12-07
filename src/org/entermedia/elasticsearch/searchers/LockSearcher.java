@@ -1,11 +1,17 @@
 package org.entermedia.elasticsearch.searchers;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.dom4j.tree.BaseElement;
-import org.elasticsearch.action.deletebyquery.DeleteByQueryRequestBuilder;
+import org.elasticsearch.action.delete.DeleteRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchService;
 
 import com.openedit.Shutdownable;
 
@@ -46,11 +52,28 @@ public class LockSearcher extends BaseElasticSearcher implements Shutdownable
 	public void clearStaleLocks()
 	{
 		String id = getElasticNodeManager().getLocalNodeId();
-		log.info("Deleted nodeid=" + id + " records database " + getSearchType() );
-		DeleteByQueryRequestBuilder delete = getClient().prepareDeleteByQuery(toId(getCatalogId()));
-		delete.setTypes(getSearchType());
+		
 		TermQueryBuilder builder = QueryBuilders.termQuery("nodeid", id);
-		delete.setQuery(builder).execute().actionGet();
+		   SearchResponse response = getClient().prepareSearch(toId(getCatalogId()))
+		            .setSearchType(SearchType.QUERY_THEN_FETCH)
+		            .setQuery(builder)
+		            .setTypes(getSearchType())
+		            .setSize(Integer.MAX_VALUE)
+		           // .addFields("id")
+		            .execute()
+		            .actionGet();
+
+		    for (SearchHit hit : response.getHits().hits()) 
+		    {
+				DeleteRequestBuilder delete = getClient().prepareDelete(toId(getCatalogId()), getSearchType(), hit.getId());
+				delete.setRefresh(false).execute().actionGet();
+		    }
+		
+		log.info("Deleted nodeid=" + id + " records database " + getSearchType() );
+//		DeleteByQueryRequestBuilder delete = getClient().prepareDeleteByQuery(toId(getCatalogId()));
+//		delete.setTypes(getSearchType());
+//		TermQueryBuilder builder = QueryBuilders.termQuery("nodeid", id);
+//		delete.setQuery(builder).execute().actionGet();
 		
 	}
 	
