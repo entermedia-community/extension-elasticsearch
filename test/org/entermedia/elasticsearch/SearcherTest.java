@@ -7,12 +7,9 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.entermedia.elasticsearch.searchers.ElasticListSearcher;
 import org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher;
@@ -33,12 +30,19 @@ public void xxtestBasicRead() throws Exception
 {
 		// on startup
 		//Node node = NodeBuilder.nodeBuilder().client(true).node();
+//    Settings settings = Settings.settingsBuilder()
+//    		.put("cluster.name", "entermedia")
+//            .build();
 	
-	Settings.Builder settings = ImmutableSettings.settingsBuilder().put("cluster.name", "entermedia");
-	Client client = new TransportClient(settings)
-	        .addTransportAddress(new InetSocketTransportAddress("localhost", 9300));
+    NodeBuilder nb = NodeBuilder.nodeBuilder();//.client(client)local(true);
+	nb.settings().put("cluster.name", "entermedia");
+	nb.settings().put("path.home", ".");
+    
+//	Settings.Builder settings = ImmutableSettings.settingsBuilder().put("cluster.name", "entermedia");
+//	Client client = new TransportClient(settings)
+//	        .addTransportAddress(new InetSocketTransportAddress("localhost", 9300));
 
-//	Client client = node.client();
+	Client client = nb.build().client();
 	
 	//	AdminClient admin = client.admin();
 	//	ActionFuture<CreateIndexResponse> indexresponse = admin.indices().create(new CreateIndexRequest("test"));

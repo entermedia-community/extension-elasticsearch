@@ -6,7 +6,6 @@ import java.util.List;
 import org.junit.Test;
 import org.openedit.Data;
 import org.openedit.data.Searcher;
-import org.openedit.data.lucene.BaseLuceneSearcher;
 import org.openedit.entermedia.Asset;
 import org.openedit.entermedia.BaseEnterMediaTest;
 import org.openedit.entermedia.EnterMedia;
