@@ -1528,7 +1528,7 @@ public class BaseElasticSearcher extends BaseSearcher
 	public void restoreSettings()
 	{
 		getPropertyDetailsArchive().clearCustomSettings(getSearchType());
-		//deleteOldMapping();  //you will lose your data!
+		deleteOldMapping();  //you will lose your data!
 		reIndexAll();
 	}
 	
@@ -1536,7 +1536,7 @@ public class BaseElasticSearcher extends BaseSearcher
 	public void reloadSettings()
 	{
 		//getPropertyDetailsArchive().clearCustomSettings(getSearchType());
-		//deleteOldMapping();  //you will lose your data!
+		deleteOldMapping();  //you will lose your data!
 		reIndexAll();
 	}
 	
