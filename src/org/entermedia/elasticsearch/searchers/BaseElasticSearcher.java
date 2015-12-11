@@ -29,7 +29,6 @@ import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.deletebyquery.DeleteByQueryRequestBuilder;
@@ -52,16 +51,14 @@ import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
-import org.elasticsearch.index.query.AndFilterBuilder;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.ExistsFilterBuilder;
-import org.elasticsearch.index.query.FilterBuilder;
 import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.TermFilterBuilder;
+import org.elasticsearch.index.query.WildcardQueryBuilder;
 import org.elasticsearch.search.facet.FacetBuilder;
 import org.elasticsearch.search.facet.FacetBuilders;
 import org.elasticsearch.search.sort.FieldSortBuilder;
@@ -80,7 +77,6 @@ import org.openedit.util.DateStorageUtil;
 
 import com.openedit.OpenEditException;
 import com.openedit.WebPageRequest;
-import com.openedit.hittracker.FilterNode;
 import com.openedit.hittracker.HitTracker;
 import com.openedit.hittracker.SearchQuery;
 import com.openedit.hittracker.Term;
@@ -802,6 +798,29 @@ public class BaseElasticSearcher extends BaseSearcher
 			find = QueryBuilders.filteredQuery(all, filter);
 
 		}
+		else if ("contains".equals(inTerm.getOperation()))
+		{
+			//MatchQueryBuilder text = QueryBuilders.matchPhraseQuery(fieldid, valueof);
+			//QueryBuilder text = QueryBuilders.queryString("*" + valueof + "*").field(fieldid);
+			if(!valueof.startsWith("*") )
+			{
+				valueof = "*"  + valueof;
+			}
+			if(!valueof.endsWith("*") )
+			{
+				valueof = valueof + "*";
+			}
+				
+			WildcardQueryBuilder text = QueryBuilders.wildcardQuery(fieldid, valueof);
+			//text.maxExpansions(10);
+			find = text;
+		}
+		else if ("startswith".equals(inTerm.getOperation()))
+		{
+			MatchQueryBuilder text = QueryBuilders.matchPhrasePrefixQuery(fieldid, valueof);
+			text.maxExpansions(10);
+			find = text;
+		}
 		else if (valueof.endsWith("*"))
 		{
 			valueof = valueof.substring(0, valueof.length() - 1);
@@ -813,12 +832,6 @@ public class BaseElasticSearcher extends BaseSearcher
 		else if (valueof.contains("*"))
 		{
 			find = QueryBuilders.wildcardQuery(fieldid, valueof);
-		}
-		else if ("startswith".equals(inTerm.getOperation()))
-		{
-			MatchQueryBuilder text = QueryBuilders.matchPhrasePrefixQuery(fieldid, valueof);
-			text.maxExpansions(10);
-			find = text;
 		}
 		else if (inDetail.isBoolean())
 		{
@@ -834,7 +847,7 @@ public class BaseElasticSearcher extends BaseSearcher
 			}
 			else if ("afterdate".equals(inTerm.getOperation()))
 			{
-				Date before = new Date(Long.MAX_VALUE);
+				//Date before = new Date(Long.MAX_VALUE);
 				Date after = DateStorageUtil.getStorageUtil().parseFromStorage(valueof);
 				find = QueryBuilders.rangeQuery(fieldid).from(after);// .to(before);
 			}
