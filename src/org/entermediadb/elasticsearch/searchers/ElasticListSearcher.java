@@ -1,4 +1,4 @@
-package org.entermedia.elasticsearch.searchers;
+package org.entermediadb.elasticsearch.searchers;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -6,21 +6,20 @@ import java.util.Iterator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.entermedia.elasticsearch.SearchHitData;
-import org.entermedia.locks.Lock;
+import org.entermediadb.data.DataArchive;
+import org.entermediadb.elasticsearch.SearchHitData;
 import org.openedit.Data;
-import org.openedit.data.DataArchive;
+import org.openedit.OpenEditException;
 import org.openedit.data.PropertyDetails;
 import org.openedit.data.PropertyDetailsArchive;
 import org.openedit.data.Reloadable;
+import org.openedit.hittracker.HitTracker;
+import org.openedit.locks.Lock;
+import org.openedit.page.manage.PageManager;
+import org.openedit.users.User;
 import org.openedit.xml.ElementData;
 import org.openedit.xml.XmlFile;
 import org.openedit.xml.XmlSearcher;
-
-import com.openedit.OpenEditException;
-import com.openedit.hittracker.HitTracker;
-import com.openedit.page.manage.PageManager;
-import com.openedit.users.User;
 
 public class ElasticListSearcher extends BaseElasticSearcher implements Reloadable
 {

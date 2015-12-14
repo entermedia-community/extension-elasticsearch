@@ -10,7 +10,7 @@ without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
 See the GNU Lesser General Public License for more details.
 */
 
-package org.entermedia.elasticsearch;
+package org.entermediadb.elasticsearch;
 
 import java.util.Iterator;
 

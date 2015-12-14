@@ -1,7 +1,7 @@
 /*
  * Created on Jul 19, 2006
  */
-package org.entermedia.elasticsearch;
+package org.entermediadb.elasticsearch;
 
 import java.util.Collection;
 import java.util.Date;
@@ -9,10 +9,9 @@ import java.util.Date;
 import org.apache.lucene.document.DateTools;
 import org.apache.lucene.document.DateTools.Resolution;
 import org.openedit.data.PropertyDetail;
+import org.openedit.hittracker.SearchQuery;
+import org.openedit.hittracker.Term;
 import org.openedit.util.DateStorageUtil;
-
-import com.openedit.hittracker.SearchQuery;
-import com.openedit.hittracker.Term;
 
 public class ElasticSearchQuery extends SearchQuery
 {

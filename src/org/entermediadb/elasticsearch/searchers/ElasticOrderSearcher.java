@@ -1,9 +1,9 @@
-package org.entermedia.elasticsearch.searchers;
+package org.entermediadb.elasticsearch.searchers;
 
+import org.entermediadb.asset.orders.Order;
+import org.entermediadb.asset.orders.OrderManager;
 import org.openedit.Data;
 import org.openedit.data.PropertyDetails;
-import org.openedit.entermedia.orders.Order;
-import org.openedit.entermedia.orders.OrderManager;
 
 public class ElasticOrderSearcher extends BaseElasticSearcher
 {

@@ -1,7 +1,7 @@
 /*
  * Created on Oct 19, 2004
  */
-package org.entermedia.elasticsearch.searchers;
+package org.entermediadb.elasticsearch.searchers;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,18 +12,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dom4j.tree.BaseElement;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.entermedia.locks.Lock;
 import org.openedit.Data;
+import org.openedit.OpenEditException;
 import org.openedit.data.PropertyDetails;
+import org.openedit.hittracker.HitTracker;
+import org.openedit.hittracker.SearchQuery;
+import org.openedit.locks.Lock;
+import org.openedit.users.BaseUser;
+import org.openedit.users.Group;
+import org.openedit.users.User;
 import org.openedit.users.UserSearcher;
-
-import com.openedit.OpenEditException;
-import com.openedit.hittracker.HitTracker;
-import com.openedit.hittracker.SearchQuery;
-import com.openedit.users.BaseUser;
-import com.openedit.users.Group;
-import com.openedit.users.User;
-import com.openedit.users.filesystem.XmlUserArchive;
+import org.openedit.users.filesystem.XmlUserArchive;
 
 /**
  *

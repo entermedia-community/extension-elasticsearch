@@ -3,9 +3,10 @@ package org.entermedia.elasticsearch.categories;
 
 import java.util.List;
 
-import org.openedit.entermedia.BaseEnterMediaTest;
-import org.openedit.entermedia.Category;
-import org.openedit.entermedia.CategoryArchive;
+import org.entermediadb.asset.BaseEnterMediaTest;
+import org.entermediadb.asset.Category;
+import org.entermediadb.asset.CategoryArchive;
+import org.entermediadb.elasticsearch.categories.ElasticCategoryArchive;
 
 public class SearcherCategoryArchiveTest  extends BaseEnterMediaTest
 {

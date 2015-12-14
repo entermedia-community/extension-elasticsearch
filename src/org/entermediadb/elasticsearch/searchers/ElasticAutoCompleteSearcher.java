@@ -1,13 +1,12 @@
-package org.entermedia.elasticsearch.searchers;
+package org.entermediadb.elasticsearch.searchers;
 
 import java.util.Date;
 
+import org.entermediadb.asset.autocomplete.AutoCompleteSearcher;
 import org.openedit.Data;
-import org.openedit.entermedia.autocomplete.AutoCompleteSearcher;
+import org.openedit.OpenEditException;
+import org.openedit.hittracker.HitTracker;
 import org.openedit.util.DateStorageUtil;
-
-import com.openedit.OpenEditException;
-import com.openedit.hittracker.HitTracker;
 
 public class ElasticAutoCompleteSearcher extends BaseElasticSearcher implements AutoCompleteSearcher
 {

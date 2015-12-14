@@ -1,13 +1,13 @@
 package org.entermedia.elasticsearch.searchers;
 
 import org.entermedia.elasticsearch.BaseElasticTest;
+import org.entermediadb.elasticsearch.searchers.ElasticGroupSearcher;
 import org.junit.Test;
 import org.openedit.Data;
-
-import com.openedit.hittracker.HitTracker;
-import com.openedit.hittracker.SearchQuery;
-import com.openedit.users.Group;
-import com.openedit.users.UserManager;
+import org.openedit.hittracker.HitTracker;
+import org.openedit.hittracker.SearchQuery;
+import org.openedit.users.Group;
+import org.openedit.users.UserManager;
 
 public class ElasticGroupSearcherTest extends BaseElasticTest
 {

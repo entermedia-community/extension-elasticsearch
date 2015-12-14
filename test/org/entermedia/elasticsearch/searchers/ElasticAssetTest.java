@@ -1,15 +1,15 @@
 package org.entermedia.elasticsearch.searchers;
 
+import org.entermediadb.asset.Asset;
+import org.entermediadb.asset.BaseEnterMediaTest;
+import org.entermediadb.asset.EnterMedia;
+import org.entermediadb.asset.search.BaseAssetSearcher;
+import org.entermediadb.elasticsearch.searchers.ElasticAssetDataConnector;
 import org.junit.Test;
+import org.openedit.WebPageRequest;
 import org.openedit.data.Searcher;
-import org.openedit.entermedia.Asset;
-import org.openedit.entermedia.BaseEnterMediaTest;
-import org.openedit.entermedia.EnterMedia;
-import org.openedit.entermedia.search.BaseAssetSearcher;
-
-import com.openedit.WebPageRequest;
-import com.openedit.hittracker.HitTracker;
-import com.openedit.hittracker.SearchQuery;
+import org.openedit.hittracker.HitTracker;
+import org.openedit.hittracker.SearchQuery;
 
 public class ElasticAssetTest  extends BaseEnterMediaTest
 {

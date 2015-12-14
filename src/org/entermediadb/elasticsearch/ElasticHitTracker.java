@@ -1,4 +1,4 @@
-package org.entermedia.elasticsearch;
+package org.entermediadb.elasticsearch;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,11 +18,10 @@ import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.filters.Filters.Bucket;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.openedit.Data;
+import org.openedit.OpenEditException;
 import org.openedit.data.PropertyDetail;
-
-import com.openedit.OpenEditException;
-import com.openedit.hittracker.FilterNode;
-import com.openedit.hittracker.HitTracker;
+import org.openedit.hittracker.FilterNode;
+import org.openedit.hittracker.HitTracker;
 
 public class ElasticHitTracker extends HitTracker
 {

@@ -1,4 +1,4 @@
-package org.entermedia.elasticsearch.searchers;
+package org.entermediadb.elasticsearch.searchers;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,33 +48,32 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.engine.VersionConflictEngineException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.WildcardQueryBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.transport.RemoteTransportException;
-import org.entermedia.elasticsearch.ElasticHitTracker;
-import org.entermedia.elasticsearch.ElasticNodeManager;
-import org.entermedia.elasticsearch.ElasticSearchQuery;
+import org.entermediadb.elasticsearch.ElasticHitTracker;
+import org.entermediadb.elasticsearch.ElasticNodeManager;
+import org.entermediadb.elasticsearch.ElasticSearchQuery;
 import org.openedit.Data;
+import org.openedit.OpenEditException;
+import org.openedit.WebPageRequest;
 import org.openedit.data.BaseData;
 import org.openedit.data.BaseSearcher;
 import org.openedit.data.PropertyDetail;
 import org.openedit.data.PropertyDetails;
+import org.openedit.hittracker.HitTracker;
+import org.openedit.hittracker.SearchQuery;
+import org.openedit.hittracker.Term;
+import org.openedit.users.User;
 import org.openedit.util.DateStorageUtil;
-
-import com.openedit.OpenEditException;
-import com.openedit.WebPageRequest;
-import com.openedit.hittracker.HitTracker;
-import com.openedit.hittracker.SearchQuery;
-import com.openedit.hittracker.Term;
-import com.openedit.users.User;
-import com.openedit.util.IntCounter;
+import org.openedit.util.IntCounter;
 
 public class BaseElasticSearcher extends BaseSearcher
 {
@@ -799,6 +798,29 @@ public class BaseElasticSearcher extends BaseSearcher
 			//find = QueryBuilders.filteredQuery(all, filter);
 
 		}
+		else if ("contains".equals(inTerm.getOperation()))
+		{
+			//MatchQueryBuilder text = QueryBuilders.matchPhraseQuery(fieldid, valueof);
+			//QueryBuilder text = QueryBuilders.queryString("*" + valueof + "*").field(fieldid);
+			if(!valueof.startsWith("*") )
+			{
+				valueof = "*"  + valueof;
+			}
+			if(!valueof.endsWith("*") )
+			{
+				valueof = valueof + "*";
+			}
+				
+			WildcardQueryBuilder text = QueryBuilders.wildcardQuery(fieldid, valueof);
+			//text.maxExpansions(10);
+			find = text;
+		}
+		else if ("startswith".equals(inTerm.getOperation()))
+		{
+			MatchQueryBuilder text = QueryBuilders.matchPhrasePrefixQuery(fieldid, valueof);
+			text.maxExpansions(10);
+			find = text;
+		}
 		else if (valueof.endsWith("*"))
 		{
 			valueof = valueof.substring(0, valueof.length() - 1);
@@ -810,12 +832,6 @@ public class BaseElasticSearcher extends BaseSearcher
 		else if (valueof.contains("*"))
 		{
 			find = QueryBuilders.wildcardQuery(fieldid, valueof);
-		}
-		else if ("startswith".equals(inTerm.getOperation()))
-		{
-			MatchQueryBuilder text = QueryBuilders.matchPhrasePrefixQuery(fieldid, valueof);
-			text.maxExpansions(10);
-			find = text;
 		}
 		else if (inDetail.isBoolean())
 		{

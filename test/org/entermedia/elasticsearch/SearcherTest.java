@@ -11,16 +11,15 @@ import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.search.SearchHit;
-import org.entermedia.elasticsearch.searchers.ElasticListSearcher;
-import org.entermedia.elasticsearch.searchers.ElasticXmlFileSearcher;
+import org.entermediadb.asset.Asset;
+import org.entermediadb.asset.BaseEnterMediaTest;
+import org.entermediadb.asset.search.BaseAssetSearcher;
+import org.entermediadb.elasticsearch.searchers.ElasticListSearcher;
+import org.entermediadb.elasticsearch.searchers.ElasticXmlFileSearcher;
 import org.openedit.Data;
 import org.openedit.data.Searcher;
-import org.openedit.entermedia.Asset;
-import org.openedit.entermedia.BaseEnterMediaTest;
-import org.openedit.entermedia.search.BaseAssetSearcher;
-
-import com.openedit.hittracker.HitTracker;
-import com.openedit.hittracker.SearchQuery;
+import org.openedit.hittracker.HitTracker;
+import org.openedit.hittracker.SearchQuery;
 
 
 public class SearcherTest extends BaseEnterMediaTest

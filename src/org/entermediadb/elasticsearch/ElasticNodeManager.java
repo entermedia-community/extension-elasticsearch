@@ -1,4 +1,4 @@
-package org.entermedia.elasticsearch;
+package org.entermediadb.elasticsearch;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -34,14 +34,13 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.snapshots.SnapshotInfo;
-import org.entermedia.locks.Lock;
-import org.entermedia.locks.LockManager;
-import org.openedit.entermedia.cluster.NodeManager;
-
-import com.openedit.OpenEditException;
-import com.openedit.page.Page;
-import com.openedit.util.PathUtilities;
-import com.openedit.util.Replacer;
+import org.entermediadb.asset.cluster.NodeManager;
+import org.openedit.OpenEditException;
+import org.openedit.locks.Lock;
+import org.openedit.locks.LockManager;
+import org.openedit.page.Page;
+import org.openedit.util.PathUtilities;
+import org.openedit.util.Replacer;
 
 public class ElasticNodeManager extends NodeManager
 {

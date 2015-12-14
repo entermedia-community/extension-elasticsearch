@@ -1,4 +1,4 @@
-package org.entermedia.elasticsearch.categories;
+package org.entermediadb.elasticsearch.categories;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,15 +9,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.entermedia.elasticsearch.searchers.BaseElasticSearcher;
+import org.entermediadb.asset.Category;
+import org.entermediadb.asset.xmldb.CategorySearcher;
+import org.entermediadb.asset.xmldb.XmlCategoryArchive;
+import org.entermediadb.elasticsearch.searchers.BaseElasticSearcher;
 import org.openedit.Data;
+import org.openedit.OpenEditException;
 import org.openedit.data.PropertyDetails;
-import org.openedit.entermedia.Category;
-import org.openedit.entermedia.xmldb.CategorySearcher;
-import org.openedit.entermedia.xmldb.XmlCategoryArchive;
-
-import com.openedit.OpenEditException;
-import com.openedit.users.User;
+import org.openedit.users.User;
 
 public class ElasticCategorySearcher extends BaseElasticSearcher implements CategorySearcher//, Reloadable
 {

@@ -1,10 +1,10 @@
 package org.entermedia.elasticsearch.searchers;
 
+import org.entermediadb.asset.BaseEnterMediaTest;
+import org.entermediadb.elasticsearch.searchers.ElasticAutoCompleteSearcher;
 import org.junit.Test;
 import org.openedit.Data;
-import org.openedit.entermedia.BaseEnterMediaTest;
-
-import com.openedit.hittracker.HitTracker;
+import org.openedit.hittracker.HitTracker;
 
 public class ElasticAutoCompleteTest extends BaseEnterMediaTest
 {

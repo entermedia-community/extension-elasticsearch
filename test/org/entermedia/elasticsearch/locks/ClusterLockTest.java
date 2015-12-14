@@ -2,10 +2,10 @@ package org.entermedia.elasticsearch.locks;
 
 import java.util.ConcurrentModificationException;
 
-import org.entermedia.elasticsearch.searchers.LockSearcher;
-import org.entermedia.locks.Lock;
-import org.openedit.entermedia.cluster.ClusterLockManager;
-import org.openedit.entermedia.model.LockTest;
+import org.entermediadb.asset.cluster.ClusterLockManager;
+import org.entermediadb.elasticsearch.searchers.LockSearcher;
+import org.entermediadb.model.LockTest;
+import org.openedit.locks.Lock;
 
 
 public class ClusterLockTest extends LockTest

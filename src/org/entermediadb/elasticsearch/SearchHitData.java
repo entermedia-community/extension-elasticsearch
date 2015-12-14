@@ -1,4 +1,4 @@
-package org.entermedia.elasticsearch;
+package org.entermediadb.elasticsearch;
 
 import java.util.Collection;
 import java.util.HashMap;

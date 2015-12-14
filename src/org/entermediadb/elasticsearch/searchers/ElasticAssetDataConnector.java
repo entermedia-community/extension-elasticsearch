@@ -1,4 +1,4 @@
-package org.entermedia.elasticsearch.searchers;
+package org.entermediadb.elasticsearch.searchers;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,25 +23,24 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
-import org.entermedia.elasticsearch.SearchHitData;
-import org.entermedia.locks.Lock;
+import org.entermediadb.asset.Asset;
+import org.entermediadb.asset.AssetArchive;
+import org.entermediadb.asset.Category;
+import org.entermediadb.asset.MediaArchive;
+import org.entermediadb.asset.search.AssetSecurityArchive;
+import org.entermediadb.asset.search.DataConnector;
+import org.entermediadb.data.DataArchive;
+import org.entermediadb.elasticsearch.SearchHitData;
 import org.openedit.Data;
-import org.openedit.data.DataArchive;
+import org.openedit.OpenEditException;
 import org.openedit.data.PropertyDetails;
-import org.openedit.entermedia.Asset;
-import org.openedit.entermedia.AssetArchive;
-import org.openedit.entermedia.Category;
-import org.openedit.entermedia.MediaArchive;
-import org.openedit.entermedia.search.AssetSecurityArchive;
-import org.openedit.entermedia.search.DataConnector;
+import org.openedit.hittracker.HitTracker;
+import org.openedit.locks.Lock;
 import org.openedit.repository.ContentItem;
-
-import com.openedit.OpenEditException;
-import com.openedit.hittracker.HitTracker;
-import com.openedit.users.User;
-import com.openedit.util.IntCounter;
-import com.openedit.util.OutputFiller;
-import com.openedit.util.PathProcessor;
+import org.openedit.users.User;
+import org.openedit.util.IntCounter;
+import org.openedit.util.OutputFiller;
+import org.openedit.util.PathProcessor;
 
 public class ElasticAssetDataConnector extends ElasticXmlFileSearcher implements DataConnector
 {

@@ -1,8 +1,7 @@
 package org.entermedia.elasticsearch;
 
-import org.openedit.entermedia.BaseEnterMediaTest;
-
-import com.openedit.TestFixture;
+import org.entermediadb.asset.BaseEnterMediaTest;
+import org.openedit.TestFixture;
 
 public class BaseElasticTest extends BaseEnterMediaTest
 {

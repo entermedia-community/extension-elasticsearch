@@ -1,4 +1,4 @@
-package org.entermedia.elasticsearch.searchers;
+package org.entermediadb.elasticsearch.searchers;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -9,24 +9,23 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.dom4j.Element;
-import org.entermedia.locks.Lock;
+import org.entermediadb.asset.SourcePathCreator;
+import org.entermediadb.data.DataArchive;
+import org.entermediadb.data.XmlDataArchive;
 import org.openedit.Data;
-import org.openedit.data.DataArchive;
+import org.openedit.OpenEditException;
+import org.openedit.OpenEditRuntimeException;
 import org.openedit.data.PropertyDetails;
-import org.openedit.data.XmlDataArchive;
-import org.openedit.entermedia.SourcePathCreator;
+import org.openedit.locks.Lock;
+import org.openedit.page.Page;
+import org.openedit.page.manage.PageManager;
 import org.openedit.repository.ContentItem;
+import org.openedit.users.User;
+import org.openedit.util.IntCounter;
+import org.openedit.util.PathProcessor;
 import org.openedit.xml.ElementData;
 import org.openedit.xml.XmlArchive;
 import org.openedit.xml.XmlFile;
-
-import com.openedit.OpenEditException;
-import com.openedit.OpenEditRuntimeException;
-import com.openedit.page.Page;
-import com.openedit.page.manage.PageManager;
-import com.openedit.users.User;
-import com.openedit.util.IntCounter;
-import com.openedit.util.PathProcessor;
 
 /**
  * This is not going to be used much longer

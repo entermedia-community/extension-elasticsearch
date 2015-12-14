@@ -3,11 +3,11 @@ package org.entermedia.elasticsearch.searchers;
 import java.util.Collection;
 import java.util.Date;
 
+import org.entermediadb.asset.BaseEnterMediaTest;
+import org.entermediadb.elasticsearch.searchers.BaseElasticSearcher;
 import org.openedit.Data;
-import org.openedit.entermedia.BaseEnterMediaTest;
+import org.openedit.hittracker.SearchQuery;
 import org.openedit.util.DateStorageUtil;
-
-import com.openedit.hittracker.SearchQuery;
 
 public class ConvertTest extends BaseEnterMediaTest
 {

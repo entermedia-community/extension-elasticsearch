@@ -2,18 +2,18 @@ package org.entermedia.elasticsearch.searchers;
 
 import java.util.Collection;
 
+import org.entermediadb.asset.BaseEnterMediaTest;
+import org.entermediadb.elasticsearch.searchers.ElasticUserSearcher;
 import org.junit.Test;
 import org.openedit.Data;
-import org.openedit.entermedia.BaseEnterMediaTest;
-
-import com.openedit.hittracker.HitTracker;
-import com.openedit.hittracker.SearchQuery;
-import com.openedit.page.Page;
-import com.openedit.page.manage.PageManager;
-import com.openedit.users.BaseGroup;
-import com.openedit.users.BaseUser;
-import com.openedit.users.Group;
-import com.openedit.users.User;
+import org.openedit.hittracker.HitTracker;
+import org.openedit.hittracker.SearchQuery;
+import org.openedit.page.Page;
+import org.openedit.page.manage.PageManager;
+import org.openedit.users.BaseGroup;
+import org.openedit.users.BaseUser;
+import org.openedit.users.Group;
+import org.openedit.users.User;
 
 public class ElasticUserSearcherTest extends BaseEnterMediaTest
 {

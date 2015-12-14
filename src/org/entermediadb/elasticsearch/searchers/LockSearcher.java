@@ -1,4 +1,4 @@
-package org.entermedia.elasticsearch.searchers;
+package org.entermediadb.elasticsearch.searchers;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,8 +12,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchService;
-
-import com.openedit.Shutdownable;
+import org.openedit.Shutdownable;
 
 public class LockSearcher extends BaseElasticSearcher implements Shutdownable
 {

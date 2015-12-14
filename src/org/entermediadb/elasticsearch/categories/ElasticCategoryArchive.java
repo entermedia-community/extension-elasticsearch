@@ -1,19 +1,18 @@
-package org.entermedia.elasticsearch.categories;
+package org.entermediadb.elasticsearch.categories;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.entermediadb.asset.Category;
+import org.entermediadb.asset.CategoryArchive;
+import org.entermediadb.asset.xmldb.CategorySearcher;
+import org.entermediadb.asset.xmldb.XmlCategoryArchive;
+import org.openedit.ModuleManager;
+import org.openedit.OpenEditException;
 import org.openedit.data.Searcher;
 import org.openedit.data.SearcherManager;
-import org.openedit.entermedia.Category;
-import org.openedit.entermedia.CategoryArchive;
-import org.openedit.entermedia.xmldb.CategorySearcher;
-import org.openedit.entermedia.xmldb.XmlCategoryArchive;
-
-import com.openedit.ModuleManager;
-import com.openedit.OpenEditException;
-import com.openedit.util.PathUtilities;
+import org.openedit.util.PathUtilities;
 
 /**
  * Archive that does not cache and uses a database for storage This is not

@@ -1,8 +1,8 @@
-package org.entermedia.elasticsearch.categories;
+package org.entermediadb.elasticsearch.categories;
 
 import java.util.List;
 
-import org.openedit.entermedia.Category;
+import org.entermediadb.asset.Category;
 
 public class ElasticCategory extends Category
 {
