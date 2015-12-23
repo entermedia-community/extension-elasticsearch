@@ -37,22 +37,21 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.snapshots.SnapshotInfo;
-import org.entermedia.locks.Lock;
-import org.entermedia.locks.LockManager;
-import org.openedit.entermedia.cluster.NodeManager;
+import org.entermediadb.asset.cluster.NodeManager;
+import org.openedit.OpenEditException;
+import org.openedit.hittracker.HitTracker;
+import org.openedit.hittracker.ListHitTracker;
+import org.openedit.locks.Lock;
+import org.openedit.locks.LockManager;
+import org.openedit.page.Page;
+import org.openedit.util.PathUtilities;
+import org.openedit.util.Replacer;
 import org.xbib.elasticsearch.action.knapsack.exp.KnapsackExportRequestBuilder;
 import org.xbib.elasticsearch.action.knapsack.exp.KnapsackExportResponse;
 import org.xbib.elasticsearch.action.knapsack.imp.KnapsackImportRequestBuilder;
 import org.xbib.elasticsearch.action.knapsack.imp.KnapsackImportResponse;
 import org.xbib.elasticsearch.action.knapsack.state.KnapsackStateRequestBuilder;
 import org.xbib.elasticsearch.action.knapsack.state.KnapsackStateResponse;
-
-import com.openedit.OpenEditException;
-import com.openedit.hittracker.HitTracker;
-import com.openedit.hittracker.ListHitTracker;
-import com.openedit.page.Page;
-import com.openedit.util.PathUtilities;
-import com.openedit.util.Replacer;
 
 public class ElasticNodeManager extends NodeManager
 {
