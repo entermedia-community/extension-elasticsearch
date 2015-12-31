@@ -37,5 +37,6 @@
 	<classpathentry kind="lib" path="lib/joda-convert-1.2.jar"/>
 	<classpathentry kind="lib" path="lib/snakeyaml-1.15.jar"/>
 	<classpathentry kind="lib" path="lib/lucene-suggest-5.3.1.jar"/>
+	<classpathentry kind="lib" path="lib/elasticsearch-knapsack-2.1.0.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
