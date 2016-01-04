@@ -45,8 +45,8 @@ public class ElasticAssetTest  extends BaseEnterMediaTest
 	}
 	public void testAssetSearch()
 	{
-		BaseAssetSearcher searcher = (BaseAssetSearcher) getMediaArchive().getSearcherManager().getSearcher("entermedia/catalogs/testcatalog", "asset");
-		searcher.reIndexAll();
+		Searcher searcher = getMediaArchive().getSearcherManager().getSearcher("entermedia/catalogs/testcatalog", "asset");
+
 		SearchQuery q = searcher.createSearchQuery();
 		q.addMatches("caption","test101");
 		WebPageRequest req = getFixture().createPageRequest("/entermedia/catalogs/testcatalog/index.html");
@@ -69,20 +69,10 @@ public class ElasticAssetTest  extends BaseEnterMediaTest
 
 		tracker = searcher.cachedSearch(req, q);
 		assertTrue(tracker.size() > 0);
+
 		
-		ElasticAssetDataConnector con = (ElasticAssetDataConnector) searcher.getDataConnector();
-		
-		con.reindexInternal();
-		
-		tracker = searcher.search(q);
-		assertTrue(tracker.size() > 0);
 	}
 
-	
-	
-	
-	
-	
 	public EnterMedia getEnterMedia(String inApplicationId)
 	{
 		EnterMedia media = (EnterMedia)getStaticFixture().getModuleManager().getBean(inApplicationId, "enterMedia");
